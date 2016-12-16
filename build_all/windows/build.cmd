@@ -12,7 +12,7 @@ set build-root=%current-path%\..\..
 rem // resolve to fully qualified path
 for %%i in ("%build-root%") do set build-root=%%~fi
 
-set repo_root=%build-root%\..\..
+set repo_root=%build-root%\..
 rem // resolve to fully qualified path
 for %%i in ("%repo_root%") do set repo_root=%%~fi
 

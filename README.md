@@ -28,15 +28,17 @@ git submodule update --init --recursive
 The build requires [CMake 2.8.11 or better](https://cmake.org/) and a CMake supported C/C++ compiler and linker
 on the target platform. CMake will create all required files for building the library with the chosen tool chain.
  
-1.  Create a directory named "build" underneath the "c" directory and cd to "build".
-2.  Run ```cmake ..```
-3.  Build. The build process will vary by platform; for Linux the default is "make". 
+1.  Create a directory named "build" and cd to "build".
+2.  Configure your build by running:
+    Ex 1. ```cmake ..``` <!-- Build libs and samples -->
+    Ex 2. ```cmake -Drun_unittests:BOOL=ON ..``` <!-- Build libs, samples and Unit tests -->
+3.  Build. The build process will vary by platform; for Linux the default is "make".
 
-Linux users please note that there are dependent packages that would need to be obtained prior to building this library. Please review and tailor the c/build_all/linux/setup.sh to suit your environment.
+Linux users please note that there are dependent packages that would need to be obtained prior to building this library. Please review and tailor the build_all/linux/setup.sh to suit your environment.
 
 ## Samples
 
-The build process will also build the available samples, which reside under [samples](./samples) for your review. 
+The build process will also build the available samples, which reside under [samples](./eventhub_client/samples) for your review.
 
 Specific instructions are available for the following platforms:
 
@@ -46,5 +48,4 @@ Specific instructions are available for the following platforms:
 * [Raspbian Linux](.\docs\raspberrypi_raspbian_setup.md)
 * [Windows](.\docs\windows_setup.md) 
 
-> Several of these documents are known to be outdated 
-
+> Several of these documents are known to be outdated.
