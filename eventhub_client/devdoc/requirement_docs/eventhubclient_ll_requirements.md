@@ -119,16 +119,20 @@ extern EVENTHUBCLIENT_RESULT EventHubClient_LL_SendBatchAsync(EVENTHUBCLIENT_LL_
 extern void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle);
 ```
 
+#### General
+**SRS_EVENTHUBCLIENT_LL_29_200: \[**`EventHubClient_LL_DoWork` shall initialize and bring up the uAMQP stack if it has not already brought up**\]**
+**SRS_EVENTHUBCLIENT_LL_29_201: \[**`EventHubClient_LL_DoWork` shall perform SAS token handling. **\]**
+**SRS_EVENTHUBCLIENT_LL_29_202: \[**`EventHubClient_LL_DoWork` shall initialize the uAMQP Message Sender stack if it has not already brought up. **\]**  
+**SRS_EVENTHUBCLIENT_LL_29_203: \[**`EventHubClient_LL_DoWork` shall perform message send handling **\]** 
+
+#### uAMQP Stack Initialize
 **SRS_EVENTHUBCLIENT_LL_01_079: \[**EventHubClient_LL_DoWork shall bring up the uAMQP stack if it has not already brought up:**\]** 
-**SRS_EVENTHUBCLIENT_LL_01_004: \[**A SASL plain mechanism shall be created by calling saslmechanism_create.**\]**
-**SRS_EVENTHUBCLIENT_LL_01_005: \[**The interface passed to saslmechanism_create shall be obtained by calling saslplain_get_interface.**\]**
-**SRS_EVENTHUBCLIENT_LL_01_006: \[**If saslplain_get_interface fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]**
-**SRS_EVENTHUBCLIENT_LL_01_007: \[**The creation parameters for the SASL plain mechanism shall be in the form of a SASL_PLAIN_CONFIG structure.**\]**
-**SRS_EVENTHUBCLIENT_LL_01_008: \[**The authcid shall be set to the key name parsed earlier from the connection string.**\]**
-**SRS_EVENTHUBCLIENT_LL_01_009: \[**The passwd members shall be set to the key value parsed earlier from the connection string.**\]**
-**SRS_EVENTHUBCLIENT_LL_01_010: \[**The authzid shall be NULL.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_004: \[**A SASL mechanism shall be created by calling saslmechanism_create.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_005: \[**The interface passed to saslmechanism_create shall be obtained by calling saslmssbcbs_get_interface.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_006: \[**If saslmssbcbs_get_interface fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]**
 **SRS_EVENTHUBCLIENT_LL_01_011: \[**If sasl_mechanism_create fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]** 
-**SRS_EVENTHUBCLIENT_LL_03_030: \[**A TLS IO shall be created by calling xio_create.**\]** **SRS_EVENTHUBCLIENT_LL_01_002: \[**The TLS IO interface description passed to xio_create shall be obtained by calling platform_get_default_tlsio_interface.**\]** 
+**SRS_EVENTHUBCLIENT_LL_03_030: \[**A TLS IO shall be created by calling xio_create.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_002: \[**The TLS IO interface description passed to xio_create shall be obtained by calling platform_get_default_tlsio_interface.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_001: \[**If platform_get_default_tlsio_interface fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages. **\]**
 **SRS_EVENTHUBCLIENT_LL_01_003: \[**If xio_create fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_012: \[**A SASL client IO shall be created by calling xio_create.**\]**
@@ -136,16 +140,32 @@ extern void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHa
 **SRS_EVENTHUBCLIENT_LL_01_014: \[**If saslclientio_get_interface_description fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]**
 **SRS_EVENTHUBCLIENT_LL_01_015: \[**The IO creation parameters passed to xio_create shall be in the form of a SASLCLIENTIO_CONFIG.**\]**
 **SRS_EVENTHUBCLIENT_LL_01_016: \[**The underlying_io members shall be set to the previously created TLS IO.**\]**
-**SRS_EVENTHUBCLIENT_LL_01_017: \[**The sasl_mechanism shall be set to the previously created SASL PLAIN mechanism.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_017: \[**The sasl_mechanism shall be set to the previously created SASL mechanism.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_018: \[**If xio_create fails creating the SASL client IO then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_019: \[**An AMQP connection shall be created by calling connection_create and passing as arguments the SASL client IO handle, eventhub hostname, "eh_client_connection" as container name and NULL for the new session handler and context.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_020: \[**If connection_create fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_028: \[**An AMQP session shall be created by calling session_create and passing as arguments the connection handle, and NULL for the new link handler and context.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_029: \[**If session_create fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
-**SRS_EVENTHUBCLIENT_LL_01_030: \[**The outgoing window for the session shall be set to 10 by calling session_set_outgoing_window.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_030: \[**The outgoing window for the session shall be set to 10 by calling session_set_outgoing_window.**\]**
+
+**SRS_EVENTHUBCLIENT_LL_29_120: \[**Obtain the underlying C string buffer of STRING_HANDLEs host name, eventhub path, shared access key name, shared access key by calling `STRING_c_str`.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_121: \[**Initialize a `EVENTHUBAUTH_CBS_CONFIG` structure params hostName, eventHubPath, sharedAccessKeyName, sharedAccessKey using the C string buffer values obtained above. Set senderPublisherId to "sender". Set receiverConsumerGroup, receiverPartitionId to NULL, sasTokenAuthFailureTimeoutInSecs to the client wait timeout value, sasTokenExpirationTimeInSec to 3600, sasTokenRefreshPeriodInSecs to 4800, mode as EVENTHUBAUTH_MODE_SENDER and credential as EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_121: \[**`EventHubAuthCBS_Create` shall be invoked using the config structure reference and the session handle created earlier.**\]**
+
+#### SAS Token handling
+**SRS_EVENTHUBCLIENT_LL_29_122: \[**`EventHubAuthCBS_GetStatus` shall be invoked to obtain the authorization status.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_123: \[**If status is EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, `EventHubAuthCBS_Refresh` shall be invoked to refresh the SAS token.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_124: \[**If status is EVENTHUBAUTH_STATUS_IDLE, `EventHubAuthCBS_Authenticate` shall be invoked to create and install the SAS token.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_125: \[**If status is EVENTHUBAUTH_STATUS_TIMEOUT, `EventHubAuthCBS_Reset` shall be invoked and any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_TIMEOUT.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_126: \[**If status is EVENTHUBAUTH_STATUS_IN_PROGRESS, `connection_dowork` shall be invoked to perform work to establish/refresh the SAS token.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_127: \[**If status is EVENTHUBAUTH_STATUS_FAILURE any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE the AMQP stack shall be brought down so that it can be created again if needed in dowork.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_128: \[**If an error is seen during this operation, the AMQP stack shall be brought down so that it can be created again if needed in `EventHubClient_LL_DoWork`.**\]**
+
+#### uAMQP Sender Stack Initialize
 **SRS_EVENTHUBCLIENT_LL_01_031: \[**If setting the outgoing window fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_021: \[**A source AMQP value shall be created by calling messaging_create_source.**\]**
-**SRS_EVENTHUBCLIENT_LL_01_022: \[**The source address shall be "ingress".**\]** **SRS_EVENTHUBCLIENT_LL_01_023: \[**A target AMQP value shall be created by calling messaging_create_target.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_022: \[**The source address shall be "ingress".**\]**
+**SRS_EVENTHUBCLIENT_LL_01_023: \[**A target AMQP value shall be created by calling messaging_create_target.**\]**
 **SRS_EVENTHUBCLIENT_LL_01_024: \[**The target address shall be "amqps://" {eventhub hostname} / {eventhub name}.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_025: \[**If creating the source or target values fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_026: \[**An AMQP link shall be created by calling link_create and passing as arguments the session handle, "sender-link" as link name, role_sender and the previously created source and target values.**\]** 
@@ -157,20 +177,34 @@ extern void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHa
 **SRS_EVENTHUBCLIENT_LL_01_036: \[**A message sender shall be created by calling messagesender_create and passing as arguments the link handle, a state changed callback, a context and NULL for the logging function.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_037: \[**If creating the message sender fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_080: \[**If any other error happens while bringing up the uAMQP stack, EventHubClient_LL_DoWork shall not attempt to open the message_sender and return without sending any messages.**\]** 
-
 **SRS_EVENTHUBCLIENT_LL_04_018: \[**if parameter eventHubClientLLHandle is NULL EventHubClient_LL_DoWork shall immediately return.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_038: \[**EventHubClient_LL_DoWork shall perform a messagesender_open if the state of the message_sender is not OPEN.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_039: \[**If messagesender_open fails, no further actions shall be carried out.**\]** 
-For each message that is pending:
-**SRS_EVENTHUBCLIENT_LL_01_049: \[**If the message has not yet been given to uAMQP then a new message shall be created by calling message_create.**\]** **SRS_EVENTHUBCLIENT_LL_01_070: \[**If creating the message fails, then the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** 
-**SRS_EVENTHUBCLIENT_LL_01_050: \[**If the number of event data entries for the message is 1 (not batched) then the message body shall be set to the event data payload by calling message_add_body_amqp_data.**\]** **SRS_EVENTHUBCLIENT_LL_01_071: \[**If message_add_body_amqp_data fails then the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** **SRS_EVENTHUBCLIENT_LL_01_051: \[**The pointer to the payload and its length shall be obtained by calling EventData_GetData.**\]** **SRS_EVENTHUBCLIENT_LL_01_052: \[**If EventData_GetData fails then the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** 
-**SRS_EVENTHUBCLIENT_LL_01_054: \[**If the number of event data entries for the message is 1 (not batched) the event data properties shall be added as application properties to the message.**\]** **SRS_EVENTHUBCLIENT_LL_01_055: \[**A map shall be created to hold the application properties by calling amqpvalue_create_map.**\]** **SRS_EVENTHUBCLIENT_LL_01_056: \[**For each property a key and value AMQP value shall be created by calling amqpvalue_create_string.**\]** **SRS_EVENTHUBCLIENT_LL_01_057: \[**Then each property shall be added to the application properties map by calling amqpvalue_set_map_value.**\]** **SRS_EVENTHUBCLIENT_LL_01_058: \[**The resulting map shall be set as the message application properties by calling message_set_application_properties.**\]** 
+
+#### For Each Pending Message Handling:
+**SRS_EVENTHUBCLIENT_LL_01_049: \[**If the message has not yet been given to uAMQP then a new message shall be created by calling message_create.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_070: \[**If creating the message fails, then the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_050: \[**If the number of event data entries for the message is 1 (not batched) then the message body shall be set to the event data payload by calling message_add_body_amqp_data.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_071: \[**If message_add_body_amqp_data fails then the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_051: \[**The pointer to the payload and its length shall be obtained by calling EventData_GetData.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_052: \[**If EventData_GetData fails then the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_054: \[**If the number of event data entries for the message is 1 (not batched) the event data properties shall be added as application properties to the message.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_055: \[**A map shall be created to hold the application properties by calling amqpvalue_create_map.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_056: \[**For each property a key and value AMQP value shall be created by calling amqpvalue_create_string.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_057: \[**Then each property shall be added to the application properties map by calling amqpvalue_set_map_value.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_058: \[**The resulting map shall be set as the message application properties by calling message_set_application_properties.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_059: \[**If any error is encountered while creating the application properties the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** 
-**SRS_EVENTHUBCLIENT_LL_01_082: \[**If the number of event data entries for the message is greater than 1 (batched) then the message format shall be set to 0x80013700 by calling message_set_message_format.**\]** **SRS_EVENTHUBCLIENT_LL_01_083: \[**If message_set_message_format fails, the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_082: \[**If the number of event data entries for the message is greater than 1 (batched) then the message format shall be set to 0x80013700 by calling message_set_message_format.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_083: \[**If message_set_message_format fails, the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_084: \[**For each event in the batch:**\]** 
-**SRS_EVENTHUBCLIENT_LL_01_085: \[**The event shall be added to the message by into a separate data section by calling message_add_body_amqp_data.**\]** **SRS_EVENTHUBCLIENT_LL_01_086: \[**The buffer passed to message_add_body_amqp_data shall contain the properties and the binary event payload serialized as AMQP values.**\]** 
-**SRS_EVENTHUBCLIENT_LL_01_087: \[**The properties shall be serialized as AMQP application_properties.**\]** **SRS_EVENTHUBCLIENT_LL_01_088: \[**The event payload shall be serialized as an AMQP message data section.**\]** **SRS_EVENTHUBCLIENT_LL_01_089: \[**If message_add_body_amqp_data fails, the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** 
-**SRS_EVENTHUBCLIENT_LL_01_090: \[**Enough memory shall be allocated to hold the properties and binary payload for each event part of the batch.**\]** **SRS_EVENTHUBCLIENT_LL_01_091: \[**The size needed for the properties and data section shall be obtained by calling amqpvalue_get_encoded_size.**\]** **SRS_EVENTHUBCLIENT_LL_01_092: \[**The properties and binary data shall be encoded by calling amqpvalue_encode and passing an encoding function that places the encoded data into the memory allocated for the event.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_085: \[**The event shall be added to the message by into a separate data section by calling message_add_body_amqp_data.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_086: \[**The buffer passed to message_add_body_amqp_data shall contain the properties and the binary event payload serialized as AMQP values.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_087: \[**The properties shall be serialized as AMQP application_properties.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_088: \[**The event payload shall be serialized as an AMQP message data section.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_089: \[**If message_add_body_amqp_data fails, the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_090: \[**Enough memory shall be allocated to hold the properties and binary payload for each event part of the batch.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_091: \[**The size needed for the properties and data section shall be obtained by calling amqpvalue_get_encoded_size.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_092: \[**The properties and binary data shall be encoded by calling amqpvalue_encode and passing an encoding function that places the encoded data into the memory allocated for the event.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_093: \[**If the property count is 0 for an event part of the batch, then no property map shall be serialized for that event.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_094: \[**If any error occurs during serializing each event properties and data that are part of the batch, the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_069: \[**The AMQP message shall be given to uAMQP by calling messagesender_send, while passing as arguments the message sender handle, the message handle, a callback function and its context.**\]** 
@@ -188,6 +222,7 @@ For each message that is pending:
 -	**SRS_EVENTHUBCLIENT_LL_01_076: \[**The SASL IO shall be destroyed by calling xio_destroy.**\]** 
 -	**SRS_EVENTHUBCLIENT_LL_01_077: \[**The TLS IO shall be destroyed by calling xio_destroy.**\]** 
 -	**SRS_EVENTHUBCLIENT_LL_01_078: \[**The SASL mechanism shall be destroyed by calling saslmechanism_destroy.**\]** 
+-   **SRS_EVENTHUBCLIENT_LL_29_150: \[**`EventHubAuthCBS_Destroy` shall be called to destory the event hub auth handle.**\]**
 
 ###on_message_send_complete
 
@@ -211,8 +246,8 @@ extern void EventHubClient_LL_Destroy(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLH
 **SRS_EVENTHUBCLIENT_LL_01_045: \[**The connection shall be freed by calling connection_destroy.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_046: \[**The SASL client IO shall be freed by calling xio_destroy.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_047: \[**The TLS IO shall be freed by calling xio_destroy.**\]** 
-**SRS_EVENTHUBCLIENT_LL_01_048: \[**The SASL plain mechanism shall be freed by calling saslmechanism_destroy.**\]** 
-
+**SRS_EVENTHUBCLIENT_LL_01_048: \[**The SASL mechanism shall be freed by calling saslmechanism_destroy.**\]** 
+**SRS_EVENTHUBCLIENT_LL_29_150: \[**`EventHubAuthCBS_Destroy` shall be called to destory the event hub auth handle.**\]**
 
 ###EventHubClient_LL_Set_StateChange_Callback
 

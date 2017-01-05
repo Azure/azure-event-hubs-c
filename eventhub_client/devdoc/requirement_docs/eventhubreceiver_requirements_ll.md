@@ -149,18 +149,17 @@ MOCKABLE_FUNCTION(, void, EventHubReceiver_LL_DoWork, EVENTHUBRECEIVER_LL_HANDLE
 **SRS_EVENTHUBRECEIVER_LL_29_450: \[**`EventHubReceiver_LL_DoWork` shall return immediately if the supplied handle is NULL**\]**
 
 #### General
-**SRS_EVENTHUBRECEIVER_LL_29_451: \[**`EventHubReceiver_LL_DoWork` shall initialize and bring up the uAMQP stack if it has not already brought up**\]** 
-**SRS_EVENTHUBRECEIVER_LL_29_452: \[**`EventHubReceiver_LL_DoWork` shall create a message receiver if not aleady created**\]** 
+**SRS_EVENTHUBRECEIVER_LL_29_451: \[**`EventHubReceiver_LL_DoWork` shall initialize and bring up the uAMQP stack if it has not already brought up**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_455: \[**`EventHubReceiver_LL_DoWork` shall perform SAS token handling. **\]**
+**SRS_EVENTHUBRECEIVER_LL_29_456: \[**`EventHubReceiver_LL_DoWork` shall initialize the uAMQP Message Receiver stack if it has not already brought up. **\]** 
+**SRS_EVENTHUBRECEIVER_LL_29_452: \[**`EventHubReceiver_LL_DoWork` shall create a message receiver if not already created. **\]** 
 **SRS_EVENTHUBRECEIVER_LL_29_453: \[**`EventHubReceiver_LL_DoWork` shall invoke connection_dowork **\]** 
 **SRS_EVENTHUBRECEIVER_LL_29_454: \[**`EventHubReceiver_LL_DoWork` shall manage timeouts as long as the user specified timeout value is non zero **\]** 
 
-#### AMQP Stack Initialize
-**SRS_EVENTHUBRECEIVER_LL_29_501: \[**A SASL plain mechanism shall be created by calling saslmechanism_create.**\]**
-**SRS_EVENTHUBRECEIVER_LL_29_502: \[**The interface passed to saslmechanism_create shall be obtained by calling saslplain_get_interface.**\]**
-**SRS_EVENTHUBRECEIVER_LL_29_503: \[**The authcid shall be set to the key name parsed from the connection string.**\]**
-**SRS_EVENTHUBRECEIVER_LL_29_504: \[**The passwd members shall be set to the key value from the connection string.**\]**
-**SRS_EVENTHUBRECEIVER_LL_29_505: \[**If saslplain_get_interface fails then a log message will be logged and the function returns immediately.**\]**
-**SRS_EVENTHUBRECEIVER_LL_29_506: \[**The creation parameters for the SASL plain mechanism shall be in the form of a SASL_PLAIN_CONFIG structure.**\]**
+#### uAMQP Stack Initialize
+**SRS_EVENTHUBRECEIVER_LL_29_501: \[**A SASL mechanism shall be created by calling saslmechanism_create.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_502: \[**The interface passed to saslmechanism_create shall be obtained by calling saslmssbcbs_get_interface.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_505: \[**If saslmssbcbs_get_interface fails then a log message will be logged and the function returns immediately.**\]**
 
 **SRS_EVENTHUBRECEIVER_LL_29_520: \[**A TLS IO shall be created by calling xio_create using TLS port 5671 and host name obtained from the connection string**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_521: \[**The interface passed to xio_create shall be obtained by calling platform_get_default_tlsio.**\]**
@@ -174,7 +173,21 @@ MOCKABLE_FUNCTION(, void, EventHubReceiver_LL_DoWork, EVENTHUBRECEIVER_LL_HANDLE
 
 **SRS_EVENTHUBRECEIVER_LL_29_540: \[**An AMQP session shall be created by calling session_create and passing as arguments the connection handle, and NULL for the new link handler and context.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_541: \[**If session_create fails then a log message will be logged and the function returns immediately.**\]**
-**SRS_EVENTHUBRECEIVER_LL_29_542: \[**Configure the session incoming window by calling session_set_incoming_window and set value to INTMAX.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_542: \[**Configure the session incoming window by calling `session_set_incoming_window` and set value to INTMAX.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_564: \[**Obtain the underlying C string buffer of STRING_HANDLEs host name, eventhub path, consumer group, partition id, shared access key name, shared access key by calling `STRING_c_str`.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_565: \[**Initialize a `EVENTHUBAUTH_CBS_CONFIG` structure params hostName, eventHubPath, receiverConsumerGroup, receiverPartitionId, sharedAccessKeyName, sharedAccessKey using the C string buffer values obtained above. Set senderPublisherId to NULL, sasTokenAuthFailureTimeoutInSecs to the client wait timeout value, sasTokenExpirationTimeInSec to 3600, sasTokenRefreshPeriodInSecs to 4800, mode as EVENTHUBAUTH_MODE_RECEIVER and credential as EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_566: \[**`EventHubAuthCBS_Create` shall be invoked using the config structure reference and the session handle created earlier.**\]**
+
+#### SAS Token handling
+**SRS_EVENTHUBRECEIVER_LL_29_567: \[**`EventHubAuthCBS_GetStatus` shall be invoked to obtain the authorization status.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_568: \[**If status is EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, `EventHubAuthCBS_Refresh` shall be invoked to refresh the SAS token.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_569: \[**If status is EVENTHUBAUTH_STATUS_IDLE, `EventHubAuthCBS_Authenticate` shall be invoked to create and install the SAS token.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_570: \[**If status is EVENTHUBAUTH_STATUS_TIMEOUT, `EventHubAuthCBS_Reset` shall be invoked and any registered client error callback shall be invoked with error code EVENTHUBRECEIVER_SASTOKEN_AUTH_TIMEOUT.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_571: \[**If status is EVENTHUBAUTH_STATUS_IN_PROGRESS, `connection_dowork` shall be invoked to perform work to establish/refresh the SAS token.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_572: \[**If status is EVENTHUBAUTH_STATUS_FAILURE any registered client error callback shall be invoked with error code EVENTHUBRECEIVER_SASTOKEN_AUTH_FAILURE the AMQP stack shall be brought down so that it can be created again if needed in `EventHubReceiver_LL_DoWork`.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_573: \[**If an error is seen during this operation, the AMQP stack shall be brought down so that it can be created again if needed in `EventHubReceiver_LL_DoWork`.**\]**
+
+#### uAMQP Receiver Stack Initialize
 **SRS_EVENTHUBRECEIVER_LL_29_543: \[**A filter_set shall be created and initialized using key "apache.org:selector-filter:string" and value as the query filter created previously.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_544: \[**If creation of the filter_set fails, then a log message will be logged and the function returns immediately.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_545: \[**If a failure is observed during source creation and initialization, then a log message will be logged and the function returns immediately.**\]**
@@ -195,16 +208,16 @@ MOCKABLE_FUNCTION(, void, EventHubReceiver_LL_DoWork, EVENTHUBRECEIVER_LL_HANDLE
 **SRS_EVENTHUBRECEIVER_LL_29_562: \[**The created message receiver shall be transitioned to OPEN by calling messagereceiver_open.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_563: \[**If messagereceiver_open fails then a log message will be logged and the function returns immediately.**\]**
 
-
 ##### AMQP Stack DeInitialize
 **SRS_EVENTHUBRECEIVER_LL_29_919: \[**`EventHubReceiver_LL_DoWork` shall do the work to tear down the AMQP stack when a user had called `EventHubReceiver_LL_ReceiveEndAsync`.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_920: \[**All pending message data not reported to the calling client shall be freed by calling messagereceiver_close and messagereceiver_destroy.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_921: \[**The link shall be freed by calling link_destroy.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_930: \[**`EventHubAuthCBS_Destroy` shall be called to destory the event hub auth handle.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_922: \[**The session shall be freed by calling session_destroy.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_923: \[**The connection shall be freed by calling connection_destroy.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_924: \[**The SASL client IO shall be freed by calling xio_destroy.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_925: \[**The TLS IO shall be freed by calling xio_destroy.**\]**
-**SRS_EVENTHUBRECEIVER_LL_29_926: \[**The SASL plain mechanism shall be freed by calling saslmechanism_destroy.**\]**
+**SRS_EVENTHUBRECEIVER_LL_29_926: \[**The SASL mechanism shall be freed by calling saslmechanism_destroy.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_927: \[**The filter string shall be freed by STRING_delete.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_928: \[**Upon Success, `EventHubReceiver_LL_DoWork` shall invoke the onEventReceiveEndCallback along with onEventReceiveEndUserContext with result code EVENTHUBRECEIVER_OK.**\]**
 **SRS_EVENTHUBRECEIVER_LL_29_929: \[**Upon failure, `EventHubReceiver_LL_DoWork` shall invoke the onEventReceiveEndCallback along with onEventReceiveEndUserContext with result code EVENTHUBRECEIVER_ERROR.**\]**
