@@ -42,10 +42,10 @@ The build process will also build the available samples, which reside under [sam
 
 Specific instructions are available for the following platforms:
 
-* [Beaglebone Black](.\docs\beagleboneblack_debian_setup.md)
-* [Fedora Linux](.\docs\desktop_fedora_setup.md)
-* [Ubuntu Linux](.\docs\desktop_ubuntu_setup.md)
-* [Raspbian Linux](.\docs\raspberrypi_raspbian_setup.md)
-* [Windows](.\docs\windows_setup.md) 
+* [Beaglebone Black](./docs/beagleboneblack_debian_setup.md)
+* [Fedora Linux](./docs/desktop_fedora_setup.md)
+* [Ubuntu Linux](./docs/desktop_ubuntu_setup.md)
+* [Raspbian Linux](./docs/raspberrypi_raspbian_setup.md)
+* [Windows](./docs/windows_setup.md)
 
 > Several of these documents are known to be outdated.
