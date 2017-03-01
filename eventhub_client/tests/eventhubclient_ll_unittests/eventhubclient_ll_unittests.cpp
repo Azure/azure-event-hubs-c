@@ -17,39 +17,49 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 */
 
+#ifdef __cplusplus
+#include <cstdbool>
+#include <cstddef>
 #include <cstdlib>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
-#include <signal.h>
+#include <cstring>
+#else
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
+#endif
+#include <signal.h>
+
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
 
-#include "eventhubclient_ll.h"
-#include "azure_c_shared_utility/strings.h"
-#include "azure_c_shared_utility/connection_string_parser.h"
-#include "azure_c_shared_utility/xio.h"
-#include "azure_uamqp_c/connection.h"
-#include "azure_uamqp_c/session.h"
-#include "azure_uamqp_c/link.h"
-#include "azure_uamqp_c/messaging.h"
-#include "azure_uamqp_c/message.h"
-#include "azure_uamqp_c/message_sender.h"
-#include "azure_uamqp_c/sasl_mechanism.h"
-#include "azure_uamqp_c/sasl_plain.h"
-#include "azure_uamqp_c/saslclientio.h"
-#include "version.h"
-#include "azure_c_shared_utility/lock.h"
 #include "azure_uamqp_c/amqp_definitions.h"
 #include "azure_uamqp_c/amqpvalue.h"
-#include "azure_c_shared_utility/platform.h"
+#include "azure_uamqp_c/cbs.h"
+#include "azure_uamqp_c/connection.h"
+#include "azure_uamqp_c/link.h"
+#include "azure_uamqp_c/session.h"
+#include "azure_uamqp_c/message.h"
+#include "azure_uamqp_c/messaging.h"
+#include "azure_uamqp_c/message_sender.h"
+#include "azure_uamqp_c/sasl_mechanism.h"
+#include "azure_uamqp_c/sasl_mssbcbs.h"
+#include "azure_uamqp_c/saslclientio.h"
+#include "azure_c_shared_utility/connection_string_parser.h"
 #include "azure_c_shared_utility/doublylinkedlist.h"
-#include "azure_c_shared_utility/tlsio.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/platform.h"
+#include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/tickcounter.h"
+#include "azure_c_shared_utility/tlsio.h"
+#include "azure_c_shared_utility/xio.h"
+
+#include "eventhubclient_ll.h"
+#include "eventhubauth.h"
+#include "version.h"
 
 DEFINE_MICROMOCK_ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_RESULT_VALUES);
 
@@ -90,7 +100,18 @@ static tickcounter_ms_t g_tickcounter_value = (tickcounter_ms_t)1000;
 #define TEST_KEYNAME_STRING_HANDLE  (STRING_HANDLE)0x49
 #define TEST_KEY_STRING_HANDLE      (STRING_HANDLE)0x4A
 #define TEST_TARGET_STRING_HANDLE   (STRING_HANDLE)0x4B
+#define TEST_EVENTHUB_STRING_HANDLE (STRING_HANDLE)0x4C
+#define TEST_PUBLISHER_STRING_HANDLE (STRING_HANDLE)0x4D
 #define TEST_CONNSTR_MAP_HANDLE     (MAP_HANDLE)0x50
+
+#define TEST_HOSTNAME_PARSER_STRING_HANDLE (STRING_HANDLE)0x60
+#define TEST_EVENTHUB_PARSER_STRING_HANDLE (STRING_HANDLE)0x61
+#define TEST_PUBLISHER_PARSER_STRING_HANDLE (STRING_HANDLE)0x62
+#define TEST_SASTOKEN_PARSER_STRING_HANDLE (STRING_HANDLE)0x63
+#define TEST_SASTOKEN_URI_PARSER_STRING_HANDLE (STRING_HANDLE)0x64
+#define TEST_SASTOKEN_PARSER_REFRESH_STRING_HANDLE (STRING_HANDLE)0x65
+#define TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE (STRING_HANDLE)0x66
+
 
 #define TEST_CLONED_EVENTDATA_HANDLE_1     (EVENTDATA_HANDLE)0x4240
 #define TEST_CLONED_EVENTDATA_HANDLE_2     (EVENTDATA_HANDLE)0x4241
@@ -103,12 +124,19 @@ static tickcounter_ms_t g_tickcounter_value = (tickcounter_ms_t)1000;
 #define TEST_MAP_HANDLE (MAP_HANDLE)0x49
 #define MICROSOFT_MESSAGE_FORMAT 0x80013700
 
-#define CONNECTION_STRING "Endpoint=sb://servicebusName.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=icT5kKsJr/Dw7oZveq7OPsSxu5Trmr6aiWlgI5zIT/8="
-#define TEST_EVENTHUB_PATH "eventHubName"
-#define TEST_ENDPOINT "sb://servicebusName.servicebus.windows.net"
-#define TEST_HOSTNAME "servicebusName.servicebus.windows.net"
-#define TEST_KEYNAME "RootManageSharedAccessKey"
-#define TEST_KEY "icT5kKsJr/Dw7oZveq7OPsSxu5Trmr6aiWlgI5zIT/8="
+#define TEST_EVENTHUBCBSAUTH_HANDLE_VALID (EVENTHUBAUTH_CBS_HANDLE)0x51
+
+#define CONNECTION_STRING       "Endpoint=sb://servicebusName.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=icT5kKsJr/Dw7oZveq7OPsSxu5Trmr6aiWlgI5zIT/8="
+#define TEST_EVENTHUB_PATH      "eventHubName"
+#define TEST_PUBLISHER_ID       "sender"
+#define TEST_ENDPOINT           "sb://servicebusName.servicebus.windows.net"
+#define TEST_HOSTNAME           "servicebusName.servicebus.windows.net"
+#define TEST_KEYNAME            "RootManageSharedAccessKey"
+#define TEST_KEY                "icT5kKsJr/Dw7oZveq7OPsSxu5Trmr6aiWlgI5zIT/8="
+#define TEST_SASTOKEN           "sas_token"
+#define TEST_REFRESH_SASTOKEN   "refresh_sas_token"
+
+#define SASTOKEN_EXT_EXPIRATION_TIMESTAMP               (uint64_t)1000
 
 static ON_MESSAGE_SENDER_STATE_CHANGED saved_on_message_sender_state_changed;
 static void* saved_message_sender_context;
@@ -160,6 +188,8 @@ static DLIST_ENTRY* saved_pending_list;
 static size_t g_currentEventClone_call;
 static size_t g_whenShallEventClone_fail;
 
+static EVENTHUBAUTH_STATUS g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_OK;
+
 typedef struct CALLBACK_CONFIRM_INFO
 {
     sig_atomic_t successCounter;
@@ -181,15 +211,15 @@ static const MESSAGE_HANDLE TEST_MESSAGE_HANDLE = (MESSAGE_HANDLE)0x4248;
 static const MESSAGE_SENDER_HANDLE TEST_MESSAGE_SENDER_HANDLE = (MESSAGE_SENDER_HANDLE)0x4249;
 static const SASL_MECHANISM_HANDLE TEST_SASL_MECHANISM_HANDLE = (SASL_MECHANISM_HANDLE)0x4250;
 static const IO_INTERFACE_DESCRIPTION* TEST_SASLCLIENTIO_INTERFACE_DESCRIPTION = (const IO_INTERFACE_DESCRIPTION*)0x4251;
-static const SASL_MECHANISM_INTERFACE_DESCRIPTION* TEST_SASLPLAIN_INTERFACE_DESCRIPTION = (const SASL_MECHANISM_INTERFACE_DESCRIPTION*)0x4252;
+static const SASL_MECHANISM_INTERFACE_DESCRIPTION* TEST_SASL_INTERFACE_DESCRIPTION = (const SASL_MECHANISM_INTERFACE_DESCRIPTION*)0x4252;
 static const IO_INTERFACE_DESCRIPTION* TEST_TLSIO_INTERFACE_DESCRIPTION = (const IO_INTERFACE_DESCRIPTION*)0x4253;
 static const AMQP_VALUE TEST_MAP_AMQP_VALUE = (AMQP_VALUE)0x4254;
 static const AMQP_VALUE TEST_STRING_AMQP_VALUE = (AMQP_VALUE)0x4255;
 static TICK_COUNTER_HANDLE TICK_COUNT_HANDLE_TEST = (TICK_COUNTER_HANDLE)0x4256;
 
-static SASL_PLAIN_CONFIG* saved_sasl_mechanism_create_parameters;
 static TLSIO_CONFIG* saved_tlsio_parameters;
 static SASLCLIENTIO_CONFIG* saved_saslclientio_parameters;
+static EVENTHUBAUTH_CBS_CONFIG g_parsed_config;
 
 std::ostream& operator<<(std::ostream& left, const BINARY_DATA& binary_data)
 {
@@ -237,6 +267,25 @@ static bool operator==(const amqp_binary left, const amqp_binary& right)
     {
         return memcmp(left.bytes, right.bytes, left.length) == 0;
     }
+}
+
+static void setup_parse_sastoken(EVENTHUBAUTH_CBS_CONFIG* cfg, const char* sasToken)
+{
+    cfg->hostName = TEST_HOSTNAME_PARSER_STRING_HANDLE;
+    cfg->eventHubPath = TEST_EVENTHUB_PARSER_STRING_HANDLE;
+    cfg->sharedAccessKeyName = NULL;
+    cfg->sharedAccessKey = NULL;
+    cfg->sasTokenAuthFailureTimeoutInSecs = 0;
+    cfg->sasTokenExpirationTimeInSec = 0;
+    cfg->sasTokenRefreshPeriodInSecs = 0;
+    cfg->extSASTokenExpTSInEpochSec = SASTOKEN_EXT_EXPIRATION_TIMESTAMP;
+    cfg->credential = EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT;
+    cfg->mode = EVENTHUBAUTH_MODE_SENDER;
+    cfg->extSASToken = TEST_SASTOKEN_PARSER_STRING_HANDLE;
+    cfg->extSASTokenURI = TEST_SASTOKEN_URI_PARSER_STRING_HANDLE;
+    cfg->receiverConsumerGroup = NULL;
+    cfg->receiverPartitionId = NULL;
+    cfg->senderPublisherId = TEST_PUBLISHER_PARSER_STRING_HANDLE;
 }
 
 TYPED_MOCK_CLASS(CEventHubClientLLMocks, CGlobalMock)
@@ -325,34 +374,6 @@ public:
 
     /* saslmechanism mocks */
     MOCK_STATIC_METHOD_2(, SASL_MECHANISM_HANDLE, saslmechanism_create, const SASL_MECHANISM_INTERFACE_DESCRIPTION*, sasl_mechanism_interface_description, void*, sasl_mechanism_create_parameters);
-        saved_sasl_mechanism_create_parameters = (SASL_PLAIN_CONFIG*)malloc(sizeof(SASL_PLAIN_CONFIG));
-        if (((SASL_PLAIN_CONFIG*)sasl_mechanism_create_parameters)->authcid == NULL)
-        {
-            saved_sasl_mechanism_create_parameters->authcid = NULL;
-        }
-        else
-        {
-            saved_sasl_mechanism_create_parameters->authcid = (char*)malloc(strlen(((SASL_PLAIN_CONFIG*)sasl_mechanism_create_parameters)->authcid) + 1);
-            (void)strcpy((char*)saved_sasl_mechanism_create_parameters->authcid, ((SASL_PLAIN_CONFIG*)sasl_mechanism_create_parameters)->authcid);
-        }
-        if (((SASL_PLAIN_CONFIG*)sasl_mechanism_create_parameters)->authzid == NULL)
-        {
-            saved_sasl_mechanism_create_parameters->authzid = NULL;
-        }
-        else
-        {
-            saved_sasl_mechanism_create_parameters->authzid = (char*)malloc(strlen(((SASL_PLAIN_CONFIG*)sasl_mechanism_create_parameters)->authzid) + 1);
-            (void)strcpy((char*)saved_sasl_mechanism_create_parameters->authzid, ((SASL_PLAIN_CONFIG*)sasl_mechanism_create_parameters)->authzid);
-        }
-        if (((SASL_PLAIN_CONFIG*)sasl_mechanism_create_parameters)->passwd == NULL)
-        {
-            saved_sasl_mechanism_create_parameters->passwd = NULL;
-        }
-        else
-        {
-            saved_sasl_mechanism_create_parameters->passwd = (char*)malloc(strlen(((SASL_PLAIN_CONFIG*)sasl_mechanism_create_parameters)->passwd) + 1);
-            (void)strcpy((char*)saved_sasl_mechanism_create_parameters->passwd, ((SASL_PLAIN_CONFIG*)sasl_mechanism_create_parameters)->passwd);
-        }
     MOCK_METHOD_END(SASL_MECHANISM_HANDLE, TEST_SASL_MECHANISM_HANDLE);
     MOCK_STATIC_METHOD_1(, void, saslmechanism_destroy, SASL_MECHANISM_HANDLE, sasl_mechanism);
     MOCK_VOID_METHOD_END();
@@ -361,9 +382,9 @@ public:
     MOCK_STATIC_METHOD_0(, const IO_INTERFACE_DESCRIPTION*, saslclientio_get_interface_description);
     MOCK_METHOD_END(const IO_INTERFACE_DESCRIPTION*, TEST_SASLCLIENTIO_INTERFACE_DESCRIPTION);
 
-    /* saslplain mocks */
-    MOCK_STATIC_METHOD_0(, const SASL_MECHANISM_INTERFACE_DESCRIPTION*, saslplain_get_interface);
-    MOCK_METHOD_END(const SASL_MECHANISM_INTERFACE_DESCRIPTION*, TEST_SASLPLAIN_INTERFACE_DESCRIPTION);
+    /* sasl cbs mocks */
+    MOCK_STATIC_METHOD_0(, const SASL_MECHANISM_INTERFACE_DESCRIPTION*, saslmssbcbs_get_interface);
+    MOCK_METHOD_END(const SASL_MECHANISM_INTERFACE_DESCRIPTION*, TEST_SASL_INTERFACE_DESCRIPTION);
 
     /* platform mocks */
     MOCK_STATIC_METHOD_0(, const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
@@ -499,6 +520,9 @@ public:
     MOCK_STATIC_METHOD_0(, STRING_HANDLE, STRING_new)
     MOCK_METHOD_END(STRING_HANDLE, DUMMY_STRING_HANDLE);
 
+    MOCK_STATIC_METHOD_2(, int, STRING_compare, STRING_HANDLE, s1, STRING_HANDLE, s2)
+    MOCK_METHOD_END(int, 0);
+
     MOCK_STATIC_METHOD_2(, void, sendAsyncConfirmationCallback, EVENTHUBCLIENT_CONFIRMATION_RESULT, result2, void*, userContextCallback)
     MOCK_VOID_METHOD_END()
 
@@ -511,6 +535,32 @@ public:
     MOCK_STATIC_METHOD_2(, int, tickcounter_get_current_ms, TICK_COUNTER_HANDLE, tick_counter, tickcounter_ms_t*, current_ms);
         *current_ms = g_tickcounter_value;
     MOCK_METHOD_END(int, 0)
+
+    MOCK_STATIC_METHOD_2(, EVENTHUBAUTH_CBS_HANDLE, EventHubAuthCBS_Create, const EVENTHUBAUTH_CBS_CONFIG*, eventHubAuthConfig, SESSION_HANDLE, cbsSessionHandle)
+    MOCK_METHOD_END(EVENTHUBAUTH_CBS_HANDLE, TEST_EVENTHUBCBSAUTH_HANDLE_VALID)
+
+    MOCK_STATIC_METHOD_1(, void, EventHubAuthCBS_Destroy, EVENTHUBAUTH_CBS_HANDLE, eventHubAuthHandle)
+    MOCK_VOID_METHOD_END()
+
+    MOCK_STATIC_METHOD_1(, EVENTHUBAUTH_RESULT, EventHubAuthCBS_Authenticate, EVENTHUBAUTH_CBS_HANDLE, eventHubAuthHandle)
+    MOCK_METHOD_END(EVENTHUBAUTH_RESULT, EVENTHUBAUTH_RESULT_OK)
+
+    MOCK_STATIC_METHOD_2(, EVENTHUBAUTH_RESULT, EventHubAuthCBS_Refresh, EVENTHUBAUTH_CBS_HANDLE, eventHubAuthHandle, STRING_HANDLE, extSASToken)
+    MOCK_METHOD_END(EVENTHUBAUTH_RESULT, EVENTHUBAUTH_RESULT_OK)
+
+    MOCK_STATIC_METHOD_2(, EVENTHUBAUTH_RESULT, EventHubAuthCBS_GetStatus, EVENTHUBAUTH_CBS_HANDLE, eventHubAuthHandle, EVENTHUBAUTH_STATUS*, returnStatus)
+        *returnStatus = g_eventhub_auth_get_status;
+    MOCK_METHOD_END(EVENTHUBAUTH_RESULT, EVENTHUBAUTH_RESULT_OK)
+
+    MOCK_STATIC_METHOD_1(, EVENTHUBAUTH_CBS_CONFIG*, EventHubAuthCBS_SASTokenParse, const char*, sasToken)
+        setup_parse_sastoken(&g_parsed_config, sasToken);
+    MOCK_METHOD_END(EVENTHUBAUTH_CBS_CONFIG*, &g_parsed_config)
+
+    MOCK_STATIC_METHOD_1(, void, EventHubAuthCBS_Config_Destroy, EVENTHUBAUTH_CBS_CONFIG*, cfg)
+    MOCK_VOID_METHOD_END()
+
+    MOCK_STATIC_METHOD_2(, void, testHook_eventhub_error_callback, EVENTHUBCLIENT_ERROR_RESULT, eventhub_failure, void*, userContextCallback)
+    MOCK_VOID_METHOD_END()
 };
 
 DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , XIO_HANDLE, xio_create, const IO_INTERFACE_DESCRIPTION*, io_interface_description, const void*, io_create_parameters);
@@ -550,7 +600,7 @@ DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , void, saslmechanism_destr
 
 DECLARE_GLOBAL_MOCK_METHOD_0(CEventHubClientLLMocks, , const IO_INTERFACE_DESCRIPTION*, saslclientio_get_interface_description);
 
-DECLARE_GLOBAL_MOCK_METHOD_0(CEventHubClientLLMocks, , const SASL_MECHANISM_INTERFACE_DESCRIPTION*, saslplain_get_interface);
+DECLARE_GLOBAL_MOCK_METHOD_0(CEventHubClientLLMocks, , const SASL_MECHANISM_INTERFACE_DESCRIPTION*, saslmssbcbs_get_interface);
 
 DECLARE_GLOBAL_MOCK_METHOD_0(CEventHubClientLLMocks, , const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
 
@@ -600,6 +650,7 @@ DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , int, STRING_concat_with_S
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , void, STRING_delete, STRING_HANDLE, handle);
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , const char*, STRING_c_str, STRING_HANDLE, s);
 DECLARE_GLOBAL_MOCK_METHOD_0(CEventHubClientLLMocks, , STRING_HANDLE, STRING_new);
+DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , int, STRING_compare, STRING_HANDLE, s1, STRING_HANDLE, s2)
 
 DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , void, sendAsyncConfirmationCallback, EVENTHUBCLIENT_CONFIRMATION_RESULT, result2, void*, userContextCallback);
 
@@ -608,6 +659,15 @@ DECLARE_GLOBAL_MOCK_METHOD_4(CEventHubClientLLMocks, , MAP_RESULT, Map_GetIntern
 DECLARE_GLOBAL_MOCK_METHOD_0(CEventHubClientLLMocks, , TICK_COUNTER_HANDLE, tickcounter_create)
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , void, tickcounter_destroy, TICK_COUNTER_HANDLE, tick_counter);
 DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , int, tickcounter_get_current_ms, TICK_COUNTER_HANDLE, tick_counter, tickcounter_ms_t*, current_ms);
+
+DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , EVENTHUBAUTH_CBS_HANDLE, EventHubAuthCBS_Create, const EVENTHUBAUTH_CBS_CONFIG*, eventHubAuthConfig, SESSION_HANDLE, cbsSessionHandle);
+DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , void, EventHubAuthCBS_Destroy, EVENTHUBAUTH_CBS_HANDLE, eventHubAuthHandle);
+DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , EVENTHUBAUTH_RESULT, EventHubAuthCBS_GetStatus, EVENTHUBAUTH_CBS_HANDLE, eventHubAuthHandle, EVENTHUBAUTH_STATUS*, returnStatus);
+DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , EVENTHUBAUTH_RESULT, EventHubAuthCBS_Authenticate, EVENTHUBAUTH_CBS_HANDLE, eventHubAuthHandle);
+DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , EVENTHUBAUTH_RESULT, EventHubAuthCBS_Refresh, EVENTHUBAUTH_CBS_HANDLE, eventHubAuthHandle, STRING_HANDLE, extSASToken);
+DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , EVENTHUBAUTH_CBS_CONFIG*, EventHubAuthCBS_SASTokenParse, const char*, sasToken);
+DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , void, EventHubAuthCBS_Config_Destroy, EVENTHUBAUTH_CBS_CONFIG*, cfg);
+DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , void, testHook_eventhub_error_callback, EVENTHUBCLIENT_ERROR_RESULT, eventhub_failure, void*, userContextCallback);
 
 // ** End of Mocks **
 static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
@@ -636,14 +696,13 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         saved_tlsio_parameters = NULL;
         saved_saslclientio_parameters = NULL;
-        saved_sasl_mechanism_create_parameters = NULL;
 
         g_setProperty = false;
 
         g_currentEventClone_call = 0;
         g_whenShallEventClone_fail = 0;
         g_confirmationResult = EVENTHUBCLIENT_CONFIRMATION_ERROR;
-
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_OK;
         g_includeProperties = false;
     }
 
@@ -660,17 +719,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             free(saved_saslclientio_parameters);
         }
 
-        if (saved_sasl_mechanism_create_parameters != NULL)
-        {
-            free((char*)saved_sasl_mechanism_create_parameters->authcid);
-            free((char*)saved_sasl_mechanism_create_parameters->authzid);
-            free((char*)saved_sasl_mechanism_create_parameters->passwd);
-            free(saved_sasl_mechanism_create_parameters);
-        }
-
         saved_tlsio_parameters = NULL;
         saved_saslclientio_parameters = NULL;
-        saved_sasl_mechanism_create_parameters = NULL;
 
         if (!MicroMockReleaseMutex(g_testByTest))
         {
@@ -695,6 +745,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_CONNSTR_HANDLE);
         STRICT_EXPECTED_CALL((*mocks), connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL((*mocks), gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL((*mocks), DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL((*mocks), tickcounter_create());
         STRICT_EXPECTED_CALL((*mocks), Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL((*mocks), STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
@@ -712,24 +764,22 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL((*mocks), STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
         STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
-        EXPECTED_CALL((*mocks), DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
+        STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
+        STRICT_EXPECTED_CALL((*mocks), STRING_construct(TEST_EVENTHUB_PATH))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL((*mocks), STRING_construct(TEST_PUBLISHER_ID))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
         STRICT_EXPECTED_CALL((*mocks), Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL((*mocks), tickcounter_create());
     }
 
-    static void setup_messenger_initialize_success(CEventHubClientLLMocks* mocks)
+    static void setup_messenger_pre_auth_uamqp_stack_bringup_success(CEventHubClientLLMocks* mocks)
     {
         STRICT_EXPECTED_CALL((*mocks), STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL((*mocks), STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL((*mocks), STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL((*mocks), STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL((*mocks), saslplain_get_interface());
-        STRICT_EXPECTED_CALL((*mocks), saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL((*mocks), saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL((*mocks), saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL((*mocks), platform_get_default_tlsio());
         STRICT_EXPECTED_CALL((*mocks), xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
@@ -740,8 +790,37 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .IgnoreArgument(2)
             .SetReturn(TEST_SASLCLIENTIO_HANDLE);
         STRICT_EXPECTED_CALL((*mocks), connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
+        STRICT_EXPECTED_CALL((*mocks), connection_set_trace(TEST_CONNECTION_HANDLE, false))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL((*mocks), session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
         STRICT_EXPECTED_CALL((*mocks), session_set_outgoing_window(TEST_SESSION_HANDLE, 10));
+        STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_Create(IGNORED_PTR_ARG, TEST_SESSION_HANDLE))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_074: \[**The session shall be destroyed by calling session_destroy.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_075: \[**The connection shall be destroyed by calling connection_destroy.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_076: \[**The SASL IO shall be destroyed by calling xio_destroy.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_077: \[**The TLS IO shall be destroyed by calling xio_destroy.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_078: \[**The SASL mechanism shall be destroyed by calling saslmechanism_destroy.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_151: \[**EventHubAuthCBS_Destroy shall be called to destroy the event hub auth handle.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_152: \[**If any ext refresh SAS token is present, it shall be called to destroyed by calling STRING_delete.**\]**
+    static void setup_messenger_pre_auth_uamqp_stack_teardown_success(CEventHubClientLLMocks* mocks)
+    {
+        STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_Destroy(TEST_EVENTHUBCBSAUTH_HANDLE_VALID));
+        STRICT_EXPECTED_CALL((*mocks), session_destroy(TEST_SESSION_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), connection_destroy(TEST_CONNECTION_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), xio_destroy(TEST_SASLCLIENTIO_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), xio_destroy(TEST_TLSIO_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
+    }
+
+    static void setup_messenger_post_auth_complete_messenger_stack_bringup_success(CEventHubClientLLMocks* mocks)
+    {
+        STRICT_EXPECTED_CALL((*mocks), STRING_c_str(TEST_TARGET_STRING_HANDLE))
+            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
         STRICT_EXPECTED_CALL((*mocks), messaging_create_source("ingress"));
         STRICT_EXPECTED_CALL((*mocks), messaging_create_target("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH));
         STRICT_EXPECTED_CALL((*mocks), link_create(TEST_SESSION_HANDLE, "sender-link", role_sender, TEST_SOURCE_AMQP_VALUE, TEST_TARGET_AMQP_VALUE));
@@ -751,6 +830,50 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL((*mocks), amqpvalue_destroy(TEST_SOURCE_AMQP_VALUE));
         STRICT_EXPECTED_CALL((*mocks), amqpvalue_destroy(TEST_TARGET_AMQP_VALUE));
+        STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL((*mocks), messagesender_open(TEST_MESSAGE_SENDER_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), connection_dowork(TEST_CONNECTION_HANDLE));
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_072: \[**The message sender shall be destroyed by calling messagesender_destroy.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_073: \[**The link shall be destroyed by calling link_destroy.**\]**
+    static void setup_messenger_post_auth_complete_messenger_stack_teardown_success(CEventHubClientLLMocks* mocks)
+    {
+        STRICT_EXPECTED_CALL((*mocks), messagesender_destroy(TEST_MESSAGE_SENDER_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), link_destroy(TEST_LINK_HANDLE));
+    }
+
+    static void setup_messenger_initialize_success(CEventHubClientLLMocks* mocks)
+    {
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(mocks);
+        setup_messenger_post_auth_complete_messenger_stack_bringup_success(mocks);
+    }
+
+    static void setup_createfromsastoken_success(CEventHubClientLLMocks* mocks)
+    {
+        STRICT_EXPECTED_CALL((*mocks), EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL((*mocks), gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL((*mocks), DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL((*mocks), tickcounter_create());
+        STRICT_EXPECTED_CALL((*mocks), STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL((*mocks), STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL((*mocks), STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
+        STRICT_EXPECTED_CALL((*mocks), STRING_clone(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL((*mocks), STRING_clone(TEST_HOSTNAME_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL((*mocks), STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL((*mocks), STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
+        STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
+        STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
+        STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
     }
 
     /*** EventHubClient_LL_CreateFromConnectionString ***/
@@ -807,6 +930,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_CONNSTR_HANDLE);
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn("sb://Host2");
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n("Host2", 5))
@@ -824,10 +949,14 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "AnotherOne"));
-        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("AnotherOne"))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_PUBLISHER_ID))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, "AnotherOne");
@@ -932,6 +1061,32 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         ASSERT_IS_NULL(result);
     }
 
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_004: [For all other errors, EventHubClient_LL_CreateFromConnectionString shall return NULL.] */
+    TEST_FUNCTION(when_creating_a_tickcounter_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
+            .SetReturn(TEST_CONNSTR_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create())
+            .SetReturn((TICK_COUNTER_HANDLE)NULL);
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.AssertActualAndExpectedCalls();
+
+        // assert
+        ASSERT_IS_NULL(result);
+    }
+
     /* Tests_SRS_EVENTHUBCLIENT_LL_03_018: [EventHubClient_LL_CreateFromConnectionString shall return NULL if the connectionString format is invalid.] */
     TEST_FUNCTION(when_getting_the_endpoint_from_the_map_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
     {
@@ -944,8 +1099,10 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn((const char*)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
@@ -970,14 +1127,16 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
             .SetReturn((STRING_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -999,17 +1158,18 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
             .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
             .SetReturn((char*)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1031,6 +1191,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
@@ -1039,11 +1200,11 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_KEYNAME);
         STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
             .SetReturn((STRING_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1052,6 +1213,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         // assert
         ASSERT_IS_NULL(result);
     }
+
 
     /* Tests_SRS_EVENTHUBCLIENT_LL_03_018: [EventHubClient_LL_CreateFromConnectionString shall return NULL if the connectionString format is invalid.] */
     TEST_FUNCTION(when_getting_the_key_from_the_map_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
@@ -1065,6 +1227,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
@@ -1075,12 +1238,12 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_KEYNAME_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
             .SetReturn((char*)NULL);
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1102,6 +1265,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
@@ -1114,12 +1278,12 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_KEY);
         STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEY))
             .SetReturn((STRING_HANDLE)NULL);
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1141,6 +1305,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
@@ -1155,13 +1320,13 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn((STRING_HANDLE)TEST_KEY_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
             .SetReturn((STRING_HANDLE)NULL);
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1183,6 +1348,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
@@ -1199,13 +1365,14 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_TARGET_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(1);
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1227,6 +1394,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
@@ -1244,13 +1412,14 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"))
             .SetReturn(1);
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1271,6 +1440,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_CONNSTR_HANDLE);
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT);
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
@@ -1283,20 +1454,221 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_KEY);
         STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEY))
             .SetReturn((STRING_HANDLE)TEST_KEY_STRING_HANDLE);
-        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
             .SetReturn(TEST_TARGET_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH))
             .SetReturn(1);
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.AssertActualAndExpectedCalls();
+
+        // assert
+        ASSERT_IS_NULL(result);
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_004: [For all other errors, EventHubClient_LL_CreateFromConnectionString shall return NULL.] */
+    TEST_FUNCTION(when_concatenating_string_publishers_in_the_target_address_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
+            .SetReturn(TEST_CONNSTR_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
+            .SetReturn(TEST_ENDPOINT);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
+            .SetReturn(TEST_KEYNAME);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
+            .SetReturn(TEST_KEYNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
+            .SetReturn(TEST_KEY);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEY))
+            .SetReturn((STRING_HANDLE)TEST_KEY_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"))
+            .SetReturn(1);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.AssertActualAndExpectedCalls();
+
+        // assert
+        ASSERT_IS_NULL(result);
+    }
+
+    TEST_FUNCTION(when_constructing_the_event_hub_path_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
+            .SetReturn(TEST_CONNSTR_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
+            .SetReturn(TEST_ENDPOINT);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
+            .SetReturn(TEST_KEYNAME);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
+            .SetReturn(TEST_KEYNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
+            .SetReturn(TEST_KEY);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEY))
+            .SetReturn((STRING_HANDLE)TEST_KEY_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_EVENTHUB_PATH))
+            .SetReturn((STRING_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.AssertActualAndExpectedCalls();
+
+        // assert
+        ASSERT_IS_NULL(result);
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_004: [For all other errors, EventHubClient_LL_CreateFromConnectionString shall return NULL.] */
+    TEST_FUNCTION(when_concatenating_publisher_id_in_the_target_address_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
+            .SetReturn(TEST_CONNSTR_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
+            .SetReturn(TEST_ENDPOINT);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
+            .SetReturn(TEST_KEYNAME);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
+            .SetReturn(TEST_KEYNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
+            .SetReturn(TEST_KEY);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEY))
+            .SetReturn((STRING_HANDLE)TEST_KEY_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID))
+            .SetReturn(1);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.AssertActualAndExpectedCalls();
+
+        // assert
+        ASSERT_IS_NULL(result);
+    }
+
+    TEST_FUNCTION(when_constructing_the_publisherid_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
+            .SetReturn(TEST_CONNSTR_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
+            .SetReturn(TEST_ENDPOINT);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
+            .SetReturn(TEST_KEYNAME);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
+            .SetReturn(TEST_KEYNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
+            .SetReturn(TEST_KEY);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEY))
+            .SetReturn((STRING_HANDLE)TEST_KEY_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_EVENTHUB_PATH)).SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_PUBLISHER_ID))
+            .SetReturn((STRING_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1318,12 +1690,13 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn("sb://");
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1345,12 +1718,13 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn("sb:/5test");
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1372,6 +1746,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT "/");
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(IGNORED_PTR_ARG, strlen(TEST_HOSTNAME)))
@@ -1390,10 +1765,14 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
-
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_EVENTHUB_PATH))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_PUBLISHER_ID))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
@@ -1404,43 +1783,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         // cleanup
         EventHubClient_LL_Destroy(result);
-    }
-
-    /* Tests_SRS_EVENTHUBCLIENT_LL_03_018: [EventHubClient_LL_CreateFromConnectionString shall return NULL if the connectionString format is invalid.] */
-    TEST_FUNCTION(when_the_keyname_is_empty_EventHubClient_LL_CreateFromConnectionString_fails)
-    {
-        // arrange
-        CEventHubClientLLMocks mocks;
-
-        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
-            .SetReturn(TEST_CONNSTR_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
-        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
-            .SetReturn(TEST_ENDPOINT "/");
-        STRICT_EXPECTED_CALL(mocks, STRING_construct_n(IGNORED_PTR_ARG, strlen(TEST_HOSTNAME)))
-            .IgnoreArgument(1)
-            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
-            .SetReturn(TEST_KEYNAME_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
-            .SetReturn("");
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
-
-        // act
-        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-
-        // assert
-        ASSERT_IS_NULL(result);
     }
 
     /* Tests_SRS_EVENTHUBCLIENT_LL_03_018: [EventHubClient_LL_CreateFromConnectionString shall return NULL if the connectionString format is invalid.] */
@@ -1455,6 +1797,45 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
         EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
+            .SetReturn(TEST_ENDPOINT "/");
+        STRICT_EXPECTED_CALL(mocks, STRING_construct_n(IGNORED_PTR_ARG, strlen(TEST_HOSTNAME)))
+            .IgnoreArgument(1)
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
+            .SetReturn(TEST_KEYNAME);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
+            .SetReturn(TEST_KEYNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
+            .SetReturn("");
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+
+        // assert
+        ASSERT_IS_NULL(result);
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_018: [EventHubClient_LL_CreateFromConnectionString shall return NULL if the connectionString format is invalid.] */
+    TEST_FUNCTION(when_the_keyname_is_empty_EventHubClient_LL_CreateFromConnectionString_fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
+            .SetReturn(TEST_CONNSTR_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
             .SetReturn(TEST_ENDPOINT "/");
         STRICT_EXPECTED_CALL(mocks, STRING_construct_n(IGNORED_PTR_ARG, strlen(TEST_HOSTNAME)))
@@ -1462,17 +1843,625 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
             .SetReturn("");
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
 
         // act
         EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
 
         // assert
         ASSERT_IS_NULL(result);
+    }
+
+    /*** EventHubClient_LL_CreateFromSASToken ***/
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_300: \[**EventHubClient_LL_CreateFromSASToken shall obtain the version string by a call to EventHubClient_GetVersionString.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_301: \[**EventHubClient_LL_CreateFromSASToken shall print the version string to standard output.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_302: \[**EventHubClient_LL_CreateFromSASToken shall return NULL if eventHubSasToken is NULL.**\]**
+    TEST_FUNCTION(EventHubClient_LL_CreateFromSASToken_with_NULL_arg_eventHubSasToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(NULL);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_300: \[**EventHubClient_LL_CreateFromSASToken shall obtain the version string by a call to EventHubClient_GetVersionString.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_301: \[**EventHubClient_LL_CreateFromSASToken shall print the version string to standard output.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_302: \[**EventHubClient_LL_CreateFromSASToken shall return NULL if eventHubSasToken is NULL.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_303: \[**EventHubClient_LL_CreateFromSASToken parse the SAS token to obtain the sasTokenData by calling API EventHubAuthCBS_SASTokenParse and passing eventHubSasToken as argument.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_306: \[**EventHubClient_LL_CreateFromSASToken shall allocate a new event hub client LL instance.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_308: \[**EventHubClient_LL_CreateFromSASToken shall create a tick counter handle using API tickcounter_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_309: \[**EventHubClient_LL_CreateFromSASToken shall clone the hostName string using API STRING_Clone.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_310: \[**EventHubClient_LL_CreateFromSASToken shall clone the senderPublisherId and eventHubPath strings using API STRING_Clone.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_311: \[**EventHubClient_LL_CreateFromSASToken shall initialize sender target address using the eventHub and senderPublisherId with format amqps://{eventhub hostname}/{eventhub name}/publishers/<PUBLISHER_NAME>.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_312: \[**EventHubClient_LL_CreateFromSASToken shall initialize connection tracing to false by default.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_313: \[**EventHubClient_LL_CreateFromSASToken shall return the allocated event hub client LL instance on success.**\]**
+    TEST_FUNCTION(EventHubClient_LL_CreateFromSASToken_Success)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        setup_createfromsastoken_success(&mocks);
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NOT_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(result);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_304: \[**EventHubClient_LL_CreateFromSASToken shall fail if EventHubAuthCBS_SASTokenParse return NULL.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_SASTokenParse_returns_NULL_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN))
+            .SetReturn((EVENTHUBAUTH_CBS_CONFIG*)NULL);
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_305: \[**EventHubClient_LL_CreateFromSASToken shall check if sasTokenData mode is EVENTHUBAUTH_MODE_SENDER, if not, NULL is returned.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_SASTokenParse_returns_a_receiver_type_token_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        EVENTHUBAUTH_CBS_CONFIG cfg;
+        setup_parse_sastoken(&cfg, TEST_SASTOKEN);
+        cfg.mode = EVENTHUBAUTH_MODE_RECEIVER;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN))
+            .SetReturn(&cfg);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&cfg));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_305: \[**EventHubClient_LL_CreateFromSASToken shall check if sasTokenData mode is EVENTHUBAUTH_MODE_SENDER, if not, NULL is returned.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_SASTokenParse_returns_a_unknown_type_token_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        EVENTHUBAUTH_CBS_CONFIG cfg;
+
+        setup_parse_sastoken(&cfg, TEST_SASTOKEN);
+        cfg.mode = EVENTHUBAUTH_MODE_UNKNOWN;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN))
+            .SetReturn(&cfg);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&cfg));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_allocating_memory_using_malloc_returns_NULL_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+            .SetReturn((void*)NULL);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_tickcounter_create_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create())
+            .SetReturn((TICK_COUNTER_HANDLE)NULL);
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_publisher_c_string_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn((const char*)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_eventhubpath_c_string_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn((const char*)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_publisherid_clone_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn((STRING_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_eventhubpath_clone_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn((STRING_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_hostname_clone_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_HOSTNAME_PARSER_STRING_HANDLE))
+            .SetReturn((STRING_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_targetaddress_string_construct_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_HOSTNAME_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn((STRING_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_targetaddress_concat_with_hostname_handle_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_HOSTNAME_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE))
+            .SetReturn(1);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_targetaddress_concat_with_slash_string_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_HOSTNAME_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"))
+            .SetReturn(1);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_targetaddress_concat_with_eventhubpath_handle_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_HOSTNAME_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH))
+            .SetReturn(1);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_targetaddress_concat_with_publisher_string_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_HOSTNAME_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"))
+            .SetReturn(1);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_307: \[**EventHubClient_LL_CreateFromSASToken shall return NULL on a failure and free up any allocations.**\]**
+    TEST_FUNCTION(when_targetaddress_concat_with_publisherid_handle_fails_EventHubClient_LL_CreateFromSASToken_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // arrange
+        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
+        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_ID);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_PUBLISHER_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_EVENTHUB_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_clone(TEST_HOSTNAME_PARSER_STRING_HANDLE))
+            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
+            .SetReturn(TEST_TARGET_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID))
+            .SetReturn(1);
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&g_parsed_config));
+
+        // act
+        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+
+        // assert
+        ASSERT_IS_NULL(result);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
     }
 
     /* EventHubClient_LL_SendAsync */
@@ -1649,7 +2638,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
     /* EventHubClient_LL_Destroy */
 
-    /* Tests_SRS_EVENTHUBCLIENT_03_010: [If the eventHubHandle is NULL, EventHubClient_LL_Destroy shall not do anything.] */
+    //**Tests_SRS_EVENTHUBCLIENT_LL_03_010: \[**If the eventHubLLHandle is NULL, EventHubClient_Destroy shall not do anything.**\]**
     TEST_FUNCTION(EventHubClient_LL_Destroy_with_NULL_eventHubHandle_Does_Nothing)
     {
         // arrange
@@ -1659,6 +2648,38 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_Destroy(NULL);
 
         // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // Implicit
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_009: [EventHubClient_LL_Destroy shall terminate the usage of this EventHubClient_LL specified by the eventHubLLHandle and cleanup all associated resources.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_081: [The key host name, key name and key allocated in EventHubClient_LL_CreateFromConnectionString shall be freed.] */
+    TEST_FUNCTION(EventHubClient_LL_Destroy_with_valid_handle_auto_sastoken_no_auth_frees_all_the_resources)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+
+
+        // act
+        EventHubClient_LL_Destroy(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
         // Implicit
     }
 
@@ -1672,108 +2693,289 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_047: [The TLS IO shall be freed by calling xio_destroy.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_048: [The SASL plain mechanism shall be freed by calling saslmechanism_destroy.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_041: [All pending message data shall be freed.] */
-    TEST_FUNCTION(EventHubClient_LL_Destroy_with_valid_handle_frees_all_the_resources)
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_153: \[**EventHubAuthCBS_Destroy shall be called to destroy the event hub auth handle.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_154: \[**If any ext refresh SAS token is present, it shall be called to destroyed by calling STRING_delete.**\]**
+    TEST_FUNCTION(EventHubClient_LL_Destroy_with_valid_handle_ext_sastoken_no_auth_frees_all_the_resources)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        // act
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+
+        // act
+        EventHubClient_LL_Destroy(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // Implicit
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_009: [EventHubClient_LL_Destroy shall terminate the usage of this EventHubClient_LL specified by the eventHubLLHandle and cleanup all associated resources.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_081: [The key host name, key name and key allocated in EventHubClient_LL_CreateFromConnectionString shall be freed.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_042: [The message sender shall be freed by calling messagesender_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_043: [The link shall be freed by calling link_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_044: [The session shall be freed by calling session_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_045: [The connection shall be freed by calling connection_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_046: [The SASL client IO shall be freed by calling xio_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_047: [The TLS IO shall be freed by calling xio_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_048: [The SASL plain mechanism shall be freed by calling saslmechanism_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_041: [All pending message data shall be freed.] */
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_153: \[**EventHubAuthCBS_Destroy shall be called to destroy the event hub auth handle.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_154: \[**If any ext refresh SAS token is present, it shall be called to destroyed by calling STRING_delete.**\]**
+    TEST_FUNCTION(EventHubClient_LL_Destroy_with_valid_handle_auto_sastoken_post_auth_complete_frees_all_the_resources)
     {
         // arrange
         CEventHubClientLLMocks mocks;
         setup_createfromconnectionstring_success(&mocks);
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
-        EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
         mocks.ResetAllCalls();
 
-        STRICT_EXPECTED_CALL(mocks, messagesender_destroy(TEST_MESSAGE_SENDER_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, link_destroy(TEST_LINK_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, session_destroy(TEST_SESSION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_SASLCLIENTIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_TLSIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
+        setup_messenger_post_auth_complete_messenger_stack_teardown_success(&mocks);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
         STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
 
         // act
         EventHubClient_LL_Destroy(eventHubHandle);
 
         // assert
+        mocks.AssertActualAndExpectedCalls();
+
         // Implicit
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_009: [EventHubClient_LL_Destroy shall terminate the usage of this EventHubClient_LL specified by the eventHubLLHandle and cleanup all associated resources.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_081: [The key host name, key name and key allocated in EventHubClient_LL_CreateFromConnectionString shall be freed.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_042: [The message sender shall be freed by calling messagesender_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_043: [The link shall be freed by calling link_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_044: [The session shall be freed by calling session_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_045: [The connection shall be freed by calling connection_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_046: [The SASL client IO shall be freed by calling xio_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_047: [The TLS IO shall be freed by calling xio_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_048: [The SASL plain mechanism shall be freed by calling saslmechanism_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_041: [All pending message data shall be freed.] */
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_153: \[**EventHubAuthCBS_Destroy shall be called to destroy the event hub auth handle.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_154: \[**If any ext refresh SAS token is present, it shall be called to destroyed by calling STRING_delete.**\]**
+    TEST_FUNCTION(EventHubClient_LL_Destroy_with_valid_handle_ext_sastoken_post_auth_complete_frees_all_the_resources)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
+        mocks.ResetAllCalls();
+
+        setup_messenger_post_auth_complete_messenger_stack_teardown_success(&mocks);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+
+        // act
+        EventHubClient_LL_Destroy(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // Implicit
+    }
+
+    void setup_refresh_sastoken_success(CEventHubClientLLMocks* mocks, EVENTHUBAUTH_CBS_CONFIG* cfg)
+    {
+        setup_parse_sastoken(cfg, TEST_REFRESH_SASTOKEN);
+        cfg->extSASTokenURI = TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE;
+        STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_SASTokenParse(TEST_REFRESH_SASTOKEN))
+            .SetReturn(cfg);
+        STRICT_EXPECTED_CALL((*mocks), STRING_compare(TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE, TEST_SASTOKEN_URI_PARSER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), STRING_construct(TEST_REFRESH_SASTOKEN)).SetReturn(TEST_SASTOKEN_PARSER_REFRESH_STRING_HANDLE);
+        STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_Config_Destroy(cfg));
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_009: [EventHubClient_LL_Destroy shall terminate the usage of this EventHubClient_LL specified by the eventHubLLHandle and cleanup all associated resources.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_081: [The key host name, key name and key allocated in EventHubClient_LL_CreateFromConnectionString shall be freed.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_042: [The message sender shall be freed by calling messagesender_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_043: [The link shall be freed by calling link_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_044: [The session shall be freed by calling session_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_045: [The connection shall be freed by calling connection_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_046: [The SASL client IO shall be freed by calling xio_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_047: [The TLS IO shall be freed by calling xio_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_048: [The SASL plain mechanism shall be freed by calling saslmechanism_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_041: [All pending message data shall be freed.] */
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_153: \[**EventHubAuthCBS_Destroy shall be called to destroy the event hub auth handle.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_154: \[**If any ext refresh SAS token is present, it shall be called to destroyed by calling STRING_delete.**\]**
+    TEST_FUNCTION(EventHubClient_LL_Destroy_with_valid_handle_ext_sastoken_post_auth_complete_with_refresh_token_frees_all_the_resources)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        EVENTHUBAUTH_CBS_CONFIG cfg;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
+        setup_refresh_sastoken_success(&mocks, &cfg);
+        (void)EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, TEST_REFRESH_SASTOKEN);
+        mocks.ResetAllCalls();
+
+        setup_messenger_post_auth_complete_messenger_stack_teardown_success(&mocks);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_SASTOKEN_PARSER_REFRESH_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+
+        // act
+        EventHubClient_LL_Destroy(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // Implicit
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_009: [EventHubClient_LL_Destroy shall terminate the usage of this EventHubClient_LL specified by the eventHubLLHandle and cleanup all associated resources.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_081: [The key host name, key name and key allocated in EventHubClient_LL_CreateFromConnectionString shall be freed.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_042: [The message sender shall be freed by calling messagesender_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_043: [The link shall be freed by calling link_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_044: [The session shall be freed by calling session_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_045: [The connection shall be freed by calling connection_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_046: [The SASL client IO shall be freed by calling xio_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_047: [The TLS IO shall be freed by calling xio_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_048: [The SASL plain mechanism shall be freed by calling saslmechanism_destroy.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_041: [All pending message data shall be freed.] */
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_153: \[**EventHubAuthCBS_Destroy shall be called to destroy the event hub auth handle.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_154: \[**If any ext refresh SAS token is present, it shall be called to destroyed by calling STRING_delete.**\]**
+    static void EventHubClient_LL_Destroy_frees_2_pending_messages_common(CEventHubClientLLMocks* mocks, EVENTHUBCLIENT_LL_HANDLE eventHubHandle, EVENTHUBAUTH_CREDENTIAL_TYPE credential)
+    {
+        EVENTDATA_HANDLE dataEventHandle = (EVENTDATA_HANDLE)1;
+        EXPECTED_CALL((*mocks), EventData_Clone(IGNORED_PTR_ARG))
+            .SetReturn(TEST_CLONED_EVENTDATA_HANDLE_1);
+        (void)EventHubClient_LL_SendAsync(eventHubHandle, dataEventHandle, sendAsyncConfirmationCallback, (void*)0x4242);
+        EXPECTED_CALL((*mocks), EventData_Clone(IGNORED_PTR_ARG))
+            .SetReturn(TEST_CLONED_EVENTDATA_HANDLE_2);
+        (void)EventHubClient_LL_SendAsync(eventHubHandle, dataEventHandle, sendAsyncConfirmationCallback, (void*)0x4243);
+        (*mocks).ResetAllCalls();
+
+        STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_TARGET_STRING_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        if (credential == EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO)
+        {
+            STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+            STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_KEY_STRING_HANDLE));
+        }
+        STRICT_EXPECTED_CALL((*mocks), DList_RemoveHeadList(saved_pending_list));
+
+        STRICT_EXPECTED_CALL((*mocks), tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+
+        /* 1st item */
+        STRICT_EXPECTED_CALL((*mocks), sendAsyncConfirmationCallback(EVENTHUBCLIENT_CONFIRMATION_DESTROY, (void*)0x4242));
+        STRICT_EXPECTED_CALL((*mocks), EventData_Destroy(TEST_CLONED_EVENTDATA_HANDLE_1));
+        EXPECTED_CALL((*mocks), gballoc_free(IGNORED_PTR_ARG));
+        EXPECTED_CALL((*mocks), gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL((*mocks), DList_RemoveHeadList(saved_pending_list));
+        /* 2nd item */
+        STRICT_EXPECTED_CALL((*mocks), sendAsyncConfirmationCallback(EVENTHUBCLIENT_CONFIRMATION_DESTROY, (void*)0x4243));
+        STRICT_EXPECTED_CALL((*mocks), EventData_Destroy(TEST_CLONED_EVENTDATA_HANDLE_2));
+        EXPECTED_CALL((*mocks), gballoc_free(IGNORED_PTR_ARG));
+        EXPECTED_CALL((*mocks), gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL((*mocks), DList_RemoveHeadList(saved_pending_list));
+        EXPECTED_CALL((*mocks), gballoc_free(IGNORED_PTR_ARG));
     }
 
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_081: [The key host name, key name and key allocated in EventHubClient_LL_CreateFromConnectionString shall be freed.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_041: [All pending message data shall be freed.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_040: [All the pending messages shall be indicated as error by calling the associated callback with EVENTHUBCLIENT_CONFIRMATION_DESTROY.] */
-    TEST_FUNCTION(EventHubClient_LL_Destroy_frees_2_pending_messages)
+    TEST_FUNCTION(EventHubClient_LL_Destroy_auto_sastoken_frees_2_pending_messages)
     {
         // arrange
         CEventHubClientLLMocks mocks;
-        EVENTDATA_HANDLE dataEventHandle = (EVENTDATA_HANDLE)1;
         setup_createfromconnectionstring_success(&mocks);
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-        EXPECTED_CALL(mocks, EventData_Clone(IGNORED_PTR_ARG))
-            .SetReturn(TEST_CLONED_EVENTDATA_HANDLE_1);
-        (void)EventHubClient_LL_SendAsync(eventHubHandle, dataEventHandle, sendAsyncConfirmationCallback, (void*)0x4242);
-        EXPECTED_CALL(mocks, EventData_Clone(IGNORED_PTR_ARG))
-            .SetReturn(TEST_CLONED_EVENTDATA_HANDLE_2);
-        (void)EventHubClient_LL_SendAsync(eventHubHandle, dataEventHandle, sendAsyncConfirmationCallback, (void*)0x4243);
-        mocks.ResetAllCalls();
-
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
-
-        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
-
-        /* 1st item */
-        STRICT_EXPECTED_CALL(mocks, sendAsyncConfirmationCallback(EVENTHUBCLIENT_CONFIRMATION_DESTROY, (void*)0x4242));
-        STRICT_EXPECTED_CALL(mocks, EventData_Destroy(TEST_CLONED_EVENTDATA_HANDLE_1));
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
-        /* 2nd item */
-        STRICT_EXPECTED_CALL(mocks, sendAsyncConfirmationCallback(EVENTHUBCLIENT_CONFIRMATION_DESTROY, (void*)0x4243));
-        STRICT_EXPECTED_CALL(mocks, EventData_Destroy(TEST_CLONED_EVENTDATA_HANDLE_2));
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        EventHubClient_LL_Destroy_frees_2_pending_messages_common(&mocks, eventHubHandle, EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO);
 
         // act
         EventHubClient_LL_Destroy(eventHubHandle);
 
         // assert
-        // Implicit
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup implicit
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_081: [The key host name, key name and key allocated in EventHubClient_LL_CreateFromConnectionString shall be freed.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_041: [All pending message data shall be freed.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_040: [All the pending messages shall be indicated as error by calling the associated callback with EVENTHUBCLIENT_CONFIRMATION_DESTROY.] */
+    TEST_FUNCTION(EventHubClient_LL_Destroy_ext_sastoken_frees_2_pending_messages)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        EventHubClient_LL_Destroy_frees_2_pending_messages_common(&mocks, eventHubHandle, EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT);
+
+        // act
+        EventHubClient_LL_Destroy(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup implicit
     }
 
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_060: [When on_messagesender_state_changed is called with MESSAGE_SENDER_STATE_ERROR, the uAMQP stack shall be brough down so that it can be created again if needed in dowork:] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_03_009: [EventHubClient_LL_Destroy shall terminate the usage of this EventHubClient_LL specified by the eventHubLLHandle and cleanup all associated resources.] */
-    TEST_FUNCTION(when_destroy_is_Called_after_the_stack_has_been_brought_down_then_it_is_not_brought_down_again)
+    TEST_FUNCTION(when_destroy_is_Called_after_the_messenger_and_uamqp_stack_has_been_brought_down_then_it_is_not_brought_down_again_using_auto_sas_token)
     {
         // arrange
         CEventHubClientLLMocks mocks;
         setup_createfromconnectionstring_success(&mocks);
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-        EventHubClient_LL_DoWork(eventHubHandle);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_ERROR, MESSAGE_SENDER_STATE_OPEN);
+        EventHubClient_LL_DoWork(eventHubHandle); //bring down the stack
         mocks.ResetAllCalls();
-
-        STRICT_EXPECTED_CALL(mocks, messagesender_destroy(TEST_MESSAGE_SENDER_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, link_destroy(TEST_LINK_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, session_destroy(TEST_SESSION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(DUMMY_IO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(DUMMY_IO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
 
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
@@ -1784,7 +2986,261 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_Destroy(eventHubHandle);
 
         // assert
-        // Implicit
+
+        // cleanup implicit
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_060: [When on_messagesender_state_changed is called with MESSAGE_SENDER_STATE_ERROR, the uAMQP stack shall be brough down so that it can be created again if needed in dowork:] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_03_009: [EventHubClient_LL_Destroy shall terminate the usage of this EventHubClient_LL specified by the eventHubLLHandle and cleanup all associated resources.] */
+    TEST_FUNCTION(when_destroy_is_Called_after_the_messenger_and_uamqp_stack_has_been_brought_down_then_it_is_not_brought_down_again_using_auto_ext_sas_token)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
+        saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
+        saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_ERROR, MESSAGE_SENDER_STATE_OPEN);
+        EventHubClient_LL_DoWork(eventHubHandle); //bring down the stack
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
+        STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+
+        // act
+        EventHubClient_LL_Destroy(eventHubHandle);
+
+        // assert
+
+        // cleanup implicit
+    }
+
+    /* EventHubClient_LL_RefreshSASTokenAsync */
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_401: \[**EventHubClient_LL_RefreshSASTokenAsync shall return EVENTHUBCLIENT_INVALID_ARG if eventHubClientLLHandle or eventHubSasToken is NULL.**\]**
+    TEST_FUNCTION(With_Null_eventHubClientLLHandle_EventHubClient_LL_RefreshSASTokenAsync_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        EVENTHUBCLIENT_RESULT result;
+
+        // act
+        result = EventHubClient_LL_RefreshSASTokenAsync(NULL, TEST_REFRESH_SASTOKEN);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, result, EVENTHUBCLIENT_INVALID_ARG);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_402: \[**EventHubClient_LL_RefreshSASTokenAsync shall return EVENTHUBCLIENT_ERROR if eventHubClientLLHandle credential is not EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT.**\]**
+    TEST_FUNCTION(For_Handles_Not_Created_Using_EventHubClient_LL_CreateFromSASToken_EventHubClient_LL_RefreshSASTokenAsync_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        EVENTHUBCLIENT_RESULT result;
+
+        // act
+        result = EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, TEST_REFRESH_SASTOKEN);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, result, EVENTHUBCLIENT_ERROR);
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_403: \[**EventHubClient_LL_RefreshSASTokenAsync shall return EVENTHUBCLIENT_ERROR if AMQP stack is not fully initialized.**\]**
+    TEST_FUNCTION(When_Inactive_AMQP_Stack_EventHubClient_LL_RefreshSASTokenAsync_Fails)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        EVENTHUBCLIENT_RESULT result;
+
+        // act
+        result = EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, TEST_REFRESH_SASTOKEN);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, result, EVENTHUBCLIENT_ERROR);
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_404: \[**EventHubClient_LL_RefreshSASTokenAsync shall check if any prior refresh ext SAS token was applied, if so EVENTHUBCLIENT_ERROR shall be returned.**\]**
+    TEST_FUNCTION(When_Multiple_Back_To_Back_Refresh_Tokens_Are_Applied_EventHubClient_LL_RefreshSASTokenAsync_Fails)
+    {
+        // arrange
+        const char* new_refresh_token = "blah";
+
+        EVENTHUBCLIENT_RESULT result;
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
+        EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, TEST_REFRESH_SASTOKEN);
+        mocks.ResetAllCalls();
+
+        // act
+        result = EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, new_refresh_token);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, result, EVENTHUBCLIENT_ERROR);
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_405: \[**EventHubClient_LL_RefreshSASTokenAsync shall invoke EventHubAuthCBS_SASTokenParse to parse eventHubRefreshSasToken.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_406: \[**EventHubClient_LL_RefreshSASTokenAsync shall return EVENTHUBCLIENT_ERROR if EventHubAuthCBS_SASTokenParse returns NULL.**\]**
+    TEST_FUNCTION(When_EventHubAuthCBS_SASTokenParse_Fails_EventHubClient_LL_RefreshSASTokenAsync_Fails)
+    {
+        // arrange
+        EVENTHUBCLIENT_RESULT result;
+        EVENTHUBAUTH_CBS_CONFIG cfg;
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
+        mocks.ResetAllCalls();
+
+        setup_parse_sastoken(&cfg, TEST_REFRESH_SASTOKEN);
+        cfg.extSASTokenURI = TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE;
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_REFRESH_SASTOKEN))
+            .SetReturn((EVENTHUBAUTH_CBS_CONFIG*)NULL);
+
+        // act
+        result = EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, TEST_REFRESH_SASTOKEN);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, result, EVENTHUBCLIENT_ERROR);
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_407: \[**EventHubClient_LL_RefreshSASTokenAsync shall validate if the eventHubRefreshSasToken's URI is exactly the same as the one used when EventHubClient_LL_CreateFromSASToken was invoked by using API STRING_compare.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_408: \[**EventHubClient_LL_RefreshSASTokenAsync shall return EVENTHUBCLIENT_ERROR if eventHubRefreshSasToken is not compatible.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_412: \[**EventHubClient_LL_RefreshSASTokenAsync shall invoke EventHubAuthCBS_Config_Destroy to free up the parsed configuration of eventHubRefreshSasToken if required.**\]**
+    TEST_FUNCTION(When_EventHubAuthCBS_String_Compare_Fails_EventHubClient_LL_RefreshSASTokenAsync_Fails)
+    {
+        // arrange
+        const char* new_refresh_token = "blah";
+
+        EVENTHUBCLIENT_RESULT result;
+        EVENTHUBAUTH_CBS_CONFIG cfg;
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
+        mocks.ResetAllCalls();
+
+        setup_parse_sastoken(&cfg, TEST_REFRESH_SASTOKEN);
+        cfg.extSASTokenURI = TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE;
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(new_refresh_token))
+            .SetReturn(&cfg);
+        STRICT_EXPECTED_CALL(mocks, STRING_compare(TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE, TEST_SASTOKEN_URI_PARSER_STRING_HANDLE))
+            .SetReturn(1);
+        //STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_REFRESH_SASTOKEN)).SetReturn(TEST_SASTOKEN_PARSER_REFRESH_STRING_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&cfg));
+
+        // act
+        result = EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, new_refresh_token);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, result, EVENTHUBCLIENT_ERROR);
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_409: \[**EventHubClient_LL_RefreshSASTokenAsync shall construct a new STRING to hold the ext SAS token using API STRING_construct with parameter eventHubSasToken for the refresh operation to be done in EventHubClient_LL_DoWork.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_411: \[**EventHubClient_LL_RefreshSASTokenAsync shall return EVENTHUBCLIENT_ERROR on failure.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_412: \[**EventHubClient_LL_RefreshSASTokenAsync shall invoke EventHubAuthCBS_Config_Destroy to free up the parsed configuration of eventHubRefreshSasToken if required.**\]**
+    TEST_FUNCTION(When_EventHubAuthCBS_String_construct_Fails_EventHubClient_LL_RefreshSASTokenAsync_Fails)
+    {
+        // arrange
+        EVENTHUBCLIENT_RESULT result;
+        EVENTHUBAUTH_CBS_CONFIG cfg;
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
+        mocks.ResetAllCalls();
+
+        setup_parse_sastoken(&cfg, TEST_REFRESH_SASTOKEN);
+        cfg.extSASTokenURI = TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE;
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_REFRESH_SASTOKEN))
+            .SetReturn(&cfg);
+        STRICT_EXPECTED_CALL(mocks, STRING_compare(TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE, TEST_SASTOKEN_URI_PARSER_STRING_HANDLE))
+            .SetReturn(0);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_REFRESH_SASTOKEN)).SetReturn((STRING_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Config_Destroy(&cfg));
+
+        // act
+        result = EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, TEST_REFRESH_SASTOKEN);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, result, EVENTHUBCLIENT_ERROR);
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_405: \[**EventHubClient_LL_RefreshSASTokenAsync shall invoke EventHubAuthCBS_SASTokenParse to parse eventHubRefreshSasToken.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_407: \[**EventHubClient_LL_RefreshSASTokenAsync shall validate if the eventHubRefreshSasToken's URI is exactly the same as the one used when EventHubClient_LL_CreateFromSASToken was invoked by using API STRING_compare.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_409: \[**EventHubClient_LL_RefreshSASTokenAsync shall construct a new STRING to hold the ext SAS token using API STRING_construct with parameter eventHubSasToken for the refresh operation to be done in EventHubClient_LL_DoWork.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_410: \[**EventHubClient_LL_RefreshSASTokenAsync shall return EVENTHUBCLIENT_OK on success.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_412: \[**EventHubClient_LL_RefreshSASTokenAsync shall invoke EventHubAuthCBS_Config_Destroy to free up the parsed configuration of eventHubRefreshSasToken if required.**\]**
+    TEST_FUNCTION(EventHubClient_LL_RefreshSASTokenAsync_Success)
+    {
+        // arrange
+        EVENTHUBCLIENT_RESULT result;
+        EVENTHUBAUTH_CBS_CONFIG cfg;
+        CEventHubClientLLMocks mocks;
+
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth do work
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
+        mocks.ResetAllCalls();
+        setup_refresh_sastoken_success(&mocks, &cfg);
+
+        // act
+        result = EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, TEST_REFRESH_SASTOKEN);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, result, EVENTHUBCLIENT_OK);
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
     }
 
     /* EventHubClient_LL_DoWork */
@@ -1802,35 +3258,26 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         mocks.AssertActualAndExpectedCalls();
     }
 
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_038: [EventHubClient_LL_DoWork shall perform a messagesender_open if the state of the message_sender is not OPEN.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_064: [EventHubClient_LL_DoWork shall call connection_dowork while passing as argument the connection handle obtained in EventHubClient_LL_Create.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_079: [EventHubClient_LL_DoWork shall bring up the uAMQP stack if it has not already brought up:] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_03_030: [A TLS IO shall be created by calling xio_create.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_002: [The TLS IO interface description passed to xio_create shall be obtained by calling platform_get_default_tlsio_interface.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_004: [A SASL plain mechanism shall be created by calling saslmechanism_create.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_005: [The interface passed to saslmechanism_create shall be obtained by calling saslplain_get_interface.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_007: [The creation parameters for the SASL plain mechanism shall be in the form of a SASL_PLAIN_CONFIG structure.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_008: [The authcid shall be set to the key name parsed earlier from the connection string.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_009: [The passwd members shall be set to the key value parsed earlier from the connection string.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_010: [The authzid shall be NULL.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_012: [A SASL client IO shall be created by calling xio_create.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_013: [The IO interface description for the SASL client IO shall be obtained by calling saslclientio_get_interface_description.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_015: [The IO creation parameters passed to xio_create shall be in the form of a SASLCLIENTIO_CONFIG.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_016: [The underlying_io members shall be set to the previously created TLS IO.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_017: [The sasl_mechanism shall be set to the previously created SASL PLAIN mechanism.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_019: [An AMQP connection shall be created by calling connection_create and passing as arguments the SASL client IO handle, eventhub hostname, "eh_client_connection" as container name and NULL for the new session handler and context.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_028: [An AMQP session shall be created by calling session_create and passing as arguments the connection handle, and NULL for the new link handler and context.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_030: [The outgoing window for the session shall be set to 10 by calling session_set_outgoing_window.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_021: [A source AMQP value shall be created by calling messaging_create_source.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_022: [The source address shall be "ingress".] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_023: [A target AMQP value shall be created by calling messaging_create_target.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_024: [The target address shall be "amqps://" {eventhub hostname} / {eventhub name}.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_026: [An AMQP link shall be created by calling link_create and passing as arguments the session handle, "sender-link" as link name, role_sender and the previously created source and target values.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_032: [The link sender settle mode shall be set to unsettled by calling link_set_snd_settle_mode.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_034: [The message size shall be set to 256K by calling link_set_max_message_size.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_036: [A message sender shall be created by calling messagesender_create and passing as arguments the link handle, a state changed callback, a context and NULL for the logging function.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_079: [EventHubClient_LL_DoWork shall bring up the uAMQP stack if it has not already brought up:] */
-    TEST_FUNCTION(EventHubClient_LL_DoWork_when_message_sender_is_not_open_opens_the_message_sender)
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_079: \[**EventHubClient_LL_DoWork shall initialize and bring up the uAMQP stack if it has not already been brought up**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_004: \[**A SASL mechanism shall be created by calling saslmechanism_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_005: \[**The interface passed to saslmechanism_create shall be obtained by calling saslmssbcbs_get_interface.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_006: \[**If saslmssbcbs_get_interface fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_03_030: \[**A TLS IO shall be created by calling xio_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_002: \[**The TLS IO interface description passed to xio_create shall be obtained by calling platform_get_default_tlsio_interface.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_012: \[**A SASL client IO shall be created by calling xio_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_013: \[**The IO interface description for the SASL client IO shall be obtained by calling saslclientio_get_interface_description.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_014: \[**If saslclientio_get_interface_description fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_015: \[**The IO creation parameters passed to xio_create shall be in the form of a SASLCLIENTIO_CONFIG.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_016: \[**The underlying_io members shall be set to the previously created TLS IO.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_017: \[**The sasl_mechanism shall be set to the previously created SASL mechanism.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_019: \[**An AMQP connection shall be created by calling connection_create and passing as arguments the SASL client IO handle, eventhub hostname, "eh_client_connection" as container name and NULL for the new session handler and context.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_028: \[**An AMQP session shall be created by calling session_create and passing as arguments the connection handle, and NULL for the new link handler and context.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_030: \[**The outgoing window for the session shall be set to 10 by calling session_set_outgoing_window.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_110: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, initialize a EVENTHUBAUTH_CBS_CONFIG structure params hostName, eventHubPath, sharedAccessKeyName, sharedAccessKey using the values set previously. Set senderPublisherId to "sender". Set receiverConsumerGroup, receiverPartitionId to NULL, sasTokenAuthFailureTimeoutInSecs to the client wait timeout value, sasTokenExpirationTimeInSec to 3600, sasTokenRefreshPeriodInSecs to 4800, mode as EVENTHUBAUTH_MODE_SENDER and credential as EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_113: \[**EventHubAuthCBS_Create shall be invoked using the config structure reference and the session handle created earlier.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_115: \[**EventHubClient_LL_DoWork shall invoke connection_set_trace using the current value of the trace on boolean.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    TEST_FUNCTION(EventHubClient_LL_DoWork_Auto_SASToken_PreAuth_Stack_Bringup_Success)
     {
         // arrange
         CEventHubClientLLMocks mocks;
@@ -1838,18 +3285,12 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         mocks.ResetAllCalls();
 
-        setup_messenger_initialize_success(&mocks);
-        STRICT_EXPECTED_CALL(mocks, messagesender_open(TEST_MESSAGE_SENDER_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_dowork(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_set_trace(TEST_CONNECTION_HANDLE, false));
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
 
         // act
         EventHubClient_LL_DoWork(eventHubHandle);
 
         // assert
-        ASSERT_ARE_EQUAL(char_ptr, TEST_KEYNAME, saved_sasl_mechanism_create_parameters->authcid);
-        ASSERT_ARE_EQUAL(char_ptr, TEST_KEY, saved_sasl_mechanism_create_parameters->passwd);
-        ASSERT_ARE_EQUAL(char_ptr, TEST_HOSTNAME, saved_tlsio_parameters->hostname);
         ASSERT_ARE_EQUAL(int, 5671, saved_tlsio_parameters->port);
         ASSERT_ARE_EQUAL(void_ptr, TEST_SASL_MECHANISM_HANDLE, saved_saslclientio_parameters->sasl_mechanism);
         ASSERT_ARE_EQUAL(void_ptr, TEST_TLSIO_HANDLE, saved_saslclientio_parameters->underlying_io);
@@ -1859,29 +3300,181 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_Destroy(eventHubHandle);
     }
 
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_079: \[**EventHubClient_LL_DoWork shall initialize and bring up the uAMQP stack if it has not already been brought up**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_004: \[**A SASL mechanism shall be created by calling saslmechanism_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_005: \[**The interface passed to saslmechanism_create shall be obtained by calling saslmssbcbs_get_interface.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_006: \[**If saslmssbcbs_get_interface fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_03_030: \[**A TLS IO shall be created by calling xio_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_002: \[**The TLS IO interface description passed to xio_create shall be obtained by calling platform_get_default_tlsio_interface.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_012: \[**A SASL client IO shall be created by calling xio_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_013: \[**The IO interface description for the SASL client IO shall be obtained by calling saslclientio_get_interface_description.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_014: \[**If saslclientio_get_interface_description fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_015: \[**The IO creation parameters passed to xio_create shall be in the form of a SASLCLIENTIO_CONFIG.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_016: \[**The underlying_io members shall be set to the previously created TLS IO.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_017: \[**The sasl_mechanism shall be set to the previously created SASL mechanism.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_019: \[**An AMQP connection shall be created by calling connection_create and passing as arguments the SASL client IO handle, eventhub hostname, "eh_client_connection" as container name and NULL for the new session handler and context.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_028: \[**An AMQP session shall be created by calling session_create and passing as arguments the connection handle, and NULL for the new link handler and context.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_030: \[**The outgoing window for the session shall be set to 10 by calling session_set_outgoing_window.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_111: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT, use the EVENTHUBAUTH_CBS_CONFIG obtained earlier from parsing the SAS token in EventHubAuthCBS_Create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_113: \[**EventHubAuthCBS_Create shall be invoked using the config structure reference and the session handle created earlier.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_115: \[**EventHubClient_LL_DoWork shall invoke connection_set_trace using the current value of the trace on boolean.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    TEST_FUNCTION(EventHubClient_LL_DoWork_Ext_SASToken_PreAuth_Stack_Bringup_Success)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        ASSERT_ARE_EQUAL(int, 5671, saved_tlsio_parameters->port);
+        ASSERT_ARE_EQUAL(void_ptr, TEST_SASL_MECHANISM_HANDLE, saved_saslclientio_parameters->sasl_mechanism);
+        ASSERT_ARE_EQUAL(void_ptr, TEST_TLSIO_HANDLE, saved_saslclientio_parameters->underlying_io);
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_079: \[**EventHubClient_LL_DoWork shall initialize and bring up the uAMQP stack if it has not already been brought up**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_004: \[**A SASL mechanism shall be created by calling saslmechanism_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_005: \[**The interface passed to saslmechanism_create shall be obtained by calling saslmssbcbs_get_interface.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_03_030: \[**A TLS IO shall be created by calling xio_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_002: \[**The TLS IO interface description passed to xio_create shall be obtained by calling platform_get_default_tlsio_interface.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_012: \[**A SASL client IO shall be created by calling xio_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_013: \[**The IO interface description for the SASL client IO shall be obtained by calling saslclientio_get_interface_description.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_014: \[**If saslclientio_get_interface_description fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_015: \[**The IO creation parameters passed to xio_create shall be in the form of a SASLCLIENTIO_CONFIG.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_016: \[**The underlying_io members shall be set to the previously created TLS IO.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_017: \[**The sasl_mechanism shall be set to the previously created SASL mechanism.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_019: \[**An AMQP connection shall be created by calling connection_create and passing as arguments the SASL client IO handle, eventhub hostname, "eh_client_connection" as container name and NULL for the new session handler and context.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_028: \[**An AMQP session shall be created by calling session_create and passing as arguments the connection handle, and NULL for the new link handler and context.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_030: \[**The outgoing window for the session shall be set to 10 by calling session_set_outgoing_window.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_110: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, initialize a EVENTHUBAUTH_CBS_CONFIG structure params hostName, eventHubPath, sharedAccessKeyName, sharedAccessKey using the values set previously. Set senderPublisherId to "sender". Set receiverConsumerGroup, receiverPartitionId to NULL, sasTokenAuthFailureTimeoutInSecs to the client wait timeout value, sasTokenExpirationTimeInSec to 3600, sasTokenRefreshPeriodInSecs to 4800, mode as EVENTHUBAUTH_MODE_SENDER and credential as EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_113: \[**EventHubAuthCBS_Create shall be invoked using the config structure reference and the session handle created earlier.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_115: \[**EventHubClient_LL_DoWork shall invoke connection_set_trace using the current value of the trace on boolean.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_021: \[**A source AMQP value shall be created by calling messaging_create_source.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_022: \[**The source address shall be "ingress".**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_023: \[**A target AMQP value shall be created by calling messaging_create_target.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_024: \[**The target address shall be amqps://{eventhub hostname}/{eventhub name}/publishers/<PUBLISHER_NAME>.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_025: \[**If creating the source or target values fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_026: \[**An AMQP link shall be created by calling link_create and passing as arguments the session handle, "sender-link" as link name, role_sender and the previously created source and target values.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_027: \[**If creating the link fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_032: \[**The link sender settle mode shall be set to unsettled by calling link_set_snd_settle_mode.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_033: \[**If link_set_snd_settle_mode fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_034: \[**The message size shall be set to 256K by calling link_set_max_message_size.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_036: \[**A message sender shall be created by calling messagesender_create and passing as arguments the link handle, a state changed callback, a context and NULL for the logging function.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_038: \[**EventHubClient_LL_DoWork shall perform a messagesender_open if the state of the message_sender is not OPEN.**\]**
+    TEST_FUNCTION(EventHubClient_LL_DoWork_Ext_SASToken_PostAuthComplete_Stack_Bringup_Success)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+
+        mocks.ResetAllCalls();
+
+        setup_messenger_initialize_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, 5671, saved_tlsio_parameters->port);
+        ASSERT_ARE_EQUAL(void_ptr, TEST_SASL_MECHANISM_HANDLE, saved_saslclientio_parameters->sasl_mechanism);
+        ASSERT_ARE_EQUAL(void_ptr, TEST_TLSIO_HANDLE, saved_saslclientio_parameters->underlying_io);
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_201: \[**`EventHubClient_LL_DoWork` shall perform SAS token handling. **\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_202: \[**`EventHubClient_LL_DoWork` shall initialize the uAMQP Message Sender stack if it has not already brought up. **\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_079: \[**EventHubClient_LL_DoWork shall initialize and bring up the uAMQP stack if it has not already been brought up**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_004: \[**A SASL mechanism shall be created by calling saslmechanism_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_005: \[**The interface passed to saslmechanism_create shall be obtained by calling saslmssbcbs_get_interface.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_03_030: \[**A TLS IO shall be created by calling xio_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_002: \[**The TLS IO interface description passed to xio_create shall be obtained by calling platform_get_default_tlsio_interface.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_012: \[**A SASL client IO shall be created by calling xio_create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_013: \[**The IO interface description for the SASL client IO shall be obtained by calling saslclientio_get_interface_description.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_014: \[**If saslclientio_get_interface_description fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_015: \[**The IO creation parameters passed to xio_create shall be in the form of a SASLCLIENTIO_CONFIG.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_016: \[**The underlying_io members shall be set to the previously created TLS IO.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_017: \[**The sasl_mechanism shall be set to the previously created SASL mechanism.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_019: \[**An AMQP connection shall be created by calling connection_create and passing as arguments the SASL client IO handle, eventhub hostname, "eh_client_connection" as container name and NULL for the new session handler and context.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_028: \[**An AMQP session shall be created by calling session_create and passing as arguments the connection handle, and NULL for the new link handler and context.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_030: \[**The outgoing window for the session shall be set to 10 by calling session_set_outgoing_window.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_111: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT, use the EVENTHUBAUTH_CBS_CONFIG obtained earlier from parsing the SAS token in EventHubAuthCBS_Create.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_113: \[**EventHubAuthCBS_Create shall be invoked using the config structure reference and the session handle created earlier.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_115: \[**EventHubClient_LL_DoWork shall invoke connection_set_trace using the current value of the trace on boolean.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_021: \[**A source AMQP value shall be created by calling messaging_create_source.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_022: \[**The source address shall be "ingress".**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_023: \[**A target AMQP value shall be created by calling messaging_create_target.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_024: \[**The target address shall be amqps://{eventhub hostname}/{eventhub name}/publishers/<PUBLISHER_NAME>.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_025: \[**If creating the source or target values fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_026: \[**An AMQP link shall be created by calling link_create and passing as arguments the session handle, "sender-link" as link name, role_sender and the previously created source and target values.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_027: \[**If creating the link fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_032: \[**The link sender settle mode shall be set to unsettled by calling link_set_snd_settle_mode.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_033: \[**If link_set_snd_settle_mode fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_034: \[**The message size shall be set to 256K by calling link_set_max_message_size.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_036: \[**A message sender shall be created by calling messagesender_create and passing as arguments the link handle, a state changed callback, a context and NULL for the logging function.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_038: \[**EventHubClient_LL_DoWork shall perform a messagesender_open if the state of the message_sender is not OPEN.**\]**
+    TEST_FUNCTION(EventHubClient_LL_DoWork_Auto_SASToken_PostAuthComplete_Stack_Bringup_Success)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        mocks.ResetAllCalls();
+
+        setup_messenger_initialize_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(int, 5671, saved_tlsio_parameters->port);
+        ASSERT_ARE_EQUAL(void_ptr, TEST_SASL_MECHANISM_HANDLE, saved_saslclientio_parameters->sasl_mechanism);
+        ASSERT_ARE_EQUAL(void_ptr, TEST_TLSIO_HANDLE, saved_saslclientio_parameters->underlying_io);
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_201: \[**`EventHubClient_LL_DoWork` shall perform SAS token handling. **\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_202: \[**`EventHubClient_LL_DoWork` shall initialize the uAMQP Message Sender stack if it has not already brought up. **\]**
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_038: [EventHubClient_LL_DoWork shall perform a messagesender_open if the state of the message_sender is not OPEN.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_064: [EventHubClient_LL_DoWork shall call connection_dowork while passing as argument the connection handle obtained in EventHubClient_LL_Create.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_079: [EventHubClient_LL_DoWork shall bring up the uAMQP stack if it has not already brought up:] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_03_030: [A TLS IO shall be created by calling xio_create.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_002: [The TLS IO interface description passed to xio_create shall be obtained by calling platform_get_default_tlsio_interface.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_004: [A SASL plain mechanism shall be created by calling saslmechanism_create.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_005: [The interface passed to saslmechanism_create shall be obtained by calling saslplain_get_interface.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_007: [The creation parameters for the SASL plain mechanism shall be in the form of a SASL_PLAIN_CONFIG structure.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_008: [The authcid shall be set to the key name parsed earlier from the connection string.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_009: [The passwd members shall be set to the key value parsed earlier from the connection string.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_010: [The authzid shall be NULL.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_004: [A SASL mechanism shall be created by calling saslmechanism_create.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_005: [The interface passed to saslmechanism_create shall be obtained by calling saslmssbcbs_get_interface.] */
+    /* Codes_SRS_EVENTHUBCLIENT_LL_01_006: [If saslmssbcbs_get_interface fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_012: [A SASL client IO shall be created by calling xio_create.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_013: [The IO interface description for the SASL client IO shall be obtained by calling saslclientio_get_interface_description.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_015: [The IO creation parameters passed to xio_create shall be in the form of a SASLCLIENTIO_CONFIG.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_016: [The underlying_io members shall be set to the previously created TLS IO.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_017: [The sasl_mechanism shall be set to the previously created SASL PLAIN mechanism.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_017: [The sasl_mechanism shall be set to the previously created SASL mechanism.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_019: [An AMQP connection shall be created by calling connection_create and passing as arguments the SASL client IO handle, eventhub hostname, "eh_client_connection" as container name and NULL for the new session handler and context.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_028: [An AMQP session shall be created by calling session_create and passing as arguments the connection handle, and NULL for the new link handler and context.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_030: [The outgoing window for the session shall be set to 10 by calling session_set_outgoing_window.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_021: [A source AMQP value shall be created by calling messaging_create_source.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_022: [The source address shall be "ingress".] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_023: [A target AMQP value shall be created by calling messaging_create_target.] */
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_024: [The target address shall be "amqps://" {eventhub hostname} / {eventhub name}.] */
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_024: [The target address shall be amqps://{eventhub hostname}/{eventhub name}/publishers/<PUBLISHER_NAME>.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_026: [An AMQP link shall be created by calling link_create and passing as arguments the session handle, "sender-link" as link name, role_sender and the previously created source and target values.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_032: [The link sender settle mode shall be set to unsettled by calling link_set_snd_settle_mode.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_034: [The message size shall be set to 256K by calling link_set_max_message_size.] */
@@ -1897,14 +3490,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn("Host2");
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" "Host2" "/" "AnotherOne");
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn("Mwahaha");
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn("Secret");
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
         STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
@@ -1917,6 +3504,14 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, "Host2", "eh_client_connection", NULL, NULL));
         STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
         STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Create(IGNORED_PTR_ARG, TEST_SESSION_HANDLE))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, connection_set_trace(TEST_CONNECTION_HANDLE, false))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
+            .SetReturn("amqps://" "Host2" "/" "AnotherOne");
         STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"));
         STRICT_EXPECTED_CALL(mocks, messaging_create_target("amqps://" "Host2" "/" "AnotherOne"));
         STRICT_EXPECTED_CALL(mocks, link_create(TEST_SESSION_HANDLE, "sender-link", role_sender, TEST_SOURCE_AMQP_VALUE, TEST_TARGET_AMQP_VALUE));
@@ -1926,18 +3521,17 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_SOURCE_AMQP_VALUE));
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_TARGET_AMQP_VALUE));
-
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, messagesender_open(TEST_MESSAGE_SENDER_HANDLE));
         STRICT_EXPECTED_CALL(mocks, connection_dowork(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_set_trace(TEST_CONNECTION_HANDLE, false));
 
         // act
-        EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle); //pre auth
+        EventHubClient_LL_DoWork(eventHubHandle); //post auth
 
         // assert
-        ASSERT_ARE_EQUAL(char_ptr, "Mwahaha", saved_sasl_mechanism_create_parameters->authcid);
-        ASSERT_ARE_EQUAL(char_ptr, "Secret", saved_sasl_mechanism_create_parameters->passwd);
-        ASSERT_ARE_EQUAL(char_ptr, "Host2", saved_tlsio_parameters->hostname);
+        //ASSERT_ARE_EQUAL(char_ptr, "Host2", saved_tlsio_parameters->hostname);
         ASSERT_ARE_EQUAL(int, 5671, saved_tlsio_parameters->port);
         ASSERT_ARE_EQUAL(void_ptr, TEST_SASL_MECHANISM_HANDLE, saved_saslclientio_parameters->sasl_mechanism);
         ASSERT_ARE_EQUAL(void_ptr, TEST_TLSIO_HANDLE, saved_saslclientio_parameters->underlying_io);
@@ -1970,7 +3564,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
     }
 
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_080: [If any other error happens while bringing up the uAMQP stack, EventHubClient_LL_DoWork shall not attempt to open the message_sender and return without sending any messages.] */
-    TEST_FUNCTION(when_getting_the_target_address_string_content_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
+    TEST_FUNCTION(when_getting_the_sasl_interface_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
     {
         // arrange
         CEventHubClientLLMocks mocks;
@@ -1980,92 +3574,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn((char*)NULL);
-
-        // act
-        EventHubClient_LL_DoWork(eventHubHandle);
-
-        // assert
-        mocks.AssertActualAndExpectedCalls();
-
-        // cleanup
-        EventHubClient_LL_Destroy(eventHubHandle);
-    }
-
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_080: [If any other error happens while bringing up the uAMQP stack, EventHubClient_LL_DoWork shall not attempt to open the message_sender and return without sending any messages.] */
-    TEST_FUNCTION(when_getting_the_string_content_for_the_keyname_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
-    {
-        // arrange
-        CEventHubClientLLMocks mocks;
-        setup_createfromconnectionstring_success(&mocks);
-        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-        mocks.ResetAllCalls();
-
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
-            .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn((char*)NULL);
-
-        // act
-        EventHubClient_LL_DoWork(eventHubHandle);
-
-        // assert
-        mocks.AssertActualAndExpectedCalls();
-
-        // cleanup
-        EventHubClient_LL_Destroy(eventHubHandle);
-    }
-
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_080: [If any other error happens while bringing up the uAMQP stack, EventHubClient_LL_DoWork shall not attempt to open the message_sender and return without sending any messages.] */
-    TEST_FUNCTION(when_getting_the_string_content_for_the_key_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
-    {
-        // arrange
-        CEventHubClientLLMocks mocks;
-        setup_createfromconnectionstring_success(&mocks);
-        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-        mocks.ResetAllCalls();
-
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
-            .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn((char*)NULL);
-
-        // act
-        EventHubClient_LL_DoWork(eventHubHandle);
-
-        // assert
-        mocks.AssertActualAndExpectedCalls();
-
-        // cleanup
-        EventHubClient_LL_Destroy(eventHubHandle);
-    }
-
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_006: [If saslplain_get_interface fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.] */
-    TEST_FUNCTION(when_getting_the_interface_for_SASL_plain_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
-    {
-        // arrange
-        CEventHubClientLLMocks mocks;
-        setup_createfromconnectionstring_success(&mocks);
-        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-        mocks.ResetAllCalls();
-
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
-            .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface())
-            .SetReturn((const SASL_MECHANISM_INTERFACE_DESCRIPTION*)NULL);
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface())
+            .SetReturn((SASL_MECHANISM_INTERFACE_DESCRIPTION*)NULL);
 
         // act
         EventHubClient_LL_DoWork(eventHubHandle);
@@ -2088,14 +3598,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2)
             .SetReturn((SASL_MECHANISM_HANDLE)NULL);
 
@@ -2120,14 +3624,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio())
             .SetReturn((const IO_INTERFACE_DESCRIPTION*)NULL);
@@ -2154,14 +3652,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
         STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
@@ -2190,14 +3682,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
         STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
@@ -2229,14 +3715,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
         STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
@@ -2270,14 +3750,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
         STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
@@ -2314,14 +3788,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
         STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
@@ -2332,6 +3800,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .IgnoreArgument(2)
             .SetReturn(TEST_SASLCLIENTIO_HANDLE);
         STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
+        STRICT_EXPECTED_CALL(mocks, connection_set_trace(TEST_CONNECTION_HANDLE, false))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL))
             .SetReturn((SESSION_HANDLE)NULL);
         STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
@@ -2360,14 +3830,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
         STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
@@ -2378,6 +3842,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .IgnoreArgument(2)
             .SetReturn(TEST_SASLCLIENTIO_HANDLE);
         STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
+        STRICT_EXPECTED_CALL(mocks, connection_set_trace(TEST_CONNECTION_HANDLE, false))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
         STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10))
             .SetReturn(1);
@@ -2397,8 +3863,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_Destroy(eventHubHandle);
     }
 
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_025: [If creating the source or target values fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.] */
-    TEST_FUNCTION(when_creating_the_source_for_the_link_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_114: \[**If EventHubAuthCBS_Create returns NULL, a log message will be logged and the function returns immediately.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_Create_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
     {
         // arrange
         CEventHubClientLLMocks mocks;
@@ -2408,14 +3874,54 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
-            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
+        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
+            .IgnoreArgument(2)
+            .SetReturn(TEST_TLSIO_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, saslclientio_get_interface_description());
+        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_SASLCLIENTIO_INTERFACE_DESCRIPTION, NULL))
+            .IgnoreArgument(2)
+            .SetReturn(TEST_SASLCLIENTIO_HANDLE);
+        STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
+        STRICT_EXPECTED_CALL(mocks, connection_set_trace(TEST_CONNECTION_HANDLE, false))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
+        STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10))
+            .SetReturn(0);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Create(IGNORED_PTR_ARG, TEST_SESSION_HANDLE))
+            .IgnoreArgument(1).SetReturn((EVENTHUBAUTH_CBS_HANDLE)NULL);
+        STRICT_EXPECTED_CALL(mocks, session_destroy(TEST_SESSION_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_SASLCLIENTIO_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_TLSIO_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_127: \[**If an error is seen, the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
+            .SetReturn(TEST_HOSTNAME);
+        STRICT_EXPECTED_CALL(mocks, saslmssbcbs_get_interface());
+        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASL_INTERFACE_DESCRIPTION, NULL))
             .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
         STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
@@ -2427,17 +3933,286 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_SASLCLIENTIO_HANDLE);
         STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
         STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10));
-        STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"))
-            .SetReturn((AMQP_VALUE)NULL);
-        STRICT_EXPECTED_CALL(mocks, session_destroy(TEST_SESSION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_SASLCLIENTIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_TLSIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10))
+            .SetReturn(0);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Create(IGNORED_PTR_ARG, TEST_SESSION_HANDLE))
+            .IgnoreArgument(1).SetReturn(TEST_EVENTHUBCBSAUTH_HANDLE_VALID);
+        STRICT_EXPECTED_CALL(mocks, connection_set_trace(TEST_CONNECTION_HANDLE, false))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2).SetReturn(EVENTHUBAUTH_RESULT_ERROR);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
 
         // act
         EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_121: \[**If status is EVENTHUBAUTH_STATUS_FAILURE or EVENTHUBAUTH_STATUS_EXPIRED any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_Failure_during_pre_auth_then_EventHubClient_LL_DoWork_invokes_error_callback_and_destroys_uamqp_stack)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_FAILURE;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        (void)EventHubClient_LL_SetErrorCallback(eventHubHandle, testHook_eventhub_error_callback, (void*)0x1234);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, testHook_eventhub_error_callback(EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE, (void*)0x1234));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_121: \[**If status is EVENTHUBAUTH_STATUS_FAILURE or EVENTHUBAUTH_STATUS_EXPIRED any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_Expired_during_pre_auth_then_EventHubClient_LL_DoWork_invokes_error_callback_and_destroys_uamqp_stack)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_EXPIRED;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        (void)EventHubClient_LL_SetErrorCallback(eventHubHandle, testHook_eventhub_error_callback, (void*)0x1234);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, testHook_eventhub_error_callback(EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE, (void*)0x1234));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_122: \[**If status is EVENTHUBAUTH_STATUS_TIMEOUT, any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_TIMEOUT and EventHubClient_LL_DoWork shall bring down AMQP stack so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_Timeout_during_pre_auth_then_EventHubClient_LL_DoWork_invokes_error_callback_and_destroys_uamqp_stack)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_TIMEOUT;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        (void)EventHubClient_LL_SetErrorCallback(eventHubHandle, testHook_eventhub_error_callback, (void*)0x1234);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, testHook_eventhub_error_callback(EVENTHUBCLIENT_SASTOKEN_AUTH_TIMEOUT, (void*)0x1234));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_123: \[**If status is EVENTHUBAUTH_STATUS_IN_PROGRESS, connection_dowork shall be invoked to perform work to establish/refresh the SAS token.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_Inprogress_during_pre_auth_then_EventHubClient_LL_DoWork_invokes_do_work)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_IN_PROGRESS;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, connection_dowork(TEST_CONNECTION_HANDLE));
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_125: \[**If status is EVENTHUBAUTH_STATUS_IDLE, EventHubAuthCBS_Authenticate shall be invoked to create and install the SAS token.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_idle_during_pre_auth_then_EventHubClient_LL_DoWork_invokes_EventHubAuthCBS_Authenticate_and_dowork)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_IDLE;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Authenticate(TEST_EVENTHUBCBSAUTH_HANDLE_VALID));
+        STRICT_EXPECTED_CALL(mocks, connection_dowork(TEST_CONNECTION_HANDLE));
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_125: \[**If status is EVENTHUBAUTH_STATUS_IDLE, EventHubAuthCBS_Authenticate shall be invoked to create and install the SAS token.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_127: \[**If an error is seen, the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_idle_during_pre_auth_then_EventHubClient_LL_DoWork_invokes_EventHubAuthCBS_Authenticate_Fails_invokes_error_callback_and_destroys_uamqp_stack)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_IDLE;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        (void)EventHubClient_LL_SetErrorCallback(eventHubHandle, testHook_eventhub_error_callback, (void*)0x1234);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Authenticate(TEST_EVENTHUBCBSAUTH_HANDLE_VALID))
+            .SetReturn(EVENTHUBAUTH_RESULT_ERROR);
+        STRICT_EXPECTED_CALL(mocks, testHook_eventhub_error_callback(EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE, (void*)0x1234));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_124: \[**If status is EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, EventHubAuthCBS_Refresh shall be invoked to refresh the SAS token. Parameter extSASToken should be NULL.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_refreshrequired_during_pre_auth_then_EventHubClient_LL_DoWork_invokes_EventHubAuthCBS_Refresh)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_REFRESH_REQUIRED;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Refresh(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, NULL));
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_124: \[**If status is EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, EventHubAuthCBS_Refresh shall be invoked to refresh the SAS token. Parameter extSASToken should be NULL.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_127: \[**If an error is seen, the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_refreshrequired_during_pre_auth_then_EventHubClient_LL_DoWork_invokes_EventHubAuthCBS_Refresh_Fails_invokes_error_callback_and_destroys_uamqp_stack)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_REFRESH_REQUIRED;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        (void)EventHubClient_LL_SetErrorCallback(eventHubHandle, testHook_eventhub_error_callback, (void*)0x1234);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Refresh(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, NULL)).SetReturn(EVENTHUBAUTH_RESULT_ERROR);
+        STRICT_EXPECTED_CALL(mocks, testHook_eventhub_error_callback(EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE, (void*)0x1234));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_127: \[**If an error is seen, the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_C_String_For_Target_Address_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
+            .SetReturn((const char*)NULL);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    /* Tests_SRS_EVENTHUBCLIENT_LL_01_025: [If creating the source or target values fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.] */
+    TEST_FUNCTION(when_creating_the_source_for_the_link_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
+            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"))
+            .SetReturn((AMQP_VALUE)NULL);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
 
         // assert
         mocks.AssertActualAndExpectedCalls();
@@ -2455,41 +4230,19 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         mocks.ResetAllCalls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
-            .SetReturn(TEST_HOSTNAME);
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
             .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_TLSIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, saslclientio_get_interface_description());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_SASLCLIENTIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_SASLCLIENTIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10));
         STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"))
             .SetReturn(TEST_SOURCE_AMQP_VALUE);
         STRICT_EXPECTED_CALL(mocks, messaging_create_target("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH))
             .SetReturn((AMQP_VALUE)NULL);
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_SOURCE_AMQP_VALUE));
-        STRICT_EXPECTED_CALL(mocks, session_destroy(TEST_SESSION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_SASLCLIENTIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_TLSIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
 
         // act
-        EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
 
         // assert
         mocks.AssertActualAndExpectedCalls();
@@ -2507,28 +4260,9 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         mocks.ResetAllCalls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
-            .SetReturn(TEST_HOSTNAME);
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
             .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_TLSIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, saslclientio_get_interface_description());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_SASLCLIENTIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_SASLCLIENTIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10));
         STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"))
             .SetReturn(TEST_SOURCE_AMQP_VALUE);
         STRICT_EXPECTED_CALL(mocks, messaging_create_target("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH))
@@ -2537,14 +4271,11 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn((LINK_HANDLE)NULL);
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_SOURCE_AMQP_VALUE));
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_TARGET_AMQP_VALUE));
-        STRICT_EXPECTED_CALL(mocks, session_destroy(TEST_SESSION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_SASLCLIENTIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_TLSIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
 
         // act
-        EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
 
         // assert
         mocks.AssertActualAndExpectedCalls();
@@ -2562,28 +4293,9 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         mocks.ResetAllCalls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
-            .SetReturn(TEST_HOSTNAME);
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
             .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_TLSIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, saslclientio_get_interface_description());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_SASLCLIENTIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_SASLCLIENTIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10));
         STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"))
             .SetReturn(TEST_SOURCE_AMQP_VALUE);
         STRICT_EXPECTED_CALL(mocks, messaging_create_target("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH))
@@ -2594,14 +4306,11 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_SOURCE_AMQP_VALUE));
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_TARGET_AMQP_VALUE));
         STRICT_EXPECTED_CALL(mocks, link_destroy(TEST_LINK_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, session_destroy(TEST_SESSION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_SASLCLIENTIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_TLSIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
 
         // act
-        EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
 
         // assert
         mocks.AssertActualAndExpectedCalls();
@@ -2619,28 +4328,9 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         mocks.ResetAllCalls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
-            .SetReturn(TEST_HOSTNAME);
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
             .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_TLSIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, saslclientio_get_interface_description());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_SASLCLIENTIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_SASLCLIENTIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10));
         STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"))
             .SetReturn(TEST_SOURCE_AMQP_VALUE);
         STRICT_EXPECTED_CALL(mocks, messaging_create_target("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH))
@@ -2652,14 +4342,11 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_SOURCE_AMQP_VALUE));
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_TARGET_AMQP_VALUE));
         STRICT_EXPECTED_CALL(mocks, link_destroy(TEST_LINK_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, session_destroy(TEST_SESSION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_SASLCLIENTIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_TLSIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
 
         // act
-        EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
 
         // assert
         mocks.AssertActualAndExpectedCalls();
@@ -2677,28 +4364,9 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         mocks.ResetAllCalls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
-            .SetReturn(TEST_HOSTNAME);
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
         STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
             .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEYNAME_STRING_HANDLE))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_KEY_STRING_HANDLE))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, saslplain_get_interface());
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_create(TEST_SASLPLAIN_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(mocks, platform_get_default_tlsio());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_TLSIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, saslclientio_get_interface_description());
-        STRICT_EXPECTED_CALL(mocks, xio_create(TEST_SASLCLIENTIO_INTERFACE_DESCRIPTION, NULL))
-            .IgnoreArgument(2)
-            .SetReturn(TEST_SASLCLIENTIO_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, connection_create(TEST_SASLCLIENTIO_HANDLE, TEST_HOSTNAME, "eh_client_connection", NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_create(TEST_CONNECTION_HANDLE, NULL, NULL));
-        STRICT_EXPECTED_CALL(mocks, session_set_outgoing_window(TEST_SESSION_HANDLE, 10));
         STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"))
             .SetReturn(TEST_SOURCE_AMQP_VALUE);
         STRICT_EXPECTED_CALL(mocks, messaging_create_target("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH))
@@ -2712,11 +4380,94 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_SOURCE_AMQP_VALUE));
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_TARGET_AMQP_VALUE));
         STRICT_EXPECTED_CALL(mocks, link_destroy(TEST_LINK_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, session_destroy(TEST_SESSION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, connection_destroy(TEST_CONNECTION_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_SASLCLIENTIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, xio_destroy(TEST_TLSIO_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, saslmechanism_destroy(TEST_SASL_MECHANISM_HANDLE));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_127: \[**If an error is seen, the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_post_auth_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
+            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"))
+            .SetReturn(TEST_SOURCE_AMQP_VALUE);
+        STRICT_EXPECTED_CALL(mocks, messaging_create_target("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH))
+            .SetReturn(TEST_TARGET_AMQP_VALUE);
+        STRICT_EXPECTED_CALL(mocks, link_create(TEST_SESSION_HANDLE, "sender-link", role_sender, TEST_SOURCE_AMQP_VALUE, TEST_TARGET_AMQP_VALUE));
+        STRICT_EXPECTED_CALL(mocks, link_set_snd_settle_mode(TEST_LINK_HANDLE, sender_settle_mode_unsettled));
+        STRICT_EXPECTED_CALL(mocks, link_set_max_message_size(TEST_LINK_HANDLE, 256 * 1024));
+        STRICT_EXPECTED_CALL(mocks, messagesender_create(TEST_LINK_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+            .IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_SOURCE_AMQP_VALUE));
+        STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_TARGET_AMQP_VALUE));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2).SetReturn(EVENTHUBAUTH_RESULT_ERROR);
+        STRICT_EXPECTED_CALL(mocks, messagesender_destroy(TEST_MESSAGE_SENDER_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, link_destroy(TEST_LINK_HANDLE));
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+
+                                                  // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_01_039: \[**If messagesender_open fails, no further actions shall be carried out.**\]**
+    TEST_FUNCTION(when_messagesender_open_fails_then_EventHubClient_LL_DoWork_does_not_proceed)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        mocks.ResetAllCalls();
+
+        setup_messenger_pre_auth_uamqp_stack_bringup_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+        STRICT_EXPECTED_CALL(mocks, STRING_c_str(TEST_TARGET_STRING_HANDLE))
+            .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
+        STRICT_EXPECTED_CALL(mocks, messaging_create_source("ingress"))
+            .SetReturn(TEST_SOURCE_AMQP_VALUE);
+        STRICT_EXPECTED_CALL(mocks, messaging_create_target("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH))
+            .SetReturn(TEST_TARGET_AMQP_VALUE);
+        STRICT_EXPECTED_CALL(mocks, link_create(TEST_SESSION_HANDLE, "sender-link", role_sender, TEST_SOURCE_AMQP_VALUE, TEST_TARGET_AMQP_VALUE));
+        STRICT_EXPECTED_CALL(mocks, link_set_snd_settle_mode(TEST_LINK_HANDLE, sender_settle_mode_unsettled));
+        STRICT_EXPECTED_CALL(mocks, link_set_max_message_size(TEST_LINK_HANDLE, 256 * 1024));
+        STRICT_EXPECTED_CALL(mocks, messagesender_create(TEST_LINK_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+            .IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_SOURCE_AMQP_VALUE));
+        STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_TARGET_AMQP_VALUE));
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, messagesender_open(TEST_MESSAGE_SENDER_HANDLE))
+            .SetReturn(1);
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, messagesender_open(TEST_MESSAGE_SENDER_HANDLE))
+            .SetReturn(1);
 
         // act
         EventHubClient_LL_DoWork(eventHubHandle);
@@ -2737,9 +4488,12 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPENING, MESSAGE_SENDER_STATE_IDLE);
         mocks.ResetAllCalls();
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, connection_dowork(TEST_CONNECTION_HANDLE));
 
         // act
@@ -2752,6 +4506,207 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_Destroy(eventHubHandle);
     }
 
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_failure_postauthcomplete_withpendingmsgs_then_EventHubClient_LL_DoWork_tearsdown_amqp_stack)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        (void)EventHubClient_LL_SetErrorCallback(eventHubHandle, testHook_eventhub_error_callback, (void*)0x1234);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+        saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
+        (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_FAILURE;
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, testHook_eventhub_error_callback(EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE, (void*)0x1234));
+        setup_messenger_post_auth_complete_messenger_stack_teardown_success(&mocks);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_121: \[**If status is EVENTHUBAUTH_STATUS_FAILURE or EVENTHUBAUTH_STATUS_EXPIRED any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_expired_postauthcomplete_withpendingmsgs_then_EventHubClient_LL_DoWork_tearsdown_amqp_stack)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        (void)EventHubClient_LL_SetErrorCallback(eventHubHandle, testHook_eventhub_error_callback, (void*)0x1234);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+        saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
+        (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_EXPIRED;
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, testHook_eventhub_error_callback(EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE, (void*)0x1234));
+        setup_messenger_post_auth_complete_messenger_stack_teardown_success(&mocks);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_121: \[**If status is EVENTHUBAUTH_STATUS_FAILURE or EVENTHUBAUTH_STATUS_EXPIRED any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_timeout_postauthcomplete_withpendingmsgs_then_EventHubClient_LL_DoWork_tearsdown_amqp_stack)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        (void)EventHubClient_LL_SetErrorCallback(eventHubHandle, testHook_eventhub_error_callback, (void*)0x1234);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+        saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
+        (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_TIMEOUT;
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, testHook_eventhub_error_callback(EVENTHUBCLIENT_SASTOKEN_AUTH_TIMEOUT, (void*)0x1234));
+        setup_messenger_post_auth_complete_messenger_stack_teardown_success(&mocks);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_123: \[**If status is EVENTHUBAUTH_STATUS_IN_PROGRESS, connection_dowork shall be invoked to perform work to establish/refresh the SAS token.**\]**
+    TEST_FUNCTION(when_EventHubAuthCBS_GetStatus_returns_status_inprogress_postauthcomplete_with_pendingmsgs_then_EventHubClient_LL_DoWork_invokes_connection_dowork)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        setup_createfromconnectionstring_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+        saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
+        (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
+        g_eventhub_auth_get_status = EVENTHUBAUTH_STATUS_IN_PROGRESS;
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, connection_dowork(TEST_CONNECTION_HANDLE));
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_126: \[**If status is EVENTHUBAUTH_STATUS_OK and an Ext refresh SAS Token was supplied by the user,  EventHubAuthCBS_Refresh shall be invoked to refresh the SAS token. Parameter extSASToken should be the refresh ext SAS token.**\]**
+    TEST_FUNCTION(using_ext_sastoken_with_refresh_when_EventHubAuthCBS_GetStatus_returns_status_ok_postauthcomplete_then_EventHubClient_LL_DoWork_invokes_AuthRefresh)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        EVENTHUBAUTH_CBS_CONFIG cfg;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+        saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
+        setup_refresh_sastoken_success(&mocks, &cfg);
+        (void)EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, TEST_REFRESH_SASTOKEN);
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Refresh(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, TEST_SASTOKEN_PARSER_REFRESH_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_SASTOKEN_PARSER_REFRESH_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, connection_dowork(TEST_CONNECTION_HANDLE));
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_120: \[**EventHubAuthCBS_GetStatus shall be invoked to obtain the authorization status.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_126: \[**If status is EVENTHUBAUTH_STATUS_OK and an Ext refresh SAS Token was supplied by the user,  EventHubAuthCBS_Refresh shall be invoked to refresh the SAS token. Parameter extSASToken should be the refresh ext SAS token.**\]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_127: \[**If an error is seen, the AMQP stack shall be brought down so that it can be created again if needed in EventHubClient_LL_DoWork.**\]**
+    TEST_FUNCTION(using_ext_sastoken_with_refresh_when_EventHubAuthCBS_GetStatus_returns_status_ok_postauthcomplete_andauthrefresh_fails_EventHubClient_LL_DoWork_tearsdown_amqp_stack)
+    {
+        // arrange
+        CEventHubClientLLMocks mocks;
+        EVENTHUBAUTH_CBS_CONFIG cfg;
+        setup_createfromsastoken_success(&mocks);
+        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromSASToken(TEST_SASTOKEN);
+        (void)EventHubClient_LL_SetErrorCallback(eventHubHandle, testHook_eventhub_error_callback, (void*)0x1234);
+        setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle); // pre auth
+        EventHubClient_LL_DoWork(eventHubHandle); // post auth
+        saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
+        setup_refresh_sastoken_success(&mocks, &cfg);
+        (void)EventHubClient_LL_RefreshSASTokenAsync(eventHubHandle, TEST_REFRESH_SASTOKEN);
+        // todo enable messages
+        //(void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_Refresh(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, TEST_SASTOKEN_PARSER_REFRESH_STRING_HANDLE))
+            .SetReturn(EVENTHUBAUTH_RESULT_ERROR);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_SASTOKEN_PARSER_REFRESH_STRING_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, testHook_eventhub_error_callback(EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE, (void*)0x1234));
+        setup_messenger_post_auth_complete_messenger_stack_teardown_success(&mocks);
+        setup_messenger_pre_auth_uamqp_stack_teardown_success(&mocks);
+
+        // act
+        EventHubClient_LL_DoWork(eventHubHandle);
+
+        // assert
+        mocks.AssertActualAndExpectedCalls();
+
+        // cleanup
+        EventHubClient_LL_Destroy(eventHubHandle);
+    }
+
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_203: \[**EventHubClient_LL_DoWork shall perform message send handling **\]**
     /* Tests_SRS_EVENTHUBCLIENT_LL_07_028: [If the message idle time is greater than the msg_timeout, EventHubClient_LL_DoWork shall call callback with EVENTHUBCLIENT_CONFIRMATION_TIMEOUT.] */
     TEST_FUNCTION(EventHubClient_LL_DoWork_when_message_timeout)
     {
@@ -2761,6 +4716,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         EventHubClient_LL_SetMessageTimeout(eventHubHandle, 2);
         setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle);
         EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
@@ -2772,6 +4728,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         BINARY_DATA binary_data = { test_data, length };
 
         g_tickcounter_value += (2000*2);
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -2805,32 +4763,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_Destroy(eventHubHandle);
     }
 
-    /* Tests_SRS_EVENTHUBCLIENT_LL_01_039: [If messagesender_open fails, no further actions shall be carried out.] */
-    TEST_FUNCTION(when_messagesender_open_fails_then_EventHubClient_LL_DoWork_does_not_do_anything_else)
-    {
-        // arrange
-        CEventHubClientLLMocks mocks;
-        setup_createfromconnectionstring_success(&mocks);
-        EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-        mocks.ResetAllCalls();
-
-        setup_messenger_initialize_success(&mocks);
-
-        STRICT_EXPECTED_CALL(mocks, messagesender_open(TEST_MESSAGE_SENDER_HANDLE))
-            .SetReturn(1);
-        STRICT_EXPECTED_CALL(mocks, connection_set_trace(IGNORED_PTR_ARG, false))
-            .IgnoreArgument(1);
-
-        // act
-        EventHubClient_LL_DoWork(eventHubHandle);
-
-        // assert
-        mocks.AssertActualAndExpectedCalls();
-
-        // cleanup
-        EventHubClient_LL_Destroy(eventHubHandle);
-    }
-
+    //**Tests_SRS_EVENTHUBCLIENT_LL_29_203: \[**EventHubClient_LL_DoWork shall perform message send handling **\]**
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_049: [If the message has not yet been given to uAMQP then a new message shall be created by calling message_create.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_050: [If the number of event data entries for the message is 1 (not batched) then the message body shall be set to the event data payload by calling message_add_body_amqp_data.] */
     /* Tests_SRS_EVENTHUBCLIENT_LL_01_051: [The pointer to the payload and its length shall be obtained by calling EventData_GetData.] */
@@ -2843,6 +4776,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -2852,6 +4786,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -2889,6 +4825,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EXPECTED_CALL(mocks, EventData_Clone(IGNORED_PTR_ARG))
             .SetReturn(TEST_CLONED_EVENTDATA_HANDLE_1);
@@ -2904,6 +4841,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data_1);
         BINARY_DATA binary_data = { test_data_1, length };
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -2963,6 +4902,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -2972,6 +4912,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3005,6 +4947,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3014,6 +4957,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3048,6 +4993,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3057,6 +5003,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3101,6 +5049,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3110,6 +5059,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create())
             .SetReturn((MESSAGE_HANDLE)NULL);
         STRICT_EXPECTED_CALL(mocks, sendAsyncConfirmationCallback(EVENTHUBCLIENT_CONFIRMATION_ERROR, (void*)0x4242));
@@ -3139,6 +5090,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EXPECTED_CALL(mocks, EventData_Clone(IGNORED_PTR_ARG))
             .SetReturn(TEST_CLONED_EVENTDATA_HANDLE_1);
@@ -3153,6 +5105,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create())
             .SetReturn((MESSAGE_HANDLE)NULL);
         STRICT_EXPECTED_CALL(mocks, sendAsyncConfirmationCallback(EVENTHUBCLIENT_CONFIRMATION_ERROR, (void*)0x4242));
@@ -3203,6 +5157,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3218,6 +5173,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* one_property_values_ptr = one_property_values;
         size_t one_property_size = 1;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3270,6 +5227,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3281,6 +5239,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         size_t one_property_size = 0;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3331,6 +5291,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3343,6 +5304,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t one_property_size = 0;
         AMQP_VALUE NULL_VALUE = NULL;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3380,6 +5343,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3392,6 +5356,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t one_property_size = 0;
         AMQP_VALUE NULL_VALUE = NULL;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3431,6 +5397,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3443,6 +5410,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t one_property_size = 0;
         AMQP_VALUE NULL_VALUE = NULL;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3484,6 +5453,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3496,6 +5466,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t one_property_size = 0;
         AMQP_VALUE NULL_VALUE = NULL;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3540,6 +5512,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3555,6 +5528,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3611,6 +5586,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3626,6 +5602,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* one_property_values_ptr = one_property_values;
         size_t one_property_size = 1;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3662,6 +5640,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3677,6 +5656,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* one_property_values_ptr = one_property_values;
         size_t one_property_size = 1;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3717,6 +5698,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3732,6 +5714,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* one_property_values_ptr = one_property_values;
         size_t one_property_size = 1;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3773,6 +5757,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3788,6 +5773,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* one_property_values_ptr = one_property_values;
         size_t one_property_size = 1;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3832,6 +5819,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3847,6 +5835,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* one_property_values_ptr = one_property_values;
         size_t one_property_size = 1;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3894,6 +5884,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3909,6 +5900,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* one_property_values_ptr = one_property_values;
         size_t one_property_size = 1;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -3959,6 +5952,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
@@ -3974,6 +5968,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* one_property_values_ptr = one_property_values;
         size_t one_property_size = 1;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, EventData_GetData(TEST_CLONED_EVENTDATA_HANDLE_1, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &buffer, sizeof(buffer))
@@ -4028,6 +6024,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
         STRICT_EXPECTED_CALL(mocks, Map_GetInternals(TEST_MAP_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
@@ -4067,6 +6064,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         setup_createfromconnectionstring_success(&mocks);
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
+        EventHubClient_LL_DoWork(eventHubHandle);
         EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         (void)EventHubClient_LL_SendAsync(eventHubHandle, TEST_EVENTDATA_HANDLE, sendAsyncConfirmationCallback, (void*)0x4242);
@@ -4109,6 +6107,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         mocks.ResetAllCalls();
 
@@ -4139,6 +6138,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4153,6 +6153,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         g_expected_encoded_counter = 0;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4235,6 +6237,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4244,6 +6247,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         (void)EventHubClient_LL_SendBatchAsync(eventHubHandle, batch, sizeof(batch) / sizeof(EVENTDATA_HANDLE), sendAsyncConfirmationCallback, (void*)0x4242);
         mocks.ResetAllCalls();
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT))
             .SetReturn(1);
@@ -4276,6 +6281,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4289,6 +6295,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4327,6 +6335,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4340,6 +6349,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4379,6 +6390,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4392,6 +6404,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4435,6 +6449,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4448,6 +6463,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4493,6 +6510,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4506,6 +6524,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4557,6 +6577,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4570,6 +6591,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4622,6 +6645,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4636,6 +6660,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         g_expected_encoded_counter = 0;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4693,6 +6719,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4707,6 +6734,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         g_expected_encoded_counter = 0;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4770,6 +6799,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4790,6 +6820,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4901,6 +6933,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4921,6 +6954,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -4965,6 +7000,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -4985,6 +7021,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -5032,6 +7070,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -5052,6 +7091,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -5102,6 +7143,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -5122,6 +7164,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -5175,6 +7219,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -5195,6 +7240,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -5249,6 +7296,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -5269,6 +7317,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -5326,6 +7376,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -5346,6 +7397,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -5406,6 +7459,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -5426,6 +7480,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -5491,6 +7547,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EVENTHUBCLIENT_LL_HANDLE eventHubHandle = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
         setup_messenger_initialize_success(&mocks);
         EventHubClient_LL_DoWork(eventHubHandle);
+        EventHubClient_LL_DoWork(eventHubHandle);
         saved_on_message_sender_state_changed(saved_message_sender_context, MESSAGE_SENDER_STATE_OPEN, MESSAGE_SENDER_STATE_IDLE);
         EVENTDATA_HANDLE batch[] = { TEST_EVENTDATA_HANDLE_1, TEST_EVENTDATA_HANDLE_2 };
         STRICT_EXPECTED_CALL(mocks, EventData_Clone(TEST_EVENTDATA_HANDLE_1))
@@ -5511,6 +7568,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         const char* const* two_property_values_ptr = two_property_values;
         size_t two_properties_size = 2;
 
+        STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
+            .IgnoreArgument(2);
         STRICT_EXPECTED_CALL(mocks, message_create());
         STRICT_EXPECTED_CALL(mocks, message_set_message_format(TEST_MESSAGE_HANDLE, MICROSOFT_MESSAGE_FORMAT));
 
@@ -5848,6 +7907,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_Destroy(eventHubHandle);
     }
 
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_016: [** If eventHubClientLLHandle is NULL EventHubClient_LL_SetStateChangeCallback shall return EVENTHUBCLIENT_INVALID_ARG. **]**
     TEST_FUNCTION(EventHubClient_LL_SetStateChangeCallback_EventHubClient_NULL_fails)
     {
         // arrange
@@ -5863,6 +7923,10 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         //cleanup
     }
 
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_016: [** If eventHubClientLLHandle is NULL EventHubClient_LL_SetStateChangeCallback shall return EVENTHUBCLIENT_INVALID_ARG. **]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_017: [** If state_change_cb is non-NULL then EventHubClient_LL_SetStateChangeCallback shall call state_change_cb when a state changes is encountered. **]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_018: [** If state_change_cb is NULL EventHubClient_LL_SetStateChangeCallback shall no longer call state_change_cb on state changes. **]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_019: [** If EventHubClient_LL_SetStateChangeCallback succeeds it shall return EVENTHUBCLIENT_OK. **]**
     TEST_FUNCTION(EventHubClient_LL_SetStateChangeCallback_succeed)
     {
         // arrange
@@ -5883,6 +7947,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_Destroy(eventHubHandle);
     }
 
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_020: [** If eventHubClientLLHandle is NULL EventHubClient_LL_SetErrorCallback shall return EVENTHUBCLIENT_INVALID_ARG. **]**
     TEST_FUNCTION(EventHubClient_LL_SetErrorCallback_EventHubClient_NULL_fails)
     {
         // arrange
@@ -5898,6 +7963,10 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         //cleanup
     }
 
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_020: [** If eventHubClientLLHandle is NULL EventHubClient_LL_SetErrorCallback shall return EVENTHUBCLIENT_INVALID_ARG. **]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_021: [** If failure_cb is non-NULL EventHubClient_LL_SetErrorCallback shall execute the on_error_cb on failures with a EVENTHUBCLIENT_FAILURE_RESULT. **]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_022: [** If failure_cb is NULL EventHubClient_LL_SetErrorCallback shall no longer call on_error_cb on failure. **]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_023: [** If EventHubClient_LL_SetErrorCallback succeeds it shall return EVENTHUBCLIENT_OK. **]**
     TEST_FUNCTION(EventHubClient_LL_SetErrorCallback_succeed)
     {
         // arrange
@@ -5918,6 +7987,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_Destroy(eventHubHandle);
     }
 
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_025: [** If eventHubClientLLHandle is NULL EventHubClient_LL_SetLogTrace shall do nothing. **]**
     TEST_FUNCTION(EventHubClient_LL_SetLogTrace_EventHubClient_NULL_fails)
     {
         // arrange
@@ -5932,6 +8002,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         //cleanup
     }
 
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_024: [** If eventHubClientLLHandle is non-NULL EventHubClient_LL_SetLogTrace shall call the uAmqp trace function with the log_trace_on. **]**
+    //**Tests_SRS_EVENTHUBCLIENT_LL_07_025: [** If eventHubClientLLHandle is NULL EventHubClient_LL_SetLogTrace shall do nothing. **]**
     TEST_FUNCTION(EventHubClient_LL_SetLogTrace_succeed)
     {
         // arrange

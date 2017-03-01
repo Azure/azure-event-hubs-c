@@ -1,9 +1,16 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstdbool>
+#include <cstddef>
 #include <cstdlib>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
+#include <cstring>
+#else
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 #endif
 
 #include "testrunnerswitcher.h"
@@ -148,6 +155,21 @@ public:
         }
     MOCK_METHOD_END(EVENTHUBCLIENT_LL_HANDLE, resultHandle)
 
+    MOCK_STATIC_METHOD_1(, EVENTHUBCLIENT_LL_HANDLE, EventHubClient_LL_CreateFromSASToken, const char*, sasToken)
+        EVENTHUBCLIENT_LL_HANDLE resultHandle;
+        if (sasToken == NULL)
+        {
+            resultHandle = NULL;
+        }
+        else
+        {
+            resultHandle = TEST_EVENTCLIENT_LL_HANDLE;
+        }
+    MOCK_METHOD_END(EVENTHUBCLIENT_LL_HANDLE, resultHandle)
+
+    MOCK_STATIC_METHOD_2(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_RefreshSASTokenAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, const char*, sasToken)
+    MOCK_METHOD_END(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_OK)
+
     MOCK_STATIC_METHOD_5(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_SendBatchAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, EVENTDATA_HANDLE*, eventDataList, size_t, count, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK, telemetryConfirmationCallback, void*, userContextCallback)
         if (g_confirmationCall)
         {
@@ -218,9 +240,9 @@ public:
         MOCK_STATIC_METHOD_1(, size_t, EventData_GetPropertyCount, EVENTDATA_HANDLE, eventDataHandle)
         MOCK_METHOD_END(size_t, 0)
 
-        /* Version Mocks */
-        MOCK_STATIC_METHOD_0(, const char*, EventHubClient_GetVersionString)
-        MOCK_METHOD_END(const char*, nullptr);
+        ///* Version Mocks */
+        //MOCK_STATIC_METHOD_0(, const char*, EventHubClient_GetVersionString)
+        //MOCK_METHOD_END(const char*, nullptr);
 
     /*Memory allocation*/
     MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
@@ -352,6 +374,9 @@ public:
 };
 
 DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientMocks, , EVENTHUBCLIENT_LL_HANDLE, EventHubClient_LL_CreateFromConnectionString, const char*, connectionString, const char*, eventHubPath);
+DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientMocks, , EVENTHUBCLIENT_LL_HANDLE, EventHubClient_LL_CreateFromSASToken, const char*, eventHubSasToken);
+DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientMocks, , EVENTHUBCLIENT_RESULT, EventHubClient_LL_RefreshSASTokenAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, const char*, eventHubSasToken);
+
 DECLARE_GLOBAL_MOCK_METHOD_4(CEventHubClientMocks, , EVENTHUBCLIENT_RESULT, EventHubClient_LL_SendAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, EVENTDATA_HANDLE, eventDataHandle, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK, telemetryConfirmationCallback, void*, userContextCallback);
 DECLARE_GLOBAL_MOCK_METHOD_5(CEventHubClientMocks, , EVENTHUBCLIENT_RESULT, EventHubClient_LL_SendBatchAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, EVENTDATA_HANDLE*, eventDataList, size_t, count, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK, telemetryConfirmationCallback, void*, userContextCallback);
 
@@ -385,7 +410,7 @@ DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientMocks, , const char*, EventData_GetP
 DECLARE_GLOBAL_MOCK_METHOD_5(CEventHubClientMocks, , EVENTDATA_RESULT, EventData_GetPropertyByIndex, EVENTDATA_HANDLE, eventDataHandle, size_t, propertyIndex, const char**, propertyName, const unsigned char**, propertyValue, size_t*, propertySize);
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientMocks, , size_t, EventData_GetPropertyCount, EVENTDATA_HANDLE, eventDataHandle);
 
-DECLARE_GLOBAL_MOCK_METHOD_0(CEventHubClientMocks, , const char*, EventHubClient_GetVersionString);
+//DECLARE_GLOBAL_MOCK_METHOD_0(CEventHubClientMocks, , const char*, EventHubClient_GetVersionString);
 
 // ** End of Mocks **
 static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
@@ -442,6 +467,21 @@ static void eventhub_error_callback(EVENTHUBCLIENT_ERROR_RESULT eventhub_failure
 {
 }
 
+/*** EventHubClient_GetVersionString ***/
+/* Tests_SRS_EVENTHUBCLIENT_05_003: \[**EventHubClient_GetVersionString shall return a pointer to a constant string which indicates the version of EventHubClient API.**\] */
+TEST_FUNCTION(EventHubClient_GetVersionString_Success)
+{
+    // arrange
+
+    // act
+    const char* result = EventHubClient_GetVersionString();
+
+    // assert
+    ASSERT_IS_NOT_NULL(result);
+
+    // cleanup
+}
+
 /*** EventHubClient_CreateFromConnectionString ***/
 /* Tests_SRS_EVENTHUBCLIENT_03_004: [EventHubClient_ CreateFromConnectionString shall pass the connectionString and eventHubPath variables to EventHubClient_CreateFromConnectionString_LL.] */
 /* Tests_SRS_EVENTHUBCLIENT_03_006: [EventHubClient_ CreateFromConnectionString shall return a NULL value if EventHubClient_CreateFromConnectionString_LL  returns NULL.] */
@@ -461,6 +501,7 @@ TEST_FUNCTION(EventHubClient_CreateFromConnectionString_Lower_Layer_Fails)
 }
 
 /* Tests_SRS_EVENTHUBCLIENT_03_002: [Upon Success of EventHubClient_CreateFromConnectionString_LL,  EventHubClient_CreateFromConnectionString shall allocate the internal structures required by this module.] */
+/* Tests_SRS_EVENTHUBCLIENT_03_005: [Upon Success EventHubClient_CreateFromConnectionString shall return the EVENTHUBCLIENT_HANDLE.] */
 TEST_FUNCTION(EventHubClient_CreateFromConnectionString_Succeeds)
 {
     // arrange
@@ -503,6 +544,201 @@ TEST_FUNCTION(EventHubClient_CreateFromConnectionString_Lock_Init_Fails)
     EventHubClient_Destroy(result);
 }
 
+//**Tests_SRS_EVENTHUBCLIENT_29_101: \[**EventHubClient_CreateFromSASToken shall pass the eventHubSasToken argument to EventHubClient_LL_CreateFromSASToken.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_102: \[**EventHubClient_CreateFromSASToken shall return a NULL value if EventHubClient_LL_CreateFromSASToken returns NULL.**\]**
+TEST_FUNCTION(EventHubClient_CreateFromSASToken_Lower_Layer_Fails)
+{
+    // arrange
+    CEventHubClientMocks ehMocks;
+    const char sasToken[] = "Test SAS Token String";
+
+    STRICT_EXPECTED_CALL(ehMocks, EventHubClient_LL_CreateFromSASToken(sasToken))
+        .SetReturn((EVENTHUBCLIENT_LL_HANDLE)NULL);
+
+    // act
+    EVENTHUBCLIENT_HANDLE result = EventHubClient_CreateFromSASToken(sasToken);
+    ehMocks.AssertActualAndExpectedCalls();
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+//**Tests_SRS_EVENTHUBCLIENT_29_101: \[**EventHubClient_CreateFromSASToken shall pass the eventHubSasToken argument to EventHubClient_LL_CreateFromSASToken.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_103: \[**Upon Success of EventHubClient_LL_CreateFromSASToken, EventHubClient_CreateFromSASToken shall allocate the internal structures as required by this module.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_104: \[**Upon Success of EventHubClient_LL_CreateFromSASToken, EventHubClient_CreateFromSASToken shall initialize a lock using API Lock_Init.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_105: \[**Upon Success EventHubClient_CreateFromSASToken shall return the EVENTHUBCLIENT_HANDLE.**\]**
+TEST_FUNCTION(EventHubClient_CreateFromSASToken_Succeeds)
+{
+    // arrange
+    CEventHubClientMocks ehMocks;
+    const char sasToken[] = "Test SAS Token String";
+
+    ehMocks.ResetAllCalls();
+    STRICT_EXPECTED_CALL(ehMocks, EventHubClient_LL_CreateFromSASToken(sasToken));
+    STRICT_EXPECTED_CALL(ehMocks, Lock_Init());
+    EXPECTED_CALL(ehMocks, gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    EVENTHUBCLIENT_HANDLE result = EventHubClient_CreateFromSASToken(sasToken);
+
+    // assert
+    ASSERT_IS_NOT_NULL(result);
+    ehMocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    EventHubClient_Destroy(result);
+}
+
+//**Tests_SRS_EVENTHUBCLIENT_29_101: \[**EventHubClient_CreateFromSASToken shall pass the eventHubSasToken argument to EventHubClient_LL_CreateFromSASToken.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_102: \[**EventHubClient_CreateFromSASToken shall return a NULL value if EventHubClient_LL_CreateFromSASToken returns NULL.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_103: \[**Upon Success of EventHubClient_LL_CreateFromSASToken, EventHubClient_CreateFromSASToken shall allocate the internal structures as required by this module.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_104: \[**Upon Success of EventHubClient_LL_CreateFromSASToken, EventHubClient_CreateFromSASToken shall initialize a lock using API Lock_Init.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_106: \[**Upon Failure EventHubClient_CreateFromSASToken shall return NULL and free any allocations as needed.**\]**
+TEST_FUNCTION(EventHubClient_CreateFromSASToken_Lock_Init_Fails)
+{
+    // arrange
+    CEventHubClientMocks ehMocks;
+    const char sasToken[] = "Test SAS Token String";
+
+    STRICT_EXPECTED_CALL(ehMocks, EventHubClient_LL_CreateFromSASToken(sasToken));
+    STRICT_EXPECTED_CALL(ehMocks, Lock_Init());
+    EXPECTED_CALL(ehMocks, gballoc_malloc(0));
+    EXPECTED_CALL(ehMocks, gballoc_free(0));
+    STRICT_EXPECTED_CALL(ehMocks, EventHubClient_LL_Destroy(TEST_EVENTCLIENT_LL_HANDLE));
+    g_lockInitFail = true;
+
+    // act
+    EVENTHUBCLIENT_HANDLE result = EventHubClient_CreateFromSASToken(sasToken);
+    ehMocks.AssertActualAndExpectedCalls();
+
+    // assert
+    ASSERT_IS_NULL(result);
+
+    // cleanup
+    EventHubClient_Destroy(result);
+}
+
+//**Tests_SRS_EVENTHUBCLIENT_29_201: \[**EventHubClient_RefreshSASTokenAsync shall return EVENTHUBCLIENT_INVALID_ARG immediately if eventHubHandle or sasToken is NULL.**\]**
+TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_NULLParam_eventHubHandle)
+{
+    const char sasToken[] = "Test String";
+
+    // arrange
+
+    // act
+    EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(NULL, sasToken);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_INVALID_ARG, result, "Failed Return Value Test");
+
+    // cleanup
+}
+
+//**Tests_SRS_EVENTHUBCLIENT_29_201: \[**EventHubClient_RefreshSASTokenAsync shall return EVENTHUBCLIENT_INVALID_ARG immediately if eventHubHandle or sasToken is NULL.**\]**
+TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_NULLParam_eventHubSasToken)
+{
+    CEventHubClientMocks ehMocks;
+    const char sasToken[] = "Test String";
+
+    // arrange
+    EVENTHUBCLIENT_HANDLE h = EventHubClient_CreateFromSASToken(sasToken);
+    ehMocks.ResetAllCalls();
+
+    // act
+    EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(h, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_INVALID_ARG, result, "Failed Return Value Test");
+    ehMocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    EventHubClient_Destroy(h);
+}
+
+//**Tests_SRS_EVENTHUBCLIENT_29_202: \[**EventHubClient_RefreshSASTokenAsync shall Lock the EVENTHUBCLIENT_STRUCT lockInfo using API Lock.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_203: \[**EventHubClient_RefreshSASTokenAsync shall call EventHubClient_LL_RefreshSASTokenAsync and pass the  EVENTHUBCLIENT_LL_HANDLE and the sasToken.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_204: \[**EventHubClient_RefreshSASTokenAsync shall unlock the EVENTHUBCLIENT_STRUCT lockInfo using API Unlock.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_205: \[**EventHubClient_RefreshSASTokenAsync shall return the result of the EventHubClient_LL_RefreshSASTokenAsync.**\]**
+TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_Succeeds)
+{
+    // arrange
+    CEventHubClientMocks ehMocks;
+    const char sasToken[] = "Test SAS Token String";
+
+    EVENTHUBCLIENT_HANDLE h = EventHubClient_CreateFromSASToken(sasToken);
+
+    ehMocks.ResetAllCalls();
+    EXPECTED_CALL(ehMocks, Lock(IGNORED_PTR_ARG));
+    EXPECTED_CALL(ehMocks, EventHubClient_LL_RefreshSASTokenAsync(IGNORED_PTR_ARG, sasToken));
+    EXPECTED_CALL(ehMocks, Unlock(IGNORED_PTR_ARG));
+
+    // act
+    EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(h, sasToken);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_OK, result, "Failed Return Value Test");
+    ehMocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    EventHubClient_Destroy(h);
+}
+
+//**Tests_SRS_EVENTHUBCLIENT_29_202: \[**EventHubClient_RefreshSASTokenAsync shall Lock the EVENTHUBCLIENT_STRUCT lockInfo using API Lock.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_203: \[**EventHubClient_RefreshSASTokenAsync shall call EventHubClient_LL_RefreshSASTokenAsync and pass the  EVENTHUBCLIENT_LL_HANDLE and the sasToken.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_204: \[**EventHubClient_RefreshSASTokenAsync shall unlock the EVENTHUBCLIENT_STRUCT lockInfo using API Unlock.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_206: \[**EventHubClient_RefreshSASTokenAsync shall return EVENTHUBCLIENT_ERROR for any errors encountered.**\]**
+TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_Lock_Fails)
+{
+    // arrange
+    CEventHubClientMocks ehMocks;
+    const char sasToken[] = "Test SAS Token String";
+
+    EVENTHUBCLIENT_HANDLE h = EventHubClient_CreateFromSASToken(sasToken);
+
+    ehMocks.ResetAllCalls();
+
+    g_whenShalllock_fail = 1;
+    EXPECTED_CALL(ehMocks, Lock(IGNORED_PTR_ARG));
+
+    // act
+    EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(h, sasToken);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_ERROR, result, "Failed Return Value Test");
+    ehMocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    EventHubClient_Destroy(h);
+}
+
+//**Tests_SRS_EVENTHUBCLIENT_29_202: \[**EventHubClient_RefreshSASTokenAsync shall Lock the EVENTHUBCLIENT_STRUCT lockInfo using API Lock.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_203: \[**EventHubClient_RefreshSASTokenAsync shall call EventHubClient_LL_RefreshSASTokenAsync and pass the  EVENTHUBCLIENT_LL_HANDLE and the sasToken.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_204: \[**EventHubClient_RefreshSASTokenAsync shall unlock the EVENTHUBCLIENT_STRUCT lockInfo using API Unlock.**\]**
+//**Tests_SRS_EVENTHUBCLIENT_29_206: \[**EventHubClient_RefreshSASTokenAsync shall return EVENTHUBCLIENT_ERROR for any errors encountered.**\]**
+TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_Refresh_Fails)
+{
+    // arrange
+    CEventHubClientMocks ehMocks;
+    const char sasToken[] = "Test SAS Token String";
+
+    EVENTHUBCLIENT_HANDLE h = EventHubClient_CreateFromSASToken(sasToken);
+
+    ehMocks.ResetAllCalls();
+    EXPECTED_CALL(ehMocks, Lock(IGNORED_PTR_ARG));
+    EXPECTED_CALL(ehMocks, EventHubClient_LL_RefreshSASTokenAsync(IGNORED_PTR_ARG, sasToken)).SetReturn(EVENTHUBCLIENT_ERROR);
+    EXPECTED_CALL(ehMocks, Unlock(IGNORED_PTR_ARG));
+
+    // act
+    EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(h, sasToken);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_ERROR, result, "Failed Return Value Test");
+    ehMocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    EventHubClient_Destroy(h);
+}
+
 /*** EventHubClient_Destroy ***/
 /* Tests_SRS_EVENTHUBCLIENT_03_018: [If the eventHubHandle is NULL, EventHubClient_Destroy shall not do anything.] */
 TEST_FUNCTION(EventHubClient_Destroy_with_NULL_eventHubHandle_Does_Nothing)
@@ -515,6 +751,56 @@ TEST_FUNCTION(EventHubClient_Destroy_with_NULL_eventHubHandle_Does_Nothing)
 
     // assert
     // Implicit
+}
+
+/* Tests_SRS_EVENTHUBCLIENT_03_019: [EventHubClient_Destroy shall terminate the usage of this EventHubClient specified by the eventHubHandle and cleanup all associated resources.] */
+/* Tests_SRS_EVENTHUBCLIENT_03_020: [EventHubClient_Destroy shall call EventHubClient_LL_Destroy with the lower level handle.] */
+TEST_FUNCTION(EventHubClient_Destroy_Success)
+{
+    // arrange
+    CEventHubClientMocks ehMocks;
+
+    EVENTHUBCLIENT_HANDLE eventHubHandle = EventHubClient_CreateFromConnectionString(CONNECTION_STRING, EVENTHUB_PATH);
+
+    ehMocks.ResetAllCalls();
+
+    EXPECTED_CALL(ehMocks, EventHubClient_LL_Destroy(IGNORED_PTR_ARG));
+    EXPECTED_CALL(ehMocks, Lock_Deinit(IGNORED_PTR_ARG));
+    EXPECTED_CALL(ehMocks, gballoc_free(0));
+
+    // act
+    EventHubClient_Destroy(eventHubHandle);
+
+    // assert
+    ehMocks.AssertActualAndExpectedCalls();
+
+    // cleanup implicit
+}
+
+/* Tests_SRS_EVENTHUBCLIENT_03_019: [EventHubClient_Destroy shall terminate the usage of this EventHubClient specified by the eventHubHandle and cleanup all associated resources.] */
+/* Tests_SRS_EVENTHUBCLIENT_03_020: [EventHubClient_Destroy shall call EventHubClient_LL_Destroy with the lower level handle.] */
+TEST_FUNCTION(EventHubClient_Destroy_With_ThreadJoin_Success)
+{
+    // arrange
+    CEventHubClientMocks ehMocks;
+
+    EVENTHUBCLIENT_HANDLE eventHubHandle = EventHubClient_CreateFromConnectionString(CONNECTION_STRING, EVENTHUB_PATH);
+    (void)EventHubClient_Send(eventHubHandle, TEST_EVENTDATA_HANDLE);
+
+    ehMocks.ResetAllCalls();
+
+    EXPECTED_CALL(ehMocks, ThreadAPI_Join(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(ehMocks, EventHubClient_LL_Destroy(IGNORED_PTR_ARG));
+    EXPECTED_CALL(ehMocks, Lock_Deinit(IGNORED_PTR_ARG));
+    EXPECTED_CALL(ehMocks, gballoc_free(0));
+
+    // act
+    EventHubClient_Destroy(eventHubHandle);
+
+    // assert
+    ehMocks.AssertActualAndExpectedCalls();
+
+    // cleanup implicit
 }
 
 /*** EventHubClient_Send ***/
@@ -766,6 +1052,7 @@ TEST_FUNCTION(EventHubClient_SendAsync_EventHubClient_LL_SendAsync_Fail)
 
 /* Tests_SRS_EVENTHUBCLIENT_07_035: [Create_DoWorkThreadIfNeccesary shall return a nonzero value if any failure is encountered.] */
 /* Tests_SRS_EVENTHUBCLIENT_07_032: [If Create_DoWorkThreadIfNeccesary does not return 0 then Execute_LowerLayerSendAsync shall return a nonzero value.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_022: [EventHubClient_SendAsync shall call into Execute_LowerLayerSendAsync and return EVENTHUBCLIENT_ERROR on a nonzero return value.] */
 TEST_FUNCTION(EventHubClient_SendAsync_ThreadApi_Fail)
 {
     // arrange
@@ -790,7 +1077,6 @@ TEST_FUNCTION(EventHubClient_SendAsync_ThreadApi_Fail)
     EventHubClient_Destroy(eventHubHandle);
 }
 
-/* Tests_SRS_EVENTHUBCLIENT_07_027: [If the threadHandle is not NULL then the CreateThread_And_SendAsync shall return EVENTHUBCLIENT_OK.] */
 /* Tests_SRS_EVENTHUBCLIENT_07_033: [Create_DoWorkThreadIfNeccesary shall set return 0 if threadHandle parameter is not a NULL value.] */
 TEST_FUNCTION(EventHubClient_SendAsync_2nd_Call_Succeeds)
 {
@@ -919,10 +1205,11 @@ TEST_FUNCTION(EventHubClient_SendBatchAsync_EventHandle_Count_Zero_Fail)
     EventHubClient_Destroy(eventHubHandle);
 }
 
-/* Test_SRS_EVENTHUBCLIENT_07_042: [On Success EventHubClient_SendBatchAsync shall return EVENTHUBCLIENT_OK.] */
-/* Test_SRS_EVENTHUBCLIENT_07_043: [Execute_LowerLayerSendBatchAsync shall Lock on the EVENTHUBCLIENT_STRUCT lockInfo to protect calls to Lower Layer and Thread function calls.] */
-/* Test_SRS_EVENTHUBCLIENT_07_045: [Execute_LowerLayerSendAsync shall call into the Create_DoWorkThreadIfNeccesary function to create the DoWork thread.] */
-/* Test_SRS_EVENTHUBCLIENT_07_047: [If Execute_LowerLayerSendAsync is successful then it shall return 0.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_042: [On Success EventHubClient_SendBatchAsync shall return EVENTHUBCLIENT_OK.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_043: [Execute_LowerLayerSendBatchAsync shall Lock on the EVENTHUBCLIENT_STRUCT lockInfo to protect calls to Lower Layer and Thread function calls.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_045: [Execute_LowerLayerSendAsync shall call into the Create_DoWorkThreadIfNeccesary function to create the DoWork thread.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_047: [If Execute_LowerLayerSendAsync is successful then it shall return 0.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_048: [Execute_LowerLayerSendAsync shall call EventHubClient_LL_SendAsync to send data to the Eventhub Endpoint.] */
 TEST_FUNCTION(EventHubClient_SendBatchAsync_Succeed)
 {
     // arrange
@@ -953,7 +1240,10 @@ TEST_FUNCTION(EventHubClient_SendBatchAsync_Succeed)
     EventHubClient_Destroy(eventHubHandle);
 }
 
-/* Test_SRS_EVENTHUBCLIENT_07_043: [Execute_LowerLayerSendBatchAsync shall Lock on the EVENTHUBCLIENT_STRUCT lockInfo to protect calls to Lower Layer and Thread function calls.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_043: [Execute_LowerLayerSendBatchAsync shall Lock on the EVENTHUBCLIENT_STRUCT lockInfo to protect calls to Lower Layer and Thread function calls.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_044: [Execute_LowerLayerSendBatchAsync shall return a nonzero value if it is unable to obtain the lock with the Lock function.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_049: [If the EventHubClient_LL_SendAsync call fails then Execute_LowerLayerSendAsync shall return a nonzero value.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_041: [EventHubClient_SendBatchAsync shall call into Execute_LowerLayerSendBatchAsync and return EVENTHUBCLIENT_ERROR on a nonzero return value.] */
 TEST_FUNCTION(EventHubClient_SendBatchAsync_Lock_Fail)
 {
     // arrange
@@ -982,7 +1272,7 @@ TEST_FUNCTION(EventHubClient_SendBatchAsync_Lock_Fail)
     EventHubClient_Destroy(eventHubHandle);
 }
 
-/* Test_SRS_EVENTHUBCLIENT_07_046: [If Create_DoWorkThreadIfNeccesary does not return 0 then Execute_LowerLayerSendAsync shall return a nonzero value.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_046: [If Create_DoWorkThreadIfNeccesary does not return 0 then Execute_LowerLayerSendAsync shall return a nonzero value.] */
 TEST_FUNCTION(EventHubClient_SendBatchAsync_ThreadApi_Fail)
 {
     // arrange
@@ -1045,7 +1335,7 @@ TEST_FUNCTION(EventHubClient_SendBatchAsync_LL_SendBatchAsync_Fail)
 }
 
 /*** EventHubClient_SendBatch ***/
-/* Test_SRS_EVENTHUBCLIENT_07_050: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_INVALID_ARG if eventHubHandle or eventDataHandle is NULL.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_050: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_INVALID_ARG if eventHubHandle or eventDataHandle is NULL.] */
 TEST_FUNCTION(EventHubClient_SendBatch_EVENTHUBCLIENT_NULLL_Fail)
 {
     // arrange
@@ -1069,7 +1359,7 @@ TEST_FUNCTION(EventHubClient_SendBatch_EVENTHUBCLIENT_NULLL_Fail)
     // cleanup
 }
 
-/* Test_SRS_EVENTHUBCLIENT_07_050: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_INVALID_ARG if eventHubHandle or eventDataHandle is NULL.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_050: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_INVALID_ARG if eventHubHandle or eventDataHandle is NULL.] */
 TEST_FUNCTION(EventHubClient_SendBatch_EVENTHANDLELIST_NULL_Fail)
 {
     // arrange
@@ -1089,7 +1379,7 @@ TEST_FUNCTION(EventHubClient_SendBatch_EVENTHANDLELIST_NULL_Fail)
     EventHubClient_Destroy(eventHubHandle);
 }
 
-/* Test_SRS_EVENTHUBCLIENT_07_050: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_INVALID_ARG if eventHubHandle or eventDataHandle is NULL.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_050: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_INVALID_ARG if eventHubHandle or eventDataHandle is NULL.] */
 TEST_FUNCTION(EventHubClient_SendBatch_Handle_count_zero_Fail)
 {
     // arrange
@@ -1114,9 +1404,9 @@ TEST_FUNCTION(EventHubClient_SendBatch_Handle_count_zero_Fail)
     EventHubClient_Destroy(eventHubHandle);
 }
 
-/* Test_SRS_EVENTHUBCLIENT_07_051: [EventHubClient_SendBatch shall call into the Execute_LowerLayerSendBatchAsync function to send the eventDataHandle parameter to the EventHub.] */
-/* Test_SRS_EVENTHUBCLIENT_07_053: [Upon success of Execute_LowerLayerSendBatchAsync, then EventHubClient_SendBatch shall wait until the EVENTHUB_CALLBACK_STRUCT callbackStatus variable is set to CALLBACK_NOTIFIED.] */
-/* Test_SRS_EVENTHUBCLIENT_07_054: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_OK upon successful completion of the Execute_LowerLayerSendBatchAsync and the callback function.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_051: [EventHubClient_SendBatch shall call into the Execute_LowerLayerSendBatchAsync function to send the eventDataHandle parameter to the EventHub.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_053: [Upon success of Execute_LowerLayerSendBatchAsync, then EventHubClient_SendBatch shall wait until the EVENTHUB_CALLBACK_STRUCT callbackStatus variable is set to CALLBACK_NOTIFIED.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_054: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_OK upon successful completion of the Execute_LowerLayerSendBatchAsync and the callback function.] */
 TEST_FUNCTION(EventHubClient_SendBatch_Succeed)
 {
     // arrange
@@ -1156,7 +1446,7 @@ TEST_FUNCTION(EventHubClient_SendBatch_Succeed)
     EventHubClient_Destroy(eventHubHandle);
 }
 
-/* Test_SRS_EVENTHUBCLIENT_07_052: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_ERROR on any failure that is encountered.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_052: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_ERROR on any failure that is encountered.] */
 TEST_FUNCTION(EventHubClient_SendBatch_LowerLayerSendBatch_Fail)
 {
     // arrange
@@ -1199,7 +1489,7 @@ TEST_FUNCTION(EventHubClient_SendBatch_LowerLayerSendBatch_Fail)
     EventHubClient_Destroy(eventHubHandle);
 }
 
-/* Test_SRS_EVENTHUBCLIENT_07_052: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_ERROR on any failure that is encountered.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_052: [EventHubClient_SendBatch shall return EVENTHUBCLIENT_ERROR on any failure that is encountered.] */
 TEST_FUNCTION(EventHubClient_SendBatch_Confirmation_Result_Fail)
 {
     // arrange
@@ -1240,6 +1530,7 @@ TEST_FUNCTION(EventHubClient_SendBatch_Confirmation_Result_Fail)
     EventHubClient_Destroy(eventHubHandle);
 }
 
+//**Tests_SRS_EVENTHUBCLIENT_07_080: [** If eventHubHandle is NULL EventHubClient_Set_StateChangeCallback shall return EVENTHUBCLIENT_INVALID_ARG. **]**
 TEST_FUNCTION(EventHubClient_SetStateChangeCallback_eventhubclient_NULL_fail)
 {
     // arrange
@@ -1256,6 +1547,9 @@ TEST_FUNCTION(EventHubClient_SetStateChangeCallback_eventhubclient_NULL_fail)
     // cleanup
 }
 
+//**Tests_SRS_EVENTHUBCLIENT_07_081: [** If state_change_cb is non-NULL then EventHubClient_Set_StateChange_Callback shall call state_change_cb when a state changes is encountered. **]**
+//**Tests_SRS_EVENTHUBCLIENT_07_082: [** If state_change_cb is NULL EventHubClient_Set_StateChange_Callback shall no longer call state_change_cb on state changes. **]**
+//**Tests_SRS_EVENTHUBCLIENT_07_083: [** If EventHubClient_Set_StateChange_Callback succeeds it shall return EVENTHUBCLIENT_OK. **]**
 TEST_FUNCTION(EventHubClient_SetStateChangeCallback_Succeeds)
 {
     // arrange
@@ -1278,6 +1572,7 @@ TEST_FUNCTION(EventHubClient_SetStateChangeCallback_Succeeds)
     EventHubClient_Destroy(eventHubHandle);
 }
 
+/* Tests_SRS_EVENTHUBCLIENT_07_056: [If eventHubHandle is NULL EventHubClient_SetErrorCallback shall return EVENTHUBCLIENT_INVALID_ARG. ] */
 TEST_FUNCTION(EventHubClient_SetErrorCallback_eventhubclient_NULL_fail)
 {
     // arrange
@@ -1294,6 +1589,9 @@ TEST_FUNCTION(EventHubClient_SetErrorCallback_eventhubclient_NULL_fail)
     // cleanup
 }
 
+/* Tests_SRS_EVENTHUBCLIENT_07_057: [If error_cb is non-NULL EventHubClient_SetErrorCallback shall execute the error_cb on failures with a EVENTHUBCLIENT_FAILURE_RESULT.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_058: [If error_cb is NULL EventHubClient_SetErrorCallback shall no longer call error_cb on failure.] */
+/* Tests_SRS_EVENTHUBCLIENT_07_059: [If EventHubClient_SetErrorCallback succeeds it shall return EVENTHUBCLIENT_OK.] */
 TEST_FUNCTION(EventHubClient_SetErrorCallback_Succeeds)
 {
     // arrange
@@ -1316,6 +1614,7 @@ TEST_FUNCTION(EventHubClient_SetErrorCallback_Succeeds)
     EventHubClient_Destroy(eventHubHandle);
 }
 
+/* Tests_SRS_EVENTHUBCLIENT_07_061: [If eventHubClientLLHandle is NULL EventHubClient_SetLogTrace shall do nothing.] */
 TEST_FUNCTION(EventHubClient_SetLogTrace_EventHubClient_NULL_fails)
 {
     // arrange
@@ -1330,6 +1629,7 @@ TEST_FUNCTION(EventHubClient_SetLogTrace_EventHubClient_NULL_fails)
     //cleanup
 }
 
+/* Tests_SRS_EVENTHUBCLIENT_07_060: [If eventHubClientLLHandle is non-NULL EventHubClient_SetLogTrace shall call the uAmqp trace function with the log_trace_on.] */
 TEST_FUNCTION(EventHubClient_SetLogTrace_succeed)
 {
     // arrange

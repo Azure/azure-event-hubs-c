@@ -25,6 +25,13 @@ extern EVENTHUBRECEIVER_HANDLE EventHubReceiver_Create
     const char* partitionId
 );
 
+MOCKABLE_FUNCTION(, EVENTHUBRECEIVER_HANDLE, EventHubReceiver_CreateFromSASToken, const char*, eventHubSasToken);
+
+MOCKABLE_FUNCTION(, EVENTHUBRECEIVER_RESULT, EventHubReceiver_LL_RefreshSASTokenAsync,
+    EVENTHUBRECEIVER_LL_HANDLE, eventHubReceiverLLHandle,
+    const char*, eventHubSasToken
+);
+
 extern void EventHubReceiver_Destroy(EVENTHUBRECEIVER_HANDLE eventHubReceiverHandle);
 
 extern EVENTHUBRECEIVER_RESULT EventHubReceiver_ReceiveFromStartTimestampAsync
@@ -79,6 +86,35 @@ extern EVENTHUBRECEIVER_HANDLE EventHubReceiver_Create
 **SRS_EVENTHUBRECEIVER_29_006: \[**`EventHubReceiver_Create` shall initialize a DLIST by calling DList_InitializeListHead for queuing callbacks resulting from the invocation of `EventHubReceiver_LL_DoWork` from the `EHR_AsyncWorkLoopThreadEntry` workloop thread. **\]**
 **SRS_EVENTHUBRECEIVER_29_004: \[**Upon Success `EventHubReceiver_Create` shall return the EVENTHUBRECEIVER_HANDLE.**\]**
 **SRS_EVENTHUBRECEIVER_29_005: \[**Upon Failure `EventHubReceiver_Create` shall return NULL.**\]**
+**SRS_EVENTHUBRECEIVER_29_007: \[**`EventHubReceiver_Create` shall initialize a LOCK_HANDLE by calling API Lock_Init().**\]**
+
+### EventHubReceiver_CreateFromSASToken
+```c
+MOCKABLE_FUNCTION(, EVENTHUBRECEIVER_HANDLE, EventHubReceiver_CreateFromSASToken, const char*, eventHubSasToken);
+```
+
+**SRS_EVENTHUBRECEIVER_29_101: \[**`EventHubReceiver_CreateFromSASToken` shall pass the eventHubSasToken argument to `EventHubReceiver_LL_CreateFromSASToken`.**\]**
+**SRS_EVENTHUBRECEIVER_29_102: \[**`EventHubReceiver_CreateFromSASToken` shall return a NULL value if `EventHubReceiver_LL_CreateFromSASToken` returns NULL.**\]**
+**SRS_EVENTHUBRECEIVER_29_103: \[**Upon Success of `EventHubReceiver_LL_CreateFromSASToken`, `EventHubReceiver_CreateFromSASToken` shall allocate the internal structures as required by this module.**\]**
+**SRS_EVENTHUBRECEIVER_29_106: \[**`EventHubReceiver_CreateFromSASToken` shall initialize a DLIST by calling DList_InitializeListHead for queuing callbacks resulting from the invocation of `EventHubReceiver_LL_DoWork` from the `EHR_AsyncWorkLoopThreadEntry` workloop thread. **\]**
+**SRS_EVENTHUBRECEIVER_29_104: \[**Upon Success `EventHubReceiver_CreateFromSASToken` shall return the EVENTHUBRECEIVER_HANDLE.**\]**
+**SRS_EVENTHUBRECEIVER_29_105: \[**Upon Failure `EventHubReceiver_CreateFromSASToken` shall return NULL.**\]**
+**SRS_EVENTHUBRECEIVER_29_107: \[**`EventHubReceiver_CreateFromSASToken` shall initialize a LOCK_HANDLE by calling API Lock_Init().**\]**
+
+### EventHubReceiver_RefreshSASTokenAsync
+```c
+MOCKABLE_FUNCTION(, EVENTHUBRECEIVER_RESULT, EventHubReceiver_RefreshSASTokenAsync,
+    EVENTHUBRECEIVER_HANDLE, eventHubReceiverHandle,
+    const char*, eventHubSasToken
+);
+```
+**SRS_EVENTHUBRECEIVER_29_201: \[**`EventHubReceiver_RefreshSASTokenAsync` shall return EVENTHUBRECEIVER_INVALID_ARG immediately if eventHubReceiverHandle or eventHubSasToken is NULL.**\]**
+**SRS_EVENTHUBRECEIVER_29_202: \[**`EventHubReceiver_RefreshSASTokenAsync` shall lock the EVENTHUBRECEIVER_STRUCT lockInfo using API Lock.**\]**
+**SRS_EVENTHUBRECEIVER_29_203: \[**`EventHubReceiver_RefreshSASTokenAsync` shall call EventHubReceiver_LL_RefreshSASTokenAsync and pass the EVENTHUBRECEIVER_LL_HANDLE and the sasToken.**\]**
+**SRS_EVENTHUBRECEIVER_29_204: \[**`EventHubReceiver_RefreshSASTokenAsync` shall unlock the EVENTHUBRECEIVER_STRUCT lockInfo using API Unlock.**\]**
+**SRS_EVENTHUBRECEIVER_29_205: \[**`EventHubReceiver_RefreshSASTokenAsync` shall return the result of the EventHubReceiver_LL_RefreshSASTokenAsync.**\]**
+**SRS_EVENTHUBRECEIVER_29_206: \[**`EventHubReceiver_RefreshSASTokenAsync` shall return EVENTHUBRECEIVER_ERROR for any errors encountered.**\]**
+
 
 ### EventHubReceiver_Destroy
 ```c
@@ -142,7 +178,7 @@ static void EHR_OnAsyncEndCB(EVENTHUBRECEIVER_RESULT result, void* context);
 **SRS_EVENTHUBRECEIVER_29_046: \[**The deferred callbacks shall save off the callback result. **\]**
 **SRS_EVENTHUBRECEIVER_29_047: \[**`EHR_OnAsyncReceiveCB` shall clone the event data using API EventData_Clone. **\]**
 **SRS_EVENTHUBRECEIVER_29_048: \[**The deferred callbacks shall enqueue the dispatch by calling DList_InsertTailList**\]**
-**SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, error messages shall be logged and any allocated memory or data structures shall be deallocated.**\]**
+**SRS_EVENTHUBRECEIVER_29_049: \[**Upon failures, error messages shall be logged and any allocated memory or data structures shall be deallocated.**\]**
 
 ### EventHubReceiver_Set_ConnectionTracing
 ```c

@@ -1,17 +1,18 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
+
+#include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/vector.h"
 
 #include "eventdata.h"
-#include "azure_c_shared_utility/xlogging.h"
-#include "azure_c_shared_utility/buffer_.h"
-#include "azure_c_shared_utility/strings.h"
-#include "azure_c_shared_utility/vector.h"
 
 DEFINE_ENUM_STRINGS(EVENTDATA_RESULT, EVENTDATA_ENUM_VALUES)
 
@@ -76,7 +77,7 @@ EVENTDATA_HANDLE EventData_CreateWithNewMemory(const unsigned char* data, size_t
         result = NULL;
         LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
     }
-    /* SRS_EVENTDATA_03_008: [EventData_CreateWithNewMemory shall allocate new memory to store the specified data.] */
+    /* Codes_SRS_EVENTDATA_03_008: [EventData_CreateWithNewMemory shall allocate new memory to store the specified data.] */
     else if ((eventData->buffer = BUFFER_new()) == NULL)
     {
         free(eventData);
@@ -281,6 +282,7 @@ EVENTDATA_HANDLE EventData_Clone(EVENTDATA_HANDLE eventDataHandle)
                 result = NULL;
                 LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
             }
+            /* Codes_SRS_EVENTDATA_07_054: [EventData_Clone shall make use of Map_Clone to clone the properties if it is not set.] */
             else if ( (result->properties = Map_Clone(srcData->properties)) == NULL)
             {
                 /* Codes_SRS_EVENTDATA_07_053: [EventData_Clone shall return NULL if it fails for any reason.] */
@@ -298,7 +300,7 @@ EVENTDATA_HANDLE EventData_Clone(EVENTDATA_HANDLE eventDataHandle)
 MAP_HANDLE EventData_Properties(EVENTDATA_HANDLE eventDataHandle)
 {
     MAP_HANDLE result;
-    /* SRS_EVENTDATA_07_034: [if eventDataHandle is NULL then EventData_Properties shall return NULL.] */
+    /* Codes_SRS_EVENTDATA_07_034: [if eventDataHandle is NULL then EventData_Properties shall return NULL.] */
     if (eventDataHandle == NULL)
     {
         LogError("invalid arg (NULL) passed to EventData_Properties");
@@ -306,7 +308,7 @@ MAP_HANDLE EventData_Properties(EVENTDATA_HANDLE eventDataHandle)
     }
     else
     {
-        /* SRS_EVENTDATA_07_035: [Otherwise, for any non-NULL eventDataHandle it shall return a non-NULL MAP_HANDLE.] */
+        /* Codes_SRS_EVENTDATA_07_035: [Otherwise, for any non-NULL eventDataHandle it shall return a non-NULL MAP_HANDLE.] */
         EVENT_DATA* handleData = (EVENT_DATA*)eventDataHandle;
         result = handleData->properties;
     }
@@ -319,14 +321,14 @@ EVENTDATA_RESULT EventData_SetEnqueuedTimestampUTCInMs(EVENTDATA_HANDLE eventDat
 
     if (eventDataHandle == NULL)
     {
-        //**SRS_EVENTDATA_29_060: \[**`EventData_SetEnqueuedTimestampUTCInMs` shall return EVENTDATA_INVALID_ARG if eventDataHandle parameter is NULL.**\]**
+        //**Codes_SRS_EVENTDATA_29_060: \[**`EventData_SetEnqueuedTimestampUTCInMs` shall return EVENTDATA_INVALID_ARG if eventDataHandle parameter is NULL.**\]**
         LogError("invalid arg (NULL) passed to EventData_SetEnqueuedTimestampUTCInMS\r\n");
         result = EVENTDATA_INVALID_ARG;
     }
     else
     {
-        //**SRS_EVENTDATA_29_061: \[**On success `EventData_SetEnqueuedTimestampUTCInMs` shall store the timestamp parameter in the EVENTDATA_HANDLE data structure.**\]**
-        //**SRS_EVENTDATA_29_062: \[**On Success `EventData_SetEnqueuedTimestampUTCInMs` shall return EVENTDATA_OK.**\]**
+        //**Codes_SRS_EVENTDATA_29_061: \[**On success `EventData_SetEnqueuedTimestampUTCInMs` shall store the timestamp parameter in the EVENTDATA_HANDLE data structure.**\]**
+        //**Codes_SRS_EVENTDATA_29_062: \[**On Success `EventData_SetEnqueuedTimestampUTCInMs` shall return EVENTDATA_OK.**\]**
         EVENT_DATA* handleData = (EVENT_DATA*)eventDataHandle;
         handleData->enqueuedTimestampUTC = timestampInMs;
         result = EVENTDATA_OK;
@@ -340,13 +342,13 @@ uint64_t EventData_GetEnqueuedTimestampUTCInMs(EVENTDATA_HANDLE eventDataHandle)
 
     if (eventDataHandle == NULL)
     {
-        //**SRS_EVENTDATA_07_050: \[**`EventData_GetEnqueuedTimestampUTCInMs` shall return 0 if the eventDataHandle parameter is NULL.**\]**
+        //**Codes_SRS_EVENTDATA_07_070: \[**`EventData_GetEnqueuedTimestampUTCInMs` shall return 0 if the eventDataHandle parameter is NULL.**\]**
         LogError("invalid arg (NULL) passed to EventData_GetEnqueuedTimestampUTCInMS\r\n");
         result = 0;
     }
     else
     {
-        //**SRS_EVENTDATA_07_051: \[**If eventDataHandle is not null, `EventData_GetEnqueuedTimestampUTCInMs` shall return the timestamp value stored in the EVENTDATA_HANDLE.**\]**
+        //**Codes_SRS_EVENTDATA_07_071: \[**If eventDataHandle is not null, `EventData_GetEnqueuedTimestampUTCInMs` shall return the timestamp value stored in the EVENTDATA_HANDLE.**\]**
         EVENT_DATA* handleData = (EVENT_DATA*)eventDataHandle;
         result = handleData->enqueuedTimestampUTC;
     }

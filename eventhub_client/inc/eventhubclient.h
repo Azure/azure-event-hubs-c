@@ -4,23 +4,22 @@
 #ifndef EVENTHUBCLIENT_H
 #define EVENTHUBCLIENT_H
 
-#ifdef __cplusplus
-#include <cstddef>
-extern "C"
-{
-#else
-#include <stddef.h>
-#endif
-
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
-#include "eventdata.h"
+
 #include "eventhubclient_ll.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 typedef struct EVENTHUBCLIENT_STRUCT_TAG* EVENTHUBCLIENT_HANDLE;
 
 MOCKABLE_FUNCTION(, const char*, EventHubClient_GetVersionString);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_HANDLE, EventHubClient_CreateFromConnectionString, const char*, connectionString, const char*, eventHubPath);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_HANDLE, EventHubClient_CreateFromSASToken, const char*, eventHubSasToken);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_RefreshSASTokenAsync, EVENTHUBCLIENT_HANDLE, eventHubHandle, const char*, eventHubSasToken);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_Send, EVENTHUBCLIENT_HANDLE, eventHubHandle, EVENTDATA_HANDLE, eventDataHandle);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_SendAsync, EVENTHUBCLIENT_HANDLE, eventHubHandle, EVENTDATA_HANDLE, eventDataHandle, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK, notificationCallback, void*, userContextCallback);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_SendBatch, EVENTHUBCLIENT_HANDLE, eventHubHandle, EVENTDATA_HANDLE, *eventDataList, size_t, count);

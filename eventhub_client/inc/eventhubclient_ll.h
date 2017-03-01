@@ -4,16 +4,20 @@
 #ifndef EVENTHUBCLIENT_LL_H
 #define EVENTHUBCLIENT_LL_H
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
+#include <stddef.h>
+#endif
+
+#include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
 #include "eventdata.h"
 
 #ifdef __cplusplus
-#include <cstddef>
 extern "C"
 {
-#else
-#include <stddef.h>
 #endif
 
 #define EVENTHUBCLIENT_RESULT_VALUES            \
@@ -45,6 +49,8 @@ DEFINE_ENUM(EVENTHUBCLIENT_CONFIRMATION_RESULT, EVENTHUBCLIENT_CONFIRMATION_RESU
 DEFINE_ENUM(EVENTHUBCLIENT_STATE, EVENTHUBCLIENT_STATE_VALUES);
 
 #define EVENTHUBCLIENT_ERROR_RESULT_VALUES          \
+    EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE,           \
+    EVENTHUBCLIENT_SASTOKEN_AUTH_TIMEOUT,           \
     EVENTHUBCLIENT_SOCKET_SEND_FAILURE              \
 
 DEFINE_ENUM(EVENTHUBCLIENT_ERROR_RESULT, EVENTHUBCLIENT_ERROR_RESULT_VALUES);
@@ -57,7 +63,8 @@ typedef void(*EVENTHUB_CLIENT_ERROR_CALLBACK)(EVENTHUBCLIENT_ERROR_RESULT eventh
 typedef void(*EVENTHUB_CLIENT_TIMEOUT_CALLBACK)(EVENTDATA_HANDLE eventDataHandle, void* userContextCallback);
 
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_LL_HANDLE, EventHubClient_LL_CreateFromConnectionString, const char*, connectionString, const char*, eventHubPath);
-
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_LL_HANDLE, EventHubClient_LL_CreateFromSASToken, const char*, eventHubSasToken);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_RefreshSASTokenAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, const char*, eventHubSasToken);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_SendAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, EVENTDATA_HANDLE, eventDataHandle, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK, sendAsyncConfirmationCallback, void*, userContextCallback);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_SendBatchAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, EVENTDATA_HANDLE*, eventDataList, size_t, count, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK, sendAsyncConfirmationCallback, void*, userContextCallback);
 

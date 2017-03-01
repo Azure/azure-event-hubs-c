@@ -66,7 +66,7 @@ extern EVENTDATA_HANDLE EventData_Clone(EVENTDATA_HANDLE eventDataHandle);
 **SRS_EVENTDATA_07_051: \[**EventData_Clone shall make use of BUFFER_Clone to clone the EVENT_DATA buffer.**\]** 
 **SRS_EVENTDATA_07_052: \[**EventData_Clone shall make use of STRING_Clone to clone the partitionKey if it is not set.**\]** 
 **SRS_EVENTDATA_07_053: \[**EventData_Clone shall return NULL if it fails for any reason.**\]** 
-**SRS_EVENTDATA_07_054: \[**EventData_Clone shall iterate the EVENTDATA VECTOR variable and clone each element.**\]** 
+**SRS_EVENTDATA_07_054: \[**EventData_Clone shall make use of Map_Clone to clone the properties if it is not set.**\]** 
 
 ###EventData_Destroy
 
@@ -114,8 +114,8 @@ extern MAP_HANDLE EventData_Properties(EVENTDATA_HANDLE eventDataHandle);
 extern uint64_t EventData_GetEnqueuedTimestampUTCInMs(EVENTDATA_HANDLE eventDataHandle);
 ```
 
-**SRS_EVENTDATA_07_050: \[**`EventData_GetEnqueuedTimestampUTCInMs` shall return 0 if the eventDataHandle parameter is NULL.**\]**
-**SRS_EVENTDATA_07_051: \[**If eventDataHandle is not null, `EventData_GetEnqueuedTimestampUTCInMs` shall return the timestamp value stored in the EVENTDATA_HANDLE.**\]**
+**SRS_EVENTDATA_07_070: \[**`EventData_GetEnqueuedTimestampUTCInMs` shall return 0 if the eventDataHandle parameter is NULL.**\]**
+**SRS_EVENTDATA_07_071: \[**If eventDataHandle is not null, `EventData_GetEnqueuedTimestampUTCInMs` shall return the timestamp value stored in the EVENTDATA_HANDLE.**\]**
 
 ###EventData_SetEnqueuedTimestampUTCInMs
 

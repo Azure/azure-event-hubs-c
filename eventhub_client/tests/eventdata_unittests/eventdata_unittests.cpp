@@ -2,9 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <cstdlib>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
+#include <cstdint>
+#include <cstddef>
 
 #include "testrunnerswitcher.h"
 #include "micromock.h"
@@ -15,6 +14,7 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/vector.h"
+#include "azure_c_shared_utility/vector_types_internal.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/map.h"
 
@@ -538,6 +538,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 
 /* EventData_CreateWithNewMemory */
 
+/* Tests_SRS_EVENTDATA_03_008: [EventData_CreateWithNewMemory shall allocate new memory to store the specified data.] */
 /* Tests_SRS_EVENTDATA_03_003: [EventData_Create shall return a NULL value if length is not zero and data is NULL.] */
 /* Tests_SRS_EVENTDATA_03_002: [EventData_CreateWithNewMemory shall provide a none-NULL handle encapsulating the storage of the data provided.] */
 TEST_FUNCTION(EventData_CreateWithNewMemory_with_zero_length_and_null_data_Succeeds)
@@ -555,6 +556,7 @@ TEST_FUNCTION(EventData_CreateWithNewMemory_with_zero_length_and_null_data_Succe
     EventData_Destroy(result);
 }
 
+/* Tests_SRS_EVENTDATA_03_008: [EventData_CreateWithNewMemory shall allocate new memory to store the specified data.] */
 /* Tests_SRS_EVENTDATA_03_003: [If data is not NULL and length is zero, EventData_Create shall return a NULL value.]  */
 /* Tests_SRS_EVENTDATA_03_002: [EventData_CreateWithNewMemory shall provide a none-NULL handle encapsulating the storage of the data provided.] */
 TEST_FUNCTION(EventData_CreateWithNewMemory_with_zero_length_and_none_null_data_Succeeds)
@@ -573,6 +575,7 @@ TEST_FUNCTION(EventData_CreateWithNewMemory_with_zero_length_and_none_null_data_
     EventData_Destroy(result);
 }
 
+/* Tests_SRS_EVENTDATA_03_008: [EventData_CreateWithNewMemory shall allocate new memory to store the specified data.] */
 /* Tests_SRS_EVENTDATA_03_003: [EventData_Create shall return a NULL value if length is not zero and data is NULL.] */
 /* Tests_SRS_EVENTDATA_03_002: [EventData_CreateWithNewMemory shall provide a none-NULL handle encapsulating the storage of the data provided.] */
 TEST_FUNCTION(EventData_CreateWithNewMemory_with_none_zero_length_and_none_null_data_Succeeds)
@@ -605,6 +608,7 @@ TEST_FUNCTION(EventData_CreateWithNewMemory_with_none_zero_length_and_null_data_
     ASSERT_IS_NULL(result);
 }
 
+/* Tests_SRS_EVENTDATA_03_008: [EventData_CreateWithNewMemory shall allocate new memory to store the specified data.] */
 /* Tests_SRS_EVENTDATA_03_002: [EventData_CreateWithNewMemory shall provide a none-NULL handle encapsulating the storage of the data provided.] */
 TEST_FUNCTION(EventData_CreateWithNewMemory_with_none_null_data_and_none_matching_length_Succeeds)
 {
@@ -1002,6 +1006,7 @@ TEST_FUNCTION(EventData_GetPartitionKey_SUCCEED)
     EventData_Destroy(eventDataHandle);
 }
 
+/* Tests_SRS_EVENTDATA_07_034: [if eventDataHandle is NULL then EventData_Properties shall return NULL.] */
 TEST_FUNCTION(EventData_Properties_with_NULL_handle_returns_NULL)
 {
     ///arrange
@@ -1065,7 +1070,7 @@ TEST_FUNCTION(EventData_Map_Filter_Succeed)
     EventData_Destroy(eventDataHandle);
 }
 
-//**SRS_EVENTDATA_29_060: \[**`EventData_SetEnqueuedTimestampUTCInMs` shall return EVENTDATA_INVALID_ARG if eventDataHandle parameter is NULL.**\]**
+//**Tests_SRS_EVENTDATA_29_060: \[**`EventData_SetEnqueuedTimestampUTCInMs` shall return EVENTDATA_INVALID_ARG if eventDataHandle parameter is NULL.**\]**
 TEST_FUNCTION(EventData_EventData_SetEnqueuedTimestampUTC_NULL_Param_Handle)
 {
     // arrange
@@ -1083,8 +1088,8 @@ TEST_FUNCTION(EventData_EventData_SetEnqueuedTimestampUTC_NULL_Param_Handle)
     // cleanup
 }
 
-//**SRS_EVENTDATA_29_061: \[**On success `EventData_SetEnqueuedTimestampUTCInMs` shall store the timestamp parameter in the EVENTDATA_HANDLE data structure.**\]**
-//**SRS_EVENTDATA_29_062: \[**On Success `EventData_SetEnqueuedTimestampUTCInMs` shall return EVENTDATA_OK.**\]**
+//**Tests_SRS_EVENTDATA_29_061: \[**On success `EventData_SetEnqueuedTimestampUTCInMs` shall store the timestamp parameter in the EVENTDATA_HANDLE data structure.**\]**
+//**Tests_SRS_EVENTDATA_29_062: \[**On Success `EventData_SetEnqueuedTimestampUTCInMs` shall return EVENTDATA_OK.**\]**
 TEST_FUNCTION(EventData_EventData_SetEnqueuedTimestampUTC_Success)
 {
     // arrange
@@ -1107,7 +1112,7 @@ TEST_FUNCTION(EventData_EventData_SetEnqueuedTimestampUTC_Success)
     EventData_Destroy(eventDataHandle);
 }
 
-//**SRS_EVENTDATA_07_050: \[**`EventData_GetEnqueuedTimestampUTCInMs` shall return 0 if the eventDataHandle parameter is NULL.**\]**
+//**Tests_SRS_EVENTDATA_07_070: \[**`EventData_GetEnqueuedTimestampUTCInMs` shall return 0 if the eventDataHandle parameter is NULL.**\]**
 TEST_FUNCTION(EventData_EventData_GetEnqueuedTimestampUTC_NULL_Param_Handle)
 {
     //arrange
@@ -1125,7 +1130,7 @@ TEST_FUNCTION(EventData_EventData_GetEnqueuedTimestampUTC_NULL_Param_Handle)
     //cleanup
 }
 
-//**SRS_EVENTDATA_07_051: \[**If eventDataHandle is not null, `EventData_GetEnqueuedTimestampUTCInMs` shall return the timestamp value stored in the EVENTDATA_HANDLE.**\]**
+//**Tests_SRS_EVENTDATA_07_071: \[**If eventDataHandle is not null, `EventData_GetEnqueuedTimestampUTCInMs` shall return the timestamp value stored in the EVENTDATA_HANDLE.**\]**
 TEST_FUNCTION(EventData_EventData_GetEnqueuedTimestampUTC_Success)
 {
     // arrange

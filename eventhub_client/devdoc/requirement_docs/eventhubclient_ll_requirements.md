@@ -29,7 +29,8 @@ DEFINE_ENUM(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_RESULT_VALUES);
     EVENTHUBCLIENT_CONFIRMATION_DESTROY,              \
     EVENTHUBCLIENT_CONFIRMATION_EXCEED_MAX_SIZE,      \
     EVENTHUBCLIENT_CONFIRMATION_UNKNOWN,              \
-    EVENTHUBCLIENT_CONFIRMATION_ERROR                 \
+    EVENTHUBCLIENT_CONFIRMATION_ERROR,                \
+    EVENTHUBCLIENT_CONFIRMATION_TIMEOUT               \
 
 DEFINE_ENUM(EVENTHUBCLIENT_CONFIRMATION_RESULT, EVENTHUBCLIENT_CONFIRMATION_RESULT_VALUES);
 
@@ -39,30 +40,37 @@ DEFINE_ENUM(EVENTHUBCLIENT_CONFIRMATION_RESULT, EVENTHUBCLIENT_CONFIRMATION_RESU
 
 DEFINE_ENUM(EVENTHUBCLIENT_STATE, EVENTHUBCLIENT_STATE_VALUES);
 
-#define EVENTHUBCLIENT_FAILURE_RESULT_VALUES       \
-    EVENTHUBCLIENT_SOCKET_SEND_FAILURE             \
+#define EVENTHUBCLIENT_ERROR_RESULT_VALUES          \
+    EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE,           \
+    EVENTHUBCLIENT_SASTOKEN_AUTH_TIMEOUT,           \
+    EVENTHUBCLIENT_SOCKET_SEND_FAILURE              \
 
-DEFINE_ENUM(EVENTHUBCLIENT_FAILURE_RESULT, EVENTHUBCLIENT_FAILURE_RESULT_VALUES);
+DEFINE_ENUM(EVENTHUBCLIENT_ERROR_RESULT, EVENTHUBCLIENT_ERROR_RESULT_VALUES);
 
 typedef struct EVENTHUBCLIENT_LL_TAG* EVENTHUBCLIENT_LL_HANDLE;
 typedef void(*EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK)(EVENTHUBCLIENT_CONFIRMATION_RESULT result, void* userContextCallback);
 
 typedef void(*EVENTHUB_CLIENT_STATECHANGE_CALLBACK)(EVENTHUBCLIENT_STATE eventhub_state, void* userContextCallback);
-typedef void(*EVENTHUB_CLIENT_FAILURE_CALLBACK)(EVENTHUBCLIENT_FAILURE_RESULT eventhub_failure, void* userContextCallback);
+typedef void(*EVENTHUB_CLIENT_ERROR_CALLBACK)(EVENTHUBCLIENT_ERROR_RESULT eventhub_failure, void* userContextCallback);
+typedef void(*EVENTHUB_CLIENT_TIMEOUT_CALLBACK)(EVENTDATA_HANDLE eventDataHandle, void* userContextCallback);
 
-extern EVENTHUBCLIENT_LL_HANDLE EventHubClient_LL_CreateFromConnectionString(const char* connectionString, const char* eventHubPath);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_LL_HANDLE, EventHubClient_LL_CreateFromConnectionString, const char*, connectionString, const char*, eventHubPath);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_LL_HANDLE, EventHubClient_LL_CreateFromSASToken, const char*, eventHubSasToken);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_RefreshSASTokenAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, const char*, eventHubRefreshSasToken);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_SendAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, EVENTDATA_HANDLE, eventDataHandle, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK, sendAsyncConfirmationCallback, void*, userContextCallback);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_SendBatchAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, EVENTDATA_HANDLE*, eventDataList, size_t, count, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK, sendAsyncConfirmationCallback, void*, userContextCallback);
 
-extern EVENTHUBCLIENT_RESULT EventHubClient_LL_SendAsync(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle, EVENTDATA_HANDLE eventDataHandle, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK sendAsyncConfirmationCallback, void* userContextCallback);
-extern EVENTHUBCLIENT_RESULT EventHubClient_LL_SendBatchAsync(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle, EVENTDATA_HANDLE* eventDataList, size_t count, EVENTHUB_CLIENT_SENDASYNC_CONFIRMATION_CALLBACK sendAsyncConfirmationCallback, void* userContextCallback);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_SetStateChangeCallback, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, EVENTHUB_CLIENT_STATECHANGE_CALLBACK, state_change_cb, void*, userContextCallback);
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_SetErrorCallback, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, EVENTHUB_CLIENT_ERROR_CALLBACK, failure_cb, void*, userContextCallback);
 
-extern EVENTHUBCLIENT_RESULT EventHubClient_LL_SetStateChangeCallback(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle, EVENTHUB_CLIENT_STATECHANGE_CALLBACK state_change_cb);
-extern EVENTHUBCLIENT_RESULT EventHubClient_LL_SetErrorCallback(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle, EVENTHUB_CLIENT_FAILURE_CALLBACK failure_cb);
-extern void EventHubClient_LL_SetLogTrace(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle, bool log_trace_on);
-extern void EventHubClient_LL_SetMessageTimeout(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle, size_t timeout_value);
+MOCKABLE_FUNCTION(, void, EventHubClient_LL_SetMessageTimeout, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, size_t, timeout_value);
 
-extern void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle);
+MOCKABLE_FUNCTION(, void, EventHubClient_LL_SetLogTrace, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, bool, log_trace_on);
 
-extern void EventHubClient_LL_Destroy(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle);
+MOCKABLE_FUNCTION(, void, EventHubClient_LL_DoWork, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle);
+
+MOCKABLE_FUNCTION(, void, EventHubClient_LL_Destroy, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle);
+
 ```
 
 ###EventHubClient_LL_CreateFromConnectionString
@@ -86,6 +94,45 @@ Endpoint=sb://[namespace].servicebus.windows.net;SharedAccessKeyName=[keyname];S
 **SRS_EVENTHUBCLIENT_LL_03_003: \[**EventHubClient_LL_CreateFromConnectionString shall return a NULL value if connectionString or eventHubPath is NULL.**\]**
 **SRS_EVENTHUBCLIENT_LL_04_016: \[**EventHubClient_LL_CreateFromConnectionString shall initialize the pending list that will be used to send Events.**\]** 
 **SRS_EVENTHUBCLIENT_LL_03_004: \[**For all other errors, EventHubClient_LL_CreateFromConnectionString shall return NULL.**\]**
+
+
+###EventHubClient_LL_CreateFromSASToken
+```c
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_LL_HANDLE, EventHubClient_LL_CreateFromSASToken, const char*, eventHubSasToken);
+```
+**SRS_EVENTHUBCLIENT_LL_29_300: \[**`EventHubClient_LL_CreateFromSASToken` shall obtain the version string by a call to EventHubClient_GetVersionString.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_301: \[**`EventHubClient_LL_CreateFromSASToken` shall print the version string to standard output.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_302: \[**`EventHubClient_LL_CreateFromSASToken` shall return NULL if eventHubSasToken is NULL.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_303: \[**`EventHubClient_LL_CreateFromSASToken` parse the SAS token to obtain the sasTokenData by calling API EventHubAuthCBS_SASTokenParse and passing eventHubSasToken as argument.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_304: \[**`EventHubClient_LL_CreateFromSASToken` shall fail if EventHubAuthCBS_SASTokenParse return NULL.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_305: \[**`EventHubClient_LL_CreateFromSASToken` shall check if sasTokenData mode is EVENTHUBAUTH_MODE_SENDER, if not, NULL is returned.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_306: \[**`EventHubClient_LL_CreateFromSASToken` shall allocate a new event hub client LL instance.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_307: \[**`EventHubClient_LL_CreateFromSASToken` shall return NULL on a failure and free up any allocations.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_308: \[**`EventHubClient_LL_CreateFromSASToken` shall create a tick counter handle using API tickcounter_create.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_309: \[**`EventHubClient_LL_CreateFromSASToken` shall clone the hostName string using API STRING_Clone.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_310: \[**`EventHubClient_LL_CreateFromSASToken` shall clone the senderPublisherId and eventHubPath strings using API STRING_Clone.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_311: \[**`EventHubClient_LL_CreateFromSASToken` shall initialize sender target address using the eventHub and senderPublisherId with format amqps://{eventhub hostname}/{eventhub name}/publishers/<PUBLISHER_NAME>.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_312: \[**`EventHubClient_LL_CreateFromSASToken` shall initialize connection tracing to false by default.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_313: \[**`EventHubClient_LL_CreateFromSASToken` shall return the allocated event hub client LL instance on success.**\]**
+
+
+###EventHubClient_LL_RefreshSASTokenAsync
+```c
+MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_LL_RefreshSASTokenAsync, EVENTHUBCLIENT_LL_HANDLE, eventHubClientLLHandle, const char*, eventHubSasToken);
+```
+**SRS_EVENTHUBCLIENT_LL_29_401: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall return EVENTHUBCLIENT_INVALID_ARG if eventHubClientLLHandle or eventHubSasToken is NULL.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_402: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall return EVENTHUBCLIENT_ERROR if eventHubClientLLHandle credential is not EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_403: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall return EVENTHUBCLIENT_ERROR if AMQP stack is not fully initialized.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_404: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall check if any prior refresh ext SAS token was applied, if so EVENTHUBCLIENT_ERROR shall be returned.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_405: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall invoke EventHubAuthCBS_SASTokenParse to parse eventHubRefreshSasToken.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_406: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall return EVENTHUBCLIENT_ERROR if EventHubAuthCBS_SASTokenParse returns NULL.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_407: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall validate if the eventHubRefreshSasToken's URI is exactly the same as the one used when `EventHubClient_LL_CreateFromSASToken` was invoked by using API STRING_compare.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_408: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall return EVENTHUBCLIENT_ERROR if eventHubRefreshSasToken is not compatible.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_409: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall construct a new STRING to hold the ext SAS token using API STRING_construct with parameter eventHubSasToken for the refresh operation to be done in `EventHubClient_LL_DoWork`.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_410: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall return EVENTHUBCLIENT_OK on success.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_411: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall return EVENTHUBCLIENT_ERROR on failure.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_412: \[**`EventHubClient_LL_RefreshSASTokenAsync` shall invoke EventHubAuthCBS_Config_Destroy to free up the parsed configuration of eventHubRefreshSasToken if required.**\]**
+
 
 ###EventHubClient_LL_SendAsync
 
@@ -120,13 +167,13 @@ extern void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHa
 ```
 
 #### General
-**SRS_EVENTHUBCLIENT_LL_29_200: \[**`EventHubClient_LL_DoWork` shall initialize and bring up the uAMQP stack if it has not already brought up**\]**
+**SRS_EVENTHUBCLIENT_LL_04_018: \[**if parameter eventHubClientLLHandle is NULL EventHubClient_LL_DoWork shall immediately return.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_079: \[**`EventHubClient_LL_DoWork` shall initialize and bring up the uAMQP stack if it has not already been brought up**\]**
 **SRS_EVENTHUBCLIENT_LL_29_201: \[**`EventHubClient_LL_DoWork` shall perform SAS token handling. **\]**
-**SRS_EVENTHUBCLIENT_LL_29_202: \[**`EventHubClient_LL_DoWork` shall initialize the uAMQP Message Sender stack if it has not already brought up. **\]**  
+**SRS_EVENTHUBCLIENT_LL_29_202: \[**`EventHubClient_LL_DoWork` shall initialize the uAMQP Message Sender stack if it has not already brought up. **\]**
 **SRS_EVENTHUBCLIENT_LL_29_203: \[**`EventHubClient_LL_DoWork` shall perform message send handling **\]** 
 
-#### uAMQP Stack Initialize
-**SRS_EVENTHUBCLIENT_LL_01_079: \[**EventHubClient_LL_DoWork shall bring up the uAMQP stack if it has not already brought up:**\]** 
+#### uAMQP Stack Initialize 
 **SRS_EVENTHUBCLIENT_LL_01_004: \[**A SASL mechanism shall be created by calling saslmechanism_create.**\]**
 **SRS_EVENTHUBCLIENT_LL_01_005: \[**The interface passed to saslmechanism_create shall be obtained by calling saslmssbcbs_get_interface.**\]**
 **SRS_EVENTHUBCLIENT_LL_01_006: \[**If saslmssbcbs_get_interface fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]**
@@ -147,26 +194,31 @@ extern void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHa
 **SRS_EVENTHUBCLIENT_LL_01_028: \[**An AMQP session shall be created by calling session_create and passing as arguments the connection handle, and NULL for the new link handler and context.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_029: \[**If session_create fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_030: \[**The outgoing window for the session shall be set to 10 by calling session_set_outgoing_window.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_031: \[**If setting the outgoing window fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
 
-**SRS_EVENTHUBCLIENT_LL_29_120: \[**Obtain the underlying C string buffer of STRING_HANDLEs host name, eventhub path, shared access key name, shared access key by calling `STRING_c_str`.**\]**
-**SRS_EVENTHUBCLIENT_LL_29_121: \[**Initialize a `EVENTHUBAUTH_CBS_CONFIG` structure params hostName, eventHubPath, sharedAccessKeyName, sharedAccessKey using the C string buffer values obtained above. Set senderPublisherId to "sender". Set receiverConsumerGroup, receiverPartitionId to NULL, sasTokenAuthFailureTimeoutInSecs to the client wait timeout value, sasTokenExpirationTimeInSec to 3600, sasTokenRefreshPeriodInSecs to 4800, mode as EVENTHUBAUTH_MODE_SENDER and credential as EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO.**\]**
-**SRS_EVENTHUBCLIENT_LL_29_121: \[**`EventHubAuthCBS_Create` shall be invoked using the config structure reference and the session handle created earlier.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_110: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, initialize a `EVENTHUBAUTH_CBS_CONFIG` structure params hostName, eventHubPath, sharedAccessKeyName, sharedAccessKey using the values set previously. Set senderPublisherId to "sender". Set receiverConsumerGroup, receiverPartitionId to NULL, sasTokenAuthFailureTimeoutInSecs to the client wait timeout value, sasTokenExpirationTimeInSec to 3600, sasTokenRefreshPeriodInSecs to 4800, mode as EVENTHUBAUTH_MODE_SENDER and credential as EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_111: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT, use the `EVENTHUBAUTH_CBS_CONFIG` obtained earlier from parsing the SAS token in EventHubAuthCBS_Create.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_113: \[**`EventHubAuthCBS_Create` shall be invoked using the config structure reference and the session handle created earlier.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_114: \[**If `EventHubAuthCBS_Create` returns NULL, a log message will be logged and the function returns immediately.**\]**
+
+**SRS_EVENTHUBCLIENT_LL_29_115: \[**`EventHubClient_LL_DoWork` shall invoke connection_set_trace using the current value of the trace on boolean.**\]**
 
 #### SAS Token handling
-**SRS_EVENTHUBCLIENT_LL_29_122: \[**`EventHubAuthCBS_GetStatus` shall be invoked to obtain the authorization status.**\]**
-**SRS_EVENTHUBCLIENT_LL_29_123: \[**If status is EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, `EventHubAuthCBS_Refresh` shall be invoked to refresh the SAS token.**\]**
-**SRS_EVENTHUBCLIENT_LL_29_124: \[**If status is EVENTHUBAUTH_STATUS_IDLE, `EventHubAuthCBS_Authenticate` shall be invoked to create and install the SAS token.**\]**
-**SRS_EVENTHUBCLIENT_LL_29_125: \[**If status is EVENTHUBAUTH_STATUS_TIMEOUT, `EventHubAuthCBS_Reset` shall be invoked and any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_TIMEOUT.**\]**
-**SRS_EVENTHUBCLIENT_LL_29_126: \[**If status is EVENTHUBAUTH_STATUS_IN_PROGRESS, `connection_dowork` shall be invoked to perform work to establish/refresh the SAS token.**\]**
-**SRS_EVENTHUBCLIENT_LL_29_127: \[**If status is EVENTHUBAUTH_STATUS_FAILURE any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE the AMQP stack shall be brought down so that it can be created again if needed in dowork.**\]**
-**SRS_EVENTHUBCLIENT_LL_29_128: \[**If an error is seen during this operation, the AMQP stack shall be brought down so that it can be created again if needed in `EventHubClient_LL_DoWork`.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_120: \[**`EventHubAuthCBS_GetStatus` shall be invoked to obtain the authorization status.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_121: \[**If status is EVENTHUBAUTH_STATUS_FAILURE or EVENTHUBAUTH_STATUS_EXPIRED any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_FAILURE the AMQP stack shall be brought down so that it can be created again if needed in `EventHubClient_LL_DoWork`.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_122: \[**If status is EVENTHUBAUTH_STATUS_TIMEOUT, any registered client error callback shall be invoked with error code EVENTHUBCLIENT_SASTOKEN_AUTH_TIMEOUT and `EventHubClient_LL_DoWork` shall bring down AMQP stack so that it can be created again if needed in `EventHubClient_LL_DoWork`.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_123: \[**If status is EVENTHUBAUTH_STATUS_IN_PROGRESS, `connection_dowork` shall be invoked to perform work to establish/refresh the SAS token.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_124: \[**If status is EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, `EventHubAuthCBS_Refresh` shall be invoked to refresh the SAS token. Parameter extSASToken should be NULL.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_125: \[**If status is EVENTHUBAUTH_STATUS_IDLE, `EventHubAuthCBS_Authenticate` shall be invoked to create and install the SAS token.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_126: \[**If status is EVENTHUBAUTH_STATUS_OK and an Ext refresh SAS Token was supplied by the user,  `EventHubAuthCBS_Refresh` shall be invoked to refresh the SAS token. Parameter extSASToken should be the refresh ext SAS token.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_127: \[**If an error is seen, the AMQP stack shall be brought down so that it can be created again if needed in `EventHubClient_LL_DoWork`.**\]**
 
-#### uAMQP Sender Stack Initialize
-**SRS_EVENTHUBCLIENT_LL_01_031: \[**If setting the outgoing window fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
+
+#### uAMQP Message Sender Stack Initialize
 **SRS_EVENTHUBCLIENT_LL_01_021: \[**A source AMQP value shall be created by calling messaging_create_source.**\]**
 **SRS_EVENTHUBCLIENT_LL_01_022: \[**The source address shall be "ingress".**\]**
 **SRS_EVENTHUBCLIENT_LL_01_023: \[**A target AMQP value shall be created by calling messaging_create_target.**\]**
-**SRS_EVENTHUBCLIENT_LL_01_024: \[**The target address shall be "amqps://" {eventhub hostname} / {eventhub name}.**\]** 
+**SRS_EVENTHUBCLIENT_LL_01_024: \[**The target address shall be amqps://{eventhub hostname}/{eventhub name}/publishers/<PUBLISHER_NAME>.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_025: \[**If creating the source or target values fails then EventHubClient_LL_DoWork shall shall not proceed with sending any messages.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_026: \[**An AMQP link shall be created by calling link_create and passing as arguments the session handle, "sender-link" as link name, role_sender and the previously created source and target values.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_027: \[**If creating the link fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]** 
@@ -177,7 +229,6 @@ extern void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHa
 **SRS_EVENTHUBCLIENT_LL_01_036: \[**A message sender shall be created by calling messagesender_create and passing as arguments the link handle, a state changed callback, a context and NULL for the logging function.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_037: \[**If creating the message sender fails then EventHubClient_LL_DoWork shall not proceed with sending any messages.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_080: \[**If any other error happens while bringing up the uAMQP stack, EventHubClient_LL_DoWork shall not attempt to open the message_sender and return without sending any messages.**\]** 
-**SRS_EVENTHUBCLIENT_LL_04_018: \[**if parameter eventHubClientLLHandle is NULL EventHubClient_LL_DoWork shall immediately return.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_038: \[**EventHubClient_LL_DoWork shall perform a messagesender_open if the state of the message_sender is not OPEN.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_039: \[**If messagesender_open fails, no further actions shall be carried out.**\]** 
 
@@ -215,14 +266,15 @@ extern void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHa
 ###on_messagesender_state_changed
 
 **SRS_EVENTHUBCLIENT_LL_01_060: \[**When on_messagesender_state_changed is called with MESSAGE_SENDER_STATE_ERROR, the uAMQP stack shall be brough down so that it can be created again if needed in dowork:**\]** 
--	**SRS_EVENTHUBCLIENT_LL_01_072: \[**The message sender shall be destroyed by calling messagesender_destroy.**\]** 
--	**SRS_EVENTHUBCLIENT_LL_01_073: \[**The link shall be destroyed by calling link_destroy.**\]** 
--	**SRS_EVENTHUBCLIENT_LL_01_074: \[**The session shall be destroyed by calling session_destroy.**\]** 
--	**SRS_EVENTHUBCLIENT_LL_01_075: \[**The connection shall be destroyed by calling connection_destroy.**\]** 
--	**SRS_EVENTHUBCLIENT_LL_01_076: \[**The SASL IO shall be destroyed by calling xio_destroy.**\]** 
--	**SRS_EVENTHUBCLIENT_LL_01_077: \[**The TLS IO shall be destroyed by calling xio_destroy.**\]** 
--	**SRS_EVENTHUBCLIENT_LL_01_078: \[**The SASL mechanism shall be destroyed by calling saslmechanism_destroy.**\]** 
--   **SRS_EVENTHUBCLIENT_LL_29_150: \[**`EventHubAuthCBS_Destroy` shall be called to destory the event hub auth handle.**\]**
+-   **SRS_EVENTHUBCLIENT_LL_01_072: \[**The message sender shall be destroyed by calling messagesender_destroy.**\]** 
+-   **SRS_EVENTHUBCLIENT_LL_01_073: \[**The link shall be destroyed by calling link_destroy.**\]** 
+-   **SRS_EVENTHUBCLIENT_LL_01_074: \[**The session shall be destroyed by calling session_destroy.**\]** 
+-   **SRS_EVENTHUBCLIENT_LL_01_075: \[**The connection shall be destroyed by calling connection_destroy.**\]** 
+-   **SRS_EVENTHUBCLIENT_LL_01_076: \[**The SASL IO shall be destroyed by calling xio_destroy.**\]** 
+-   **SRS_EVENTHUBCLIENT_LL_01_077: \[**The TLS IO shall be destroyed by calling xio_destroy.**\]** 
+-   **SRS_EVENTHUBCLIENT_LL_01_078: \[**The SASL mechanism shall be destroyed by calling saslmechanism_destroy.**\]** 
+-   **SRS_EVENTHUBCLIENT_LL_29_151: \[**`EventHubAuthCBS_Destroy` shall be called to destroy the event hub auth handle.**\]**
+-   **SRS_EVENTHUBCLIENT_LL_29_152: \[**If any ext refresh SAS token is present, it shall be called to destroyed by calling STRING_delete.**\]**
 
 ###on_message_send_complete
 
@@ -236,7 +288,8 @@ extern void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHa
 extern void EventHubClient_LL_Destroy(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle);
 ```
 
-**SRS_EVENTHUBCLIENT_LL_03_009: \[**EventHubClient_LL_Destroy shall terminate the usage of this EventHubClient_LL specified by the eventHubLLHandle and cleanup all associated resources.**\]** **SRS_EVENTHUBCLIENT_LL_01_081: \[**The key host name, key name and key allocated in EventHubClient_LL_CreateFromConnectionString shall be freed.**\]** 
+**SRS_EVENTHUBCLIENT_LL_03_009: \[**EventHubClient_LL_Destroy shall terminate the usage of this EventHubClient_LL specified by the eventHubLLHandle and cleanup all associated resources.**\]**
+**SRS_EVENTHUBCLIENT_LL_01_081: \[**The key host name, key name and key allocated in EventHubClient_LL_CreateFromConnectionString shall be freed.**\]** 
 **SRS_EVENTHUBCLIENT_LL_03_010: \[**If the eventHubLLHandle is NULL, EventHubClient_Destroy shall not do anything.**\]**
 **SRS_EVENTHUBCLIENT_LL_01_040: \[**All the pending messages shall be indicated as error by calling the associated callback with EVENTHUBCLIENT_CONFIRMATION_DESTROY.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_041: \[**All pending message data shall be freed.**\]** 
@@ -247,20 +300,21 @@ extern void EventHubClient_LL_Destroy(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLH
 **SRS_EVENTHUBCLIENT_LL_01_046: \[**The SASL client IO shall be freed by calling xio_destroy.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_047: \[**The TLS IO shall be freed by calling xio_destroy.**\]** 
 **SRS_EVENTHUBCLIENT_LL_01_048: \[**The SASL mechanism shall be freed by calling saslmechanism_destroy.**\]** 
-**SRS_EVENTHUBCLIENT_LL_29_150: \[**`EventHubAuthCBS_Destroy` shall be called to destory the event hub auth handle.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_153: \[**`EventHubAuthCBS_Destroy` shall be called to destroy the event hub auth handle.**\]**
+**SRS_EVENTHUBCLIENT_LL_29_154: \[**If any ext refresh SAS token is present, it shall be called to destroyed by calling STRING_delete.**\]**
 
-###EventHubClient_LL_Set_StateChange_Callback
+###EventHubClient_LL_SetStateChangeCallback
 
 ```c
 extern EVENTHUBCLIENT_RESULT EventHubClient_LL_SetStateChangeCallback(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle, EVENTHUB_CLIENT_STATECHANGE_CALLBACK state_change_cb);
 ```
 
-**SRS_EVENTHUBCLIENT_LL_07_016: [** If eventHubClientLLHandle is NULL EventHubClient_LL_Set_StateChange_Callback shall return EVENTHUBCLIENT_INVALID_ARG. **]**
-**SRS_EVENTHUBCLIENT_LL_07_017: [** If state_change_cb is non-NULL then EventHubClient_LL_Set_StateChange_Callback shall call state_change_cb when a state changes is encountered. **]**  
-**SRS_EVENTHUBCLIENT_LL_07_018: [** If state_change_cb is NULL EventHubClient_LL_Set_StateChange_Callback shall no longer call state_change_cb on state changes. **]**  
-**SRS_EVENTHUBCLIENT_LL_07_019: [** If EventHubClient_LL_Set_StateChange_Callback succeeds it shall return EVENTHUBCLIENT_OK. **]**
+**SRS_EVENTHUBCLIENT_LL_07_016: [** If eventHubClientLLHandle is NULL EventHubClient_LL_SetStateChangeCallback shall return EVENTHUBCLIENT_INVALID_ARG. **]**
+**SRS_EVENTHUBCLIENT_LL_07_017: [** If state_change_cb is non-NULL then EventHubClient_LL_SetStateChangeCallback shall call state_change_cb when a state changes is encountered. **]**  
+**SRS_EVENTHUBCLIENT_LL_07_018: [** If state_change_cb is NULL EventHubClient_LL_SetStateChangeCallback shall no longer call state_change_cb on state changes. **]**  
+**SRS_EVENTHUBCLIENT_LL_07_019: [** If EventHubClient_LL_SetStateChangeCallback succeeds it shall return EVENTHUBCLIENT_OK. **]**
 
-###EventHubClient_LL_Set_Failure_Callback
+###EventHubClient_LL_SetErrorCallback
 
 ```c
 extern EVENTHUBCLIENT_RESULT EventHubClient_LL_SetErrorCallback(EVENTHUBCLIENT_LL_HANDLE eventHubClientLLHandle, EVENTHUB_CLIENT_FAILURE_CALLBACK on_error_cb);

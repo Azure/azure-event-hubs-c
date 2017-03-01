@@ -1,12 +1,18 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-#include <signal.h>
+#ifdef __cplusplus
+#include <cstdbool>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+#else
+#include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
+
+#include <signal.h>
 
 static void* TestHook_malloc(size_t size)
 {
@@ -28,14 +34,11 @@ static void TestHook_free(void* ptr)
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/gballoc.h"
-
 #include "eventhubreceiver_ll.h"
-
 #undef  ENABLE_MOCKS
 
 // interface under test
 #include "eventhubreceiver.h"
-
 
 //#################################################################################################
 // EventHubReceiver Test Defines and Data types
@@ -230,13 +233,14 @@ static void ResetTestGlobalData(void)
     threadEntryCtxt = NULL;
 }
 
-//**SRS_EVENTHUBRECEIVER_29_031: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall save off the user supplied callbacks and contexts.**\]**
-//**SRS_EVENTHUBRECEIVER_29_033: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall pass `EHR_OnAsyncReceiveCB`, `EHR_OnAsyncReceiveErrorCB` along with eventHubReceiverHandle as corresponding context arguments to `EventHubReceiver_LL_ReceiveFromStartTimestamp*Async` so as to defer execution of these callbacks to the workloop thread.**\]**
-//**SRS_EVENTHUBRECEIVER_29_034: \[**`EventHubReceiver_ReceiveFromStartTimestampAsync` shall invoke `EventHubReceiver_LL_ReceiveFromStartTimestampAsync`.**\]**
-//**SRS_EVENTHUBRECEIVER_29_035: \[**`EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync` invoke `EventHubReceiver_LL_ReceiveFromStartTimestampAsync` if waitTimeout is zero.**\]**
-//**SRS_EVENTHUBRECEIVER_29_036: \[**`EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync` invoke `EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync` if waitTimeout is non zero.**\]**
-//**SRS_EVENTHUBRECEIVER_29_038: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall create workloop thread which performs the requirements under "EHR_AsyncWorkLoopThreadEntry"**\]**
-//**SRS_EVENTHUBRECEIVER_29_041: \[**Upon Success EVENTHUBRECEIVER_OK shall be returned.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_031: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall save off the user supplied callbacks and contexts.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_033: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall pass EHR_OnAsyncReceiveCB, EHR_OnAsyncReceiveErrorCB along with eventHubReceiverHandle as corresponding context arguments to EventHubReceiver_LL_ReceiveFromStartTimestamp*Async so as to defer execution of these callbacks to the workloop thread.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_034: \[**EventHubReceiver_ReceiveFromStartTimestampAsync shall invoke EventHubReceiver_LL_ReceiveFromStartTimestampAsync.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_035: \[**EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync invoke EventHubReceiver_LL_ReceiveFromStartTimestampAsync if waitTimeout is zero.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_036: \[**EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync invoke EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync if waitTimeout is non zero.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_037: \[**If EventHubReceiver_LL_ReceiveFromStartTimestamp*Async returns an error, any allocated memory is freed and the error code is returned to the user and a message will logged.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_038: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall create workloop thread which performs the requirements under "EHR_AsyncWorkLoopThreadEntry"**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_041: \[**Upon Success EVENTHUBRECEIVER_OK shall be returned.**\]**
 void TestHelper_SetupReceiveFromStartTimestampAsyncCommon(unsigned int waitTimeoutInMs)
 {
     ResetTestGlobalData();
@@ -270,10 +274,10 @@ void TestHelper_SetupReceiveFromStartTimestampAsyncCommon(unsigned int waitTimeo
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_VALID));
 }
 
-//**SRS_EVENTHUBRECEIVER_29_050: \[**`EventHubReceiver_Destroy` shall call ThreadAPI_Join if required to wait for the workloop thread.**\]**
-//**SRS_EVENTHUBRECEIVER_29_051: \[**`EventHubReceiver_Destroy` shall pass the EventHubReceiver_LL_Handle to `EventHubReceiver_Destroy_LL`.**\]**
-//**SRS_EVENTHUBRECEIVER_29_052: \[**After call to `EventHubReceiver_Destroy_LL`, free up any allocated structures.**\]**
-//**SRS_EVENTHUBRECEIVER_29_053: \[**If any errors are seen, a message will be logged.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_050: \[**EventHubReceiver_Destroy shall call ThreadAPI_Join if required to wait for the workloop thread.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_051: \[**EventHubReceiver_Destroy shall pass the EventHubReceiver_LL_Handle to EventHubReceiver_Destroy_LL.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_052: \[**After call to EventHubReceiver_Destroy_LL, free up any allocated structures.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_053: \[**If any errors are seen, a message will be logged.**\]**
 void TestHelper_SetupCommonDestroyCallStack(size_t freeDispatchCallbackCount, bool isEventData, bool isThreadActive)
 {
     size_t idx;
@@ -311,10 +315,9 @@ void TestHelper_SetupCommonDestroyCallStack(size_t freeDispatchCallbackCount, bo
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 }
 
-//**SRS_EVENTHUBRECEIVER_29_080: \[**`EventHubReceiverAsyncThreadEntry` shall call EventHubReceiver_LL_DoWork.**\]**
-//**SRS_EVENTHUBRECEIVER_29_081: \[**`EventHubReceiverAsyncThreadEntry` shall invoke any queued user callbacks as a result of `EventHubReceiver_LL_DoWork` calling after the lock has been released.**\]**
-//**SRS_EVENTHUBRECEIVER_29_082: \[**`EventHubReceiverAsyncThreadEntry` shall poll using ThreadAPI_Sleep with an interval of 1ms.**\]**
-//**SRS_EVENTHUBRECEIVER_29_085: \[**`EventHubReceiverAsyncThreadEntry` shall "Perform Destroy" after all references to the handle have been removed.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_080: \[**EventHubReceiverAsyncThreadEntry shall call EventHubReceiver_LL_DoWork.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_081: \[**EventHubReceiverAsyncThreadEntry shall invoke any queued user callbacks as a result of EventHubReceiver_LL_DoWork calling after the lock has been released.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_082: \[**EventHubReceiverAsyncThreadEntry shall poll using ThreadAPI_Sleep with an interval of 1ms.**\]**
 void TestHelper_SetupCommonWorkloopCallStack(size_t freeDispatchCallbackCount, bool isEventData)
 {
     size_t idx;
@@ -349,11 +352,11 @@ void TestHelper_SetupCommonWorkloopCallStack(size_t freeDispatchCallbackCount, b
     STRICT_EXPECTED_CALL(ThreadAPI_Sleep(1));
 }
 
-//**SRS_EVENTHUBRECEIVER_29_045: \[**The deferred callbacks shall allocate memory to dispatch the resulting callbacks after calling EventHubReceiver_LL_DoWork. **\]**
-//**SRS_EVENTHUBRECEIVER_29_046: \[**The deferred callbacks shall save off the callback result. **\]**
-//**SRS_EVENTHUBRECEIVER_29_047: \[**`EHR_OnAsyncReceiveCB` shall clone the event data using API EventData_Clone. **\]**
-//**SRS_EVENTHUBRECEIVER_29_048: \[**The deferred callbacks shall enqueue the dispatch by calling DList_InsertTailList**\]**
-//**SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, error messages shall be logged and any allocated memory or data structures shall be deallocated.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_045: \[**The deferred callbacks shall allocate memory to dispatch the resulting callbacks after calling EventHubReceiver_LL_DoWork. **\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_046: \[**The deferred callbacks shall save off the callback result. **\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_047: \[**EHR_OnAsyncReceiveCB shall clone the event data using API EventData_Clone. **\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_048: \[**The deferred callbacks shall enqueue the dispatch by calling DList_InsertTailList**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_049: \[**Upon failures, error messages shall be logged and any allocated memory or data structures shall be deallocated.**\]**
 void TestHelper_SetupDeferredCallbackCommon(bool isEventData)
 {
     umock_c_reset_all_calls();
@@ -365,10 +368,10 @@ void TestHelper_SetupDeferredCallbackCommon(bool isEventData)
     EXPECTED_CALL(DList_InsertTailList(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 }
 
-//**SRS_EVENTHUBRECEIVER_29_062: \[**Upon Success, `EventHubReceiver_ReceiveEndAsync` shall return EVENTHUBRECEIVER_OK.**\]**
-//**SRS_EVENTHUBRECEIVER_29_063: \[**Upon failure, `EventHubReceiver_ReceiveEndAsync` shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
-//**SRS_EVENTHUBRECEIVER_29_064: \[**`EventHubReceiver_ReceiveEndAsync` shall call EventHubReceiver_ReceiveEndAsync_LL.**\]**
-//**SRS_EVENTHUBRECEIVER_29_065: \[**`EventHubReceiver_ReceiveEndAsync` shall pass `EHR_OnAsyncEndCB` along with eventHubReceiverHandle as corresponding context arguments to `EventHubReceiver_ReceiveEndAsync_LL` so as to defer execution of the user provided callbacks to the `EHR_AsyncWorkLoopThreadEntry` workloop thread. This step will only be required if the user has passed in a callback.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_062: \[**Upon Success, EventHubReceiver_ReceiveEndAsync shall return EVENTHUBRECEIVER_OK.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_063: \[**Upon failure, EventHubReceiver_ReceiveEndAsync shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_064: \[**EventHubReceiver_ReceiveEndAsync shall call EventHubReceiver_ReceiveEndAsync_LL.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_065: \[**EventHubReceiver_ReceiveEndAsync shall pass EHR_OnAsyncEndCB along with eventHubReceiverHandle as corresponding context arguments to EventHubReceiver_ReceiveEndAsync_LL so as to defer execution of the user provided callbacks to the EHR_AsyncWorkLoopThreadEntry workloop thread. This step will only be required if the user has passed in a callback.**\]**
 void TestHelper_SetupCommonReceiveEndAsyncStack(void)
 {
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_VALID));
@@ -379,12 +382,13 @@ void TestHelper_SetupCommonReceiveEndAsyncStack(void)
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_VALID));
 }
 
-// **SRS_EVENTHUBRECEIVER_29_001: \[**`EventHubReceiver_Create` shall pass the connectionString, eventHubPath, consumerGroup and partitionId arguments to `EventHubReceiver_LL_Create`.**\]**
-// **SRS_EVENTHUBRECEIVER_29_003: \[**Upon Success of `EventHubReceiver_LL_Create`, `EventHubReceiver_Create` shall allocate the internal structures as required by this module.**\]**
-// **SRS_EVENTHUBRECEIVER_29_006: \[**`EventHubReceiver_Create` shall initialize a DLIST by calling DList_InitializeListHead for queuing callbacks resulting from the invocation of `EventHubReceiver_LL_DoWork` from the `EHR_AsyncWorkLoopThreadEntry` workloop thread. **\]**
-// **SRS_EVENTHUBRECEIVER_29_004: \[**Upon Success `EventHubReceiver_Create` shall return the EVENTHUBRECEIVER_HANDLE.**\]**
-// **SRS_EVENTHUBRECEIVER_29_002: \[**`EventHubReceiver_Create` shall return a NULL value if `EventHubReceiver_LL_Create` returns NULL.**\]**
-// **SRS_EVENTHUBRECEIVER_29_005: \[**Upon Failure `EventHubReceiver_Create` shall return NULL.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_001: \[**EventHubReceiver_Create shall pass the connectionString, eventHubPath, consumerGroup and partitionId arguments to EventHubReceiver_LL_Create.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_003: \[**Upon Success of EventHubReceiver_LL_Create, EventHubReceiver_Create shall allocate the internal structures as required by this module.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_006: \[**EventHubReceiver_Create shall initialize a DLIST by calling DList_InitializeListHead for queuing callbacks resulting from the invocation of EventHubReceiver_LL_DoWork from the EHR_AsyncWorkLoopThreadEntry workloop thread. **\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_007: \[**EventHubReceiver_Create shall initialize a LOCK_HANDLE by calling API Lock_Init().**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_004: \[**Upon Success EventHubReceiver_Create shall return the EVENTHUBRECEIVER_HANDLE.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_002: \[**EventHubReceiver_Create shall return a NULL value if EventHubReceiver_LL_Create returns NULL.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_005: \[**Upon Failure EventHubReceiver_Create shall return NULL.**\]**
 void TestHelper_SetupCommonReceiverCreateStack(void)
 {
     umock_c_reset_all_calls();
@@ -396,6 +400,60 @@ void TestHelper_SetupCommonReceiverCreateStack(void)
     STRICT_EXPECTED_CALL(Lock_Init());
 
     EXPECTED_CALL(DList_InitializeListHead(IGNORED_PTR_ARG));
+}
+
+//**Tests_SRS_EVENTHUBRECEIVER_29_101: \[**EventHubReceiver_CreateFromSASToken shall pass the eventHubSasToken argument to EventHubReceiver_LL_CreateFromSASToken.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_102: \[**EventHubReceiver_CreateFromSASToken shall return a NULL value if EventHubReceiver_LL_CreateFromSASToken returns NULL.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_103: \[**Upon Success of EventHubReceiver_LL_CreateFromSASToken, EventHubReceiver_CreateFromSASToken shall allocate the internal structures as required by this module.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_106: \[**EventHubReceiver_CreateFromSASToken shall initialize a DLIST by calling DList_InitializeListHead for queuing callbacks resulting from the invocation of EventHubReceiver_LL_DoWork from the EHR_AsyncWorkLoopThreadEntry workloop thread. **\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_104: \[**Upon Success EventHubReceiver_CreateFromSASToken shall return the EVENTHUBRECEIVER_HANDLE.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_105: \[**Upon Failure EventHubReceiver_CreateFromSASToken shall return NULL.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_107: \[**EventHubReceiver_CreateFromSASToken shall initialize a LOCK_HANDLE by calling API Lock_Init().**\]**
+static uint64_t TestHelper_EventHubReceiver_CreateFromSASTokenStack(const char* sasToken)
+{
+    uint64_t failedFunctionBitmask = 0;
+    int i = 0;
+    // arrange
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(EventHubReceiver_LL_CreateFromSASToken(sasToken));
+    failedFunctionBitmask |= ((uint64_t)1 << i++);
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    failedFunctionBitmask |= ((uint64_t)1 << i++);
+
+    STRICT_EXPECTED_CALL(Lock_Init());
+    failedFunctionBitmask |= ((uint64_t)1 << i++);
+
+    EXPECTED_CALL(DList_InitializeListHead(IGNORED_PTR_ARG));
+    i++;
+
+    return failedFunctionBitmask;
+}
+
+//**Tests_SRS_EVENTHUBRECEIVER_29_202: \[**EventHubReceiver_RefreshSASTokenAsync shall lock the EVENTHUBRECEIVER_STRUCT lockInfo using API Lock.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_203: \[**EventHubReceiver_RefreshSASTokenAsync shall call EventHubReceiver_LL_RefreshSASTokenAsync and pass the EVENTHUBRECEIVER_LL_HANDLE and the sasToken.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_204: \[**EventHubReceiver_RefreshSASTokenAsync shall unlock the EVENTHUBRECEIVER_STRUCT lockInfo using API Unlock.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_205: \[**EventHubReceiver_RefreshSASTokenAsync shall return the result of the EventHubReceiver_LL_RefreshSASTokenAsync.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_206: \[**EventHubReceiver_RefreshSASTokenAsync shall return EVENTHUBRECEIVER_ERROR for any errors encountered.**\]**
+static uint64_t TestHelper_EventHubReceiver_RefreshSASTokenAsyncStack(const char* sasToken)
+{
+    uint64_t failedFunctionBitmask = 0;
+    int i = 0;
+
+    // arrange
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_VALID));
+    failedFunctionBitmask |= ((uint64_t)1 << i++);
+
+    STRICT_EXPECTED_CALL(EventHubReceiver_LL_RefreshSASTokenAsync(TEST_EVENTHUB_RECEIVER_LL_VALID, sasToken));
+    failedFunctionBitmask |= ((uint64_t)1 << i++);
+
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_VALID));
+    i++;
+
+    return failedFunctionBitmask;
 }
 
 //#################################################################################################
@@ -457,6 +515,11 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
     REGISTER_GLOBAL_MOCK_RETURN(EventHubReceiver_LL_Create, TEST_EVENTHUB_RECEIVER_LL_VALID);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(EventHubReceiver_LL_Create, NULL);
+    REGISTER_GLOBAL_MOCK_RETURN(EventHubReceiver_LL_CreateFromSASToken, TEST_EVENTHUB_RECEIVER_LL_VALID);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(EventHubReceiver_LL_CreateFromSASToken, NULL);
+
+    REGISTER_GLOBAL_MOCK_RETURN(EventHubReceiver_LL_RefreshSASTokenAsync, EVENTHUBRECEIVER_OK);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(EventHubReceiver_LL_RefreshSASTokenAsync, EVENTHUBRECEIVER_ERROR);
 
     REGISTER_GLOBAL_MOCK_HOOK(EventHubReceiver_LL_ReceiveEndAsync, TestHook_EventHubReceiver_LL_ReceiveEndAsync);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(EventHubReceiver_LL_ReceiveEndAsync, EVENTHUBRECEIVER_ERROR);
@@ -542,11 +605,139 @@ TEST_FUNCTION(EventHubReceiver_Create_Failure)
 
 //#################################################################################################
 //
+// EventHubReceiver_CreateFromSASToken Tests
+//
+//#################################################################################################
+TEST_FUNCTION(EventHubReceiver_CreateFromSASToken_Success)
+{
+    const char sasToken[] = "Test SAS Token";
+
+    // arrange
+    (void)TestHelper_EventHubReceiver_CreateFromSASTokenStack(sasToken);
+
+    // act
+    EVENTHUBRECEIVER_HANDLE h = EventHubReceiver_CreateFromSASToken(sasToken);
+
+    // assert
+    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_IS_NOT_NULL_WITH_MSG(h, "Failed NULL Value Test");
+
+    // cleanup
+    EventHubReceiver_Destroy(h);
+}
+
+TEST_FUNCTION(EventHubReceiver_CreateFromSASToken_Failure)
+{
+    const char sasToken[] = "Test SAS Token";
+    int testResult = umock_c_negative_tests_init();
+    ASSERT_ARE_EQUAL(int, 0, testResult);
+
+    // arrange
+    uint64_t failedCallBitmask = TestHelper_EventHubReceiver_CreateFromSASTokenStack(sasToken);
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        umock_c_negative_tests_reset();
+        umock_c_negative_tests_fail_call(i);
+
+        if (failedCallBitmask & ((uint64_t)1 << i))
+        {
+            // act
+            EVENTHUBRECEIVER_HANDLE h = EventHubReceiver_CreateFromSASToken(sasToken);
+            // assert
+            ASSERT_IS_NULL(h);
+        }
+    }
+
+    // cleanup
+    umock_c_negative_tests_deinit();
+}
+
+//#################################################################################################
+//
+// EventHubReceiver_RefreshSASTokenAsync Tests
+//
+//#################################################################################################
+
+//**Tests_SRS_EVENTHUBRECEIVER_29_201: \[**EventHubReceiver_RefreshSASTokenAsync shall return EVENTHUBRECEIVER_INVALID_ARG immediately if eventHubReceiverHandle or eventHubSasToken is NULL.**\]**
+TEST_FUNCTION(EventHubReceiver_RefreshSASTokenAsync_NULLParam_eventHubReceiverHandle)
+{
+    const char sasToken[] = "Test SAS Token";
+
+    EVENTHUBRECEIVER_RESULT result = EventHubReceiver_RefreshSASTokenAsync(NULL, sasToken);
+
+    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_INVALID_ARG, result, "Failed Return Value Test");
+}
+
+//**Tests_SRS_EVENTHUBRECEIVER_29_201: \[**EventHubReceiver_RefreshSASTokenAsync shall return EVENTHUBRECEIVER_INVALID_ARG immediately if eventHubReceiverHandle or eventHubSasToken is NULL.**\]**
+TEST_FUNCTION(EventHubReceiver_RefreshSASTokenAsync_NULLParam_eventHubSasToken)
+{
+    EVENTHUBRECEIVER_RESULT result = EventHubReceiver_RefreshSASTokenAsync(TEST_EVENTHUB_RECEIVER_VALID, NULL);
+
+    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_INVALID_ARG, result, "Failed Return Value Test");
+}
+
+TEST_FUNCTION(EventHubReceiver_RefreshSASTokenAsync_Success)
+{
+    const char sasToken[] = "Test SAS Token";
+
+    EVENTHUBRECEIVER_HANDLE h = EventHubReceiver_CreateFromSASToken(sasToken);
+
+    // arrange
+    (void)TestHelper_EventHubReceiver_RefreshSASTokenAsyncStack(sasToken);
+
+    // act
+    EVENTHUBRECEIVER_RESULT result = EventHubReceiver_RefreshSASTokenAsync(h, sasToken);
+
+    // assert
+    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
+
+    // cleanup
+    EventHubReceiver_Destroy(h);
+}
+
+TEST_FUNCTION(EventHubReceiver_RefreshSASTokenAsync_Failure)
+{
+    const char sasToken[] = "Test SAS Token";
+    int testResult = umock_c_negative_tests_init();
+    ASSERT_ARE_EQUAL(int, 0, testResult);
+
+    // arrange
+    uint64_t failedCallBitmask = TestHelper_EventHubReceiver_RefreshSASTokenAsyncStack(sasToken);
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        EVENTHUBRECEIVER_HANDLE h = EventHubReceiver_CreateFromSASToken(sasToken);
+
+        if (failedCallBitmask & ((uint64_t)1 << i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            EVENTHUBRECEIVER_RESULT result = EventHubReceiver_RefreshSASTokenAsync(h, sasToken);
+
+            // assert
+            ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test");
+        }
+
+        EventHubReceiver_Destroy(h);
+    }
+
+    // cleanup
+    umock_c_negative_tests_deinit();
+}
+
+//#################################################################################################
+//
 // EventHubReceiver_ReceiveFromStartTimestampAsync Tests
 //
 //#################################################################################################
 
-//**SRS_EVENTHUBRECEIVER_29_030: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_030: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampAsync_NULL_Handle_Param)
 {
     // arrange
@@ -563,7 +754,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampAsync_NULL_Handle_Param)
     ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_INVALID_ARG, result);
 }
 
-//**SRS_EVENTHUBRECEIVER_29_030: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_030: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampAsync_NULL_RxCallback_Param)
 {
     // arrange
@@ -581,7 +772,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampAsync_NULL_RxCallback_Pa
     ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_INVALID_ARG, result);
 }
 
-//**SRS_EVENTHUBRECEIVER_29_030: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_030: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampAsync_NULL_RxErrorCallback_Param)
 {
     // arrange
@@ -620,7 +811,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampAsync_Success)
     EventHubReceiver_Destroy(h);
 }
 
-// **SRS_EVENTHUBRECEIVER_29_039: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall return an error code of EVENTHUBRECEIVER_NOT_ALLOWED if a user called EventHubReceiver_Receive* more than once on the same handle.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_039: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall return an error code of EVENTHUBRECEIVER_NOT_ALLOWED if a user called EventHubReceiver_Receive* more than once on the same handle.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampAsync_Multiple)
 {
     // arrange
@@ -646,7 +837,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampAsync_Multiple)
     EventHubReceiver_Destroy(h);
 }
 
-//**SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, EVENTHUBRECEIVER_ERROR shall be returned.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, EVENTHUBRECEIVER_ERROR shall be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampAsync_Failure)
 {
     // arrange
@@ -731,7 +922,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_Timeout
     EventHubReceiver_Destroy(h);
 }
 
-// **SRS_EVENTHUBRECEIVER_29_030: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_030: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_NULL_Handle_Params)
 {
     // arrange
@@ -748,7 +939,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_NULL_Ha
     ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_INVALID_ARG, result);
 }
 
-// **SRS_EVENTHUBRECEIVER_29_030: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_030: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_NULL_RxCallback_Params)
 {
     // arrange
@@ -765,7 +956,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_NULL_Rx
     ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_INVALID_ARG, result);
 }
 
-// **SRS_EVENTHUBRECEIVER_29_030: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_030: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_NULL_RxErrorCallback_Params)
 {
     // arrange
@@ -782,7 +973,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_NULL_Rx
     ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_INVALID_ARG, result);
 }
 
-// **SRS_EVENTHUBRECEIVER_29_039: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall return an error code of EVENTHUBRECEIVER_NOT_ALLOWED if a user called EventHubReceiver_Receive* more than once on the same handle.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_039: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall return an error code of EVENTHUBRECEIVER_NOT_ALLOWED if a user called EventHubReceiver_Receive* more than once on the same handle.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_Multiple)
 {
     // arrange
@@ -1255,7 +1446,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveEndAsyncWorkloop_Negative)
 //
 //#################################################################################################
 
-// **SRS_EVENTHUBRECEIVER_29_060: \[**`EventHubReceiver_ReceiveEndAsync` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_060: \[**EventHubReceiver_ReceiveEndAsync shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveEndAsync_NULL_Handle_Param)
 {
     // arrange
@@ -1266,7 +1457,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveEndAsync_NULL_Handle_Param)
     ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_INVALID_ARG, result);
 }
 
-// **SRS_EVENTHUBRECEIVER_29_061: \[**`EventHubReceiver_ReceiveEndAsync` shall check if a receiver connection is currently active. If no receiver is active, EVENTHUBRECEIVER_NOT_ALLOWED shall be returned and a message will be logged.**\]**
+// **Tests_SRS_EVENTHUBRECEIVER_29_061: \[**EventHubReceiver_ReceiveEndAsync shall check if a receiver connection is currently active. If no receiver is active, EVENTHUBRECEIVER_NOT_ALLOWED shall be returned and a message will be logged.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveEndAsync_Inactive_Success)
 {
     // arrange
@@ -1317,7 +1508,7 @@ TEST_FUNCTION(EventHubReceiver_ReceiveEndAsync_Active_Success)
     EventHubReceiver_Destroy(h);
 }
 
-//**SRS_EVENTHUBRECEIVER_29_063: \[**Upon failure, `EventHubReceiver_ReceiveEndAsync` shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_063: \[**Upon failure, EventHubReceiver_ReceiveEndAsync shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
 TEST_FUNCTION(EventHubReceiver_ReceiveEndAsync_Active_Failure)
 {
     // arrange
@@ -1472,7 +1663,7 @@ TEST_FUNCTION(EventHubReceiver_Destroy_ReceiverActive_Negative)
 //
 //#################################################################################################
 
-//**SRS_EVENTHUBRECEIVER_29_020: \[**`EventHubReceiver_SetConnectionTracing` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_020: \[**EventHubReceiver_SetConnectionTracing shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_SetConnectionTracing_NULL_Handle)
 {
     // act
@@ -1482,8 +1673,8 @@ TEST_FUNCTION(EventHubReceiver_SetConnectionTracing_NULL_Handle)
     ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_INVALID_ARG, result);
 }
 
-//**SRS_EVENTHUBRECEIVER_29_021: \[**`EventHubReceiver_SetConnectionTracing` shall pass the arguments to `EventHubReceiver_LL_SetConnectionTracing`.**\]**
-//**SRS_EVENTHUBRECEIVER_29_023: \[**Upon Success, `EventHubReceiver_SetConnectionTracing` shall return EVENTHUBRECEIVER_OK.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_021: \[**EventHubReceiver_SetConnectionTracing shall pass the arguments to EventHubReceiver_LL_SetConnectionTracing.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_023: \[**Upon Success, EventHubReceiver_SetConnectionTracing shall return EVENTHUBRECEIVER_OK.**\]**
 TEST_FUNCTION(EventHubReceiver_SetConnectionTracing_Success)
 {
     // arrange
@@ -1510,8 +1701,8 @@ TEST_FUNCTION(EventHubReceiver_SetConnectionTracing_Success)
     EventHubReceiver_Destroy(h);
 }
 
-//**SRS_EVENTHUBRECEIVER_29_021: \[**`EventHubReceiver_SetConnectionTracing` shall pass the arguments to `EventHubReceiver_LL_SetConnectionTracing`.**\]**
-//**SRS_EVENTHUBRECEIVER_29_023: \[**Upon Success, `EventHubReceiver_SetConnectionTracing` shall return EVENTHUBRECEIVER_OK.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_021: \[**EventHubReceiver_SetConnectionTracing shall pass the arguments to EventHubReceiver_LL_SetConnectionTracing.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_023: \[**Upon Success, EventHubReceiver_SetConnectionTracing shall return EVENTHUBRECEIVER_OK.**\]**
 TEST_FUNCTION(EventHubReceiver_SetConnectionTracing_MultipleSuccess)
 {
     // arrange
@@ -1532,9 +1723,9 @@ TEST_FUNCTION(EventHubReceiver_SetConnectionTracing_MultipleSuccess)
     EventHubReceiver_Destroy(h);
 }
 
-//**SRS_EVENTHUBRECEIVER_29_021: \[**`EventHubReceiver_SetConnectionTracing` shall pass the arguments to `EventHubReceiver_LL_SetConnectionTracing`.**\]**
-//**SRS_EVENTHUBRECEIVER_29_022: \[**If `EventHubReceiver_LL_SetConnectionTracing` returns an error, the code is returned to the user and a message will logged.**\]**
-//**SRS_EVENTHUBRECEIVER_29_024: \[**Upon failure, `EventHubReceiver_SetConnectionTracing` shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_021: \[**EventHubReceiver_SetConnectionTracing shall pass the arguments to EventHubReceiver_LL_SetConnectionTracing.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_022: \[**If EventHubReceiver_LL_SetConnectionTracing returns an error, the code is returned to the user and a message will logged.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_29_024: \[**Upon failure, EventHubReceiver_SetConnectionTracing shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
 TEST_FUNCTION(EventHubReceiver_Set_ConnectionTracing_Failure)
 {
     // arrange

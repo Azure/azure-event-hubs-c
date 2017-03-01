@@ -8,19 +8,23 @@ compileAsC99()
 
 set(eventhub_client_c_files
     ./src/eventdata.c
+    ./src/eventhubauth.c
     ./src/eventhubclient.c
     ./src/eventhubreceiver.c
     ./src/eventhubreceiver_ll.c
     ./src/eventhubclient_ll.c
+    ./src/kvp_parser.c
     ./src/version.c
 )
 
 set(eventhub_client_h_files
     ./inc/eventdata.h
+    ./inc/eventhubauth.h
     ./inc/eventhubclient.h
     ./inc/eventhubclient_ll.h
     ./inc/eventhubreceiver.h
     ./inc/eventhubreceiver_ll.h
+    ./inc/kvp_parser.h
     ./inc/version.h
 )
 

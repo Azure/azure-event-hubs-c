@@ -7,6 +7,7 @@
 #include "eventhubclient.h"
 #include "eventdata.h"
 #include "send.h"
+#include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/platform.h"
@@ -18,7 +19,7 @@ static const char* eventHubPath = "[event hub name]";
 static bool g_bSendProperties = false;
 static bool g_bSendPartitionKey = false;
 
-static const char PARTITION_KEY_INFO[] = "PartitionKeyInfo";
+static const char PARTITION_KEY_INFO[]  = "PartitionKeyInfo";
 static const char TEST_STRING_VALUE_1[] = "Property_String_Value_1";
 static const char TEST_STRING_VALUE_2[] = "Property_String_Value_2";
 
@@ -36,10 +37,10 @@ void custom_logging_function(LOG_CATEGORY log_category, const char* file, const 
 
     switch (log_category)
     {
-        case LOG_INFO:
+        case AZ_LOG_INFO:
             (void)printf("Custom Info: ");
             break;
-        case LOG_ERROR:
+        case AZ_LOG_ERROR:
             (void)printf("Custom Error: File:%s Func:%s Line:%d ", file, func, line);
             break;
         default:

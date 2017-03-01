@@ -1,25 +1,25 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
+#include <string.h>
 #include <signal.h>
 
-#include "version.h"
-#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/doublylinkedlist.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 #include "eventhubreceiver.h"
+#include "version.h"
 
-#define THREAD_END					    0
-#define THREAD_RUN						1
+#define THREAD_END  0
+#define THREAD_RUN  1
 
 /* Event Hub Receiver States */
 #define EVENTHUBRECEIVER_STATE_VALUES   \
@@ -84,6 +84,54 @@ static void EHR_OnAsyncEndCB(EVENTHUBRECEIVER_RESULT result, void* userContextCa
 const size_t THREAD_STATE_OFFSET = offsetof(EVENTHUBRECEIVER_STRUCT, threadState);
 const int    THREAD_STATE_EXIT   = THREAD_END;
 
+static EVENTHUBRECEIVER_STRUCT* CreateEventHubReceiver(EVENTHUBRECEIVER_LL_HANDLE llHandle)
+{
+    EVENTHUBRECEIVER_STRUCT* result;
+
+    //**Codes_SRS_EVENTHUBRECEIVER_29_003: \[**Upon Success of EventHubReceiver_LL_Create, EventHubReceiver_Create shall allocate the internal structures as required by this module.**\]**
+    //**Codes_SRS_EVENTHUBRECEIVER_29_103: \[**Upon Success of EventHubReceiver_LL_CreateFromSASToken, EventHubReceiver_CreateFromSASToken shall allocate the internal structures as required by this module.**\]**
+    result = (EVENTHUBRECEIVER_STRUCT*)malloc(sizeof(EVENTHUBRECEIVER_STRUCT));
+    if (result == NULL)
+    {
+        //**Codes_SRS_EVENTHUBRECEIVER_29_005: \[**Upon Failure EventHubReceiver_Create shall return NULL.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_105: \[**Upon Failure EventHubReceiver_CreateFromSASToken shall return NULL.**\]**
+        EventHubReceiver_LL_Destroy(llHandle);
+        LogError("EventHubReceiver_Create no memory to allocate struct.\r\n");
+    }
+    else
+    {
+        //**Codes_SRS_EVENTHUBRECEIVER_29_007: \[**EventHubReceiver_Create shall initialize a LOCK_HANDLE by calling API Lock_Init().**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_107: \[**EventHubReceiver_CreateFromSASToken shall initialize a LOCK_HANDLE by calling API Lock_Init().**\]**
+        if ((result->lockInfo = Lock_Init()) == NULL)
+        {
+            free(result);
+            //**Codes_SRS_EVENTHUBRECEIVER_29_005: \[**Upon Failure EventHubReceiver_Create shall return NULL.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_105: \[**Upon Failure EventHubReceiver_CreateFromSASToken shall return NULL.**\]**
+            result = NULL;
+            EventHubReceiver_LL_Destroy(llHandle);
+            LogError("EventHubReceiver_Create Lock init failed.\r\n");
+        }
+        else
+        {
+            result->eventHubReceiverLLHandle = llHandle;
+            result->threadHandle = NULL;
+            result->threadState = THREAD_END;
+            result->state = RECEIVER_STATE_INACTIVE;
+            result->onEventReceiveCallback = NULL;
+            result->onEventReceiveErrorCallback = NULL;
+            result->onEventReceiveEndCallback = NULL;
+            result->onEventReceiveUserContext = NULL;
+            result->onEventReceiveErrorUserContext = NULL;
+            result->onEventReceiveEndUserContext = NULL;
+            //**Codes_SRS_EVENTHUBRECEIVER_29_006: \[**EventHubReceiver_Create shall initialize a DLIST by calling DList_InitializeListHead for queuing callbacks resulting from the invocation of EventHubReceiver_LL_DoWork from the EHR_AsyncWorkLoopThreadEntry workloop thread. **\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_106: \[**EventHubReceiver_CreateFromSASToken shall initialize a DLIST by calling DList_InitializeListHead for queuing callbacks resulting from the invocation of EventHubReceiver_LL_DoWork from the EHR_AsyncWorkLoopThreadEntry workloop thread. **\]**
+            AsyncDispatchCallbackListInit(result);
+        }
+    }
+
+    return result;
+}
+
 EVENTHUBRECEIVER_HANDLE EventHubReceiver_Create
 (
     const char* connectionString,
@@ -95,53 +143,79 @@ EVENTHUBRECEIVER_HANDLE EventHubReceiver_Create
     EVENTHUBRECEIVER_LL_HANDLE llHandle;
     EVENTHUBRECEIVER_STRUCT* result;
     
-    //**SRS_EVENTHUBRECEIVER_29_001: \[**`EventHubReceiver_Create` shall pass the connectionString, eventHubPath, consumerGroup and partitionId arguments to `EventHubReceiver_LL_Create`.**\]**
+    //**Codes_SRS_EVENTHUBRECEIVER_29_001: \[**EventHubReceiver_Create shall pass the connectionString, eventHubPath, consumerGroup and partitionId arguments to EventHubReceiver_LL_Create.**\]**
     llHandle = EventHubReceiver_LL_Create(connectionString, eventHubPath, consumerGroup, partitionId);
     if (llHandle == NULL)
     {
-        //**SRS_EVENTHUBRECEIVER_29_002: \[**`EventHubReceiver_Create` shall return a NULL value if `EventHubReceiver_LL_Create` returns NULL.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_002: \[**EventHubReceiver_Create shall return a NULL value if EventHubReceiver_LL_Create returns NULL.**\]**
         result = NULL;
         LogError("EventHubReceiver_LL_Create returned NULL.\r\n");
     }
     else
     {
-        //**SRS_EVENTHUBRECEIVER_29_003: \[**Upon Success of `EventHubReceiver_LL_Create`, `EventHubReceiver_Create` shall allocate the internal structures as required by this module.**\]**
-        result = (EVENTHUBRECEIVER_STRUCT*)malloc(sizeof(EVENTHUBRECEIVER_STRUCT));
-        if (result == NULL)
+        result = CreateEventHubReceiver(llHandle);
+    }
+    //**Codes_SRS_EVENTHUBRECEIVER_29_004: \[**Upon Success EventHubReceiver_Create shall return the EVENTHUBRECEIVER_HANDLE.**\]**
+    return (EVENTHUBRECEIVER_HANDLE)result;
+}
+
+EVENTHUBRECEIVER_HANDLE EventHubReceiver_CreateFromSASToken(const char* eventHubSasToken)
+{
+    EVENTHUBRECEIVER_LL_HANDLE llHandle;
+    EVENTHUBRECEIVER_STRUCT* result;
+
+    //**Codes_SRS_EVENTHUBRECEIVER_29_101: \[**EventHubReceiver_CreateFromSASToken shall pass the eventHubSasToken argument to EventHubReceiver_LL_CreateFromSASToken.**\]**
+    llHandle = EventHubReceiver_LL_CreateFromSASToken(eventHubSasToken);
+    if (llHandle == NULL)
+    {
+        //**Codes_SRS_EVENTHUBRECEIVER_29_102: \[**EventHubReceiver_CreateFromSASToken shall return a NULL value if EventHubReceiver_LL_CreateFromSASToken returns NULL.**\]**
+        result = NULL;
+        LogError("EventHubReceiver_LL_CreateFromSASToken returned NULL.\r\n");
+    }
+    else
+    {
+        result = CreateEventHubReceiver(llHandle);
+    }
+    //**Codes_SRS_EVENTHUBRECEIVER_29_104: \[**Upon Success EventHubReceiver_CreateFromSASToken shall return the EVENTHUBRECEIVER_HANDLE.**\]**
+    return (EVENTHUBRECEIVER_HANDLE)result;
+}
+
+EVENTHUBRECEIVER_RESULT EventHubReceiver_RefreshSASTokenAsync
+(
+    EVENTHUBRECEIVER_HANDLE eventHubReceiverHandle,
+    const char* eventHubSasToken
+)
+{
+    EVENTHUBRECEIVER_RESULT result;
+    EVENTHUBRECEIVER_STRUCT* ehStruct = (EVENTHUBRECEIVER_STRUCT*)eventHubReceiverHandle;
+
+    //**Codes_SRS_EVENTHUBRECEIVER_29_201: \[**EventHubReceiver_RefreshSASTokenAsync shall return EVENTHUBRECEIVER_INVALID_ARG immediately if eventHubReceiverHandle or eventHubSasToken is NULL.**\]**
+    if ((ehStruct == NULL) || (eventHubSasToken == NULL))
+    {
+        LogError("Invalid Arguments.\r\n");
+        result = EVENTHUBRECEIVER_INVALID_ARG;
+    }
+    else
+    {
+        //**Codes_SRS_EVENTHUBRECEIVER_29_202: \[**EventHubReceiver_RefreshSASTokenAsync shall lock the EVENTHUBRECEIVER_STRUCT lockInfo using API Lock.**\]**
+        if (Lock(ehStruct->lockInfo) != LOCK_OK)
         {
-            //**SRS_EVENTHUBRECEIVER_29_005: \[**Upon Failure EventHubReceiver_Create shall return NULL.**\]**
-            EventHubReceiver_LL_Destroy(llHandle);
-            LogError("EventHubReceiver_Create no memory to allocate struct.\r\n");
+            //**Codes_SRS_EVENTHUBRECEIVER_29_206: \[**EventHubReceiver_RefreshSASTokenAsync shall return EVENTHUBRECEIVER_ERROR for any errors encountered.**\]**
+            LogError("Could not acquire lock!");
+            result = EVENTHUBRECEIVER_ERROR;
         }
         else
         {
-            if ((result->lockInfo = Lock_Init()) == NULL)
-            {
-                free(result);
-                //**SRS_EVENTHUBRECEIVER_29_005: \[**Upon Failure EventHubReceiver_Create shall return NULL.**\]**
-                result = NULL;
-                EventHubReceiver_LL_Destroy(llHandle);
-                LogError("EventHubReceiver_Create Lock init failed.\r\n");
-            }
-            else
-            {
-                result->eventHubReceiverLLHandle = llHandle;
-                result->threadHandle = NULL;
-                result->threadState = THREAD_END;
-                result->state = RECEIVER_STATE_INACTIVE;
-                result->onEventReceiveCallback = NULL;
-                result->onEventReceiveErrorCallback = NULL;
-                result->onEventReceiveEndCallback = NULL;
-                result->onEventReceiveUserContext = NULL;
-                result->onEventReceiveErrorUserContext = NULL;
-                result->onEventReceiveEndUserContext = NULL;
-                //**SRS_EVENTHUBRECEIVER_29_006: \[**`EventHubReceiver_Create` shall initialize a DLIST by calling DList_InitializeListHead for queuing callbacks resulting from the invocation of `EventHubReceiver_LL_DoWork` from the `EHR_AsyncWorkLoopThreadEntry` workloop thread. **\]**
-                AsyncDispatchCallbackListInit(result);
-            }
+            //**Codes_SRS_EVENTHUBRECEIVER_29_203: \[**EventHubReceiver_RefreshSASTokenAsync shall call EventHubReceiver_LL_RefreshSASTokenAsync and pass the EVENTHUBRECEIVER_LL_HANDLE and the sasToken.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_205: \[**EventHubReceiver_RefreshSASTokenAsync shall return the result of the EventHubReceiver_LL_RefreshSASTokenAsync.**\]**
+            result = EventHubReceiver_LL_RefreshSASTokenAsync(ehStruct->eventHubReceiverLLHandle, eventHubSasToken);
+            //**Codes_SRS_EVENTHUBRECEIVER_29_204: \[**EventHubReceiver_RefreshSASTokenAsync shall unlock the EVENTHUBRECEIVER_STRUCT lockInfo using API Unlock.**\]**
+            (void)Unlock(ehStruct->lockInfo);
         }
     }
-    //**SRS_EVENTHUBRECEIVER_29_004: \[**Upon Success EventHubReceiver_Create shall return the EVENTHUBRECEIVER_HANDLE.**\]**
-    return (EVENTHUBRECEIVER_HANDLE)result;
+
+    //**Codes_SRS_EVENTHUBRECEIVER_29_205: \[**EventHubReceiver_RefreshSASTokenAsync shall return the result of the EventHubReceiver_LL_RefreshSASTokenAsync.**\]**
+    return result;
 }
 
 void EventHubReceiver_Destroy(EVENTHUBRECEIVER_HANDLE eventHubReceiverHandle)
@@ -154,15 +228,15 @@ void EventHubReceiver_Destroy(EVENTHUBRECEIVER_HANDLE eventHubReceiverHandle)
         int threadExitResult = 0;
 
         ehStruct->threadState = THREAD_END;
-        //**SRS_EVENTHUBRECEIVER_29_050: \[**`EventHubReceiver_Destroy` shall call ThreadAPI_Join if required to wait for the workloop thread.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_050: \[**EventHubReceiver_Destroy shall call ThreadAPI_Join if required to wait for the workloop thread.**\]**
         if ((ehStruct->threadHandle != NULL) && ((joinResult = ThreadAPI_Join(ehStruct->threadHandle, &threadExitResult)) != THREADAPI_OK))
         {
-            //**SRS_EVENTHUBRECEIVER_29_053: \[**If any errors are seen, a message will be logged.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_053: \[**If any errors are seen, a message will be logged.**\]**
             LogError("Join Failed.\r\n");
         }
-        //**SRS_EVENTHUBRECEIVER_29_051: \[**`EventHubReceiver_Destroy` shall pass the EventHubReceiver_LL_Handle to `EventHubReceiver_Destroy_LL`.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_051: \[**EventHubReceiver_Destroy shall pass the EventHubReceiver_LL_Handle to EventHubReceiver_Destroy_LL.**\]**
         EventHubReceiver_LL_Destroy(ehStruct->eventHubReceiverLLHandle);
-        //**SRS_EVENTHUBRECEIVER_29_052: \[**After call to `EventHubReceiver_LL_Destroy`, free up any allocated structures.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_052: \[**After call to EventHubReceiver_LL_Destroy, free up any allocated structures.**\]**
         AsyncDispatchCallbackListDeInit(ehStruct);
         Lock_Deinit(ehStruct->lockInfo);
         free(ehStruct);
@@ -179,7 +253,7 @@ EVENTHUBRECEIVER_RESULT EventHubReceiver_ReceiveEndAsync
     EVENTHUBRECEIVER_STRUCT* ehStruct = (EVENTHUBRECEIVER_STRUCT*)eventHubReceiverHandle;
     EVENTHUBRECEIVER_RESULT result;
 
-    //**SRS_EVENTHUBRECEIVER_29_060: \[**`EventHubReceiver_ReceiveEndAsync` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+    //**Codes_SRS_EVENTHUBRECEIVER_29_060: \[**EventHubReceiver_ReceiveEndAsync shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
     if (ehStruct == NULL)
     {
         result = EVENTHUBRECEIVER_INVALID_ARG;
@@ -188,13 +262,13 @@ EVENTHUBRECEIVER_RESULT EventHubReceiver_ReceiveEndAsync
     {
         if (Lock(ehStruct->lockInfo) != LOCK_OK)
         {
-            //**SRS_EVENTHUBRECEIVER_29_063: \[**Upon failure, `EventHubReceiver_ReceiveEndAsync` shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_063: \[**Upon failure, EventHubReceiver_ReceiveEndAsync shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
             LogError("Could not acquire lock!");
             result = EVENTHUBRECEIVER_ERROR;
         }
         else
         {
-            //**SRS_EVENTHUBRECEIVER_29_061: \[**`EventHubReceiver_ReceiveEndAsync` shall check if a receiver connection is currently active, If no receiver is active, EVENTHUBRECEIVER_NOT_ALLOWED shall be returned and a message will be logged.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_061: \[**EventHubReceiver_ReceiveEndAsync shall check if a receiver connection is currently active, If no receiver is active, EVENTHUBRECEIVER_NOT_ALLOWED shall be returned and a message will be logged.**\]**
             if (ehStruct->state != RECEIVER_STATE_ACTIVE)
             {
                 LogError("Operation not permitted as there is no active receiver connection.\r\n");
@@ -204,21 +278,21 @@ EVENTHUBRECEIVER_RESULT EventHubReceiver_ReceiveEndAsync
             {
                 EVENTHUBRECEIVER_ASYNC_END_CALLBACK eventRxEndCallback = NULL;
                 void* eventRxEndCallbackContext = NULL;
-                //**SRS_EVENTHUBRECEIVER_29_065: \[**`EventHubReceiver_ReceiveEndAsync` shall pass `EHR_OnAsyncEndCB` along with eventHubReceiverHandle as corresponding context arguments to `EventHubReceiver_ReceiveEndAsync_LL` so as to defer execution of the user provided callbacks to the `EHR_AsyncWorkLoopThreadEntry` workloop thread. This step will only be required if the user has passed in a callback.**\]**
+                //**Codes_SRS_EVENTHUBRECEIVER_29_065: \[**EventHubReceiver_ReceiveEndAsync shall pass EHR_OnAsyncEndCB along with eventHubReceiverHandle as corresponding context arguments to EventHubReceiver_ReceiveEndAsync_LL so as to defer execution of the user provided callbacks to the EHR_AsyncWorkLoopThreadEntry workloop thread. This step will only be required if the user has passed in a callback.**\]**
                 if (onEventReceiveEndCallback)
                 {
                     eventRxEndCallback = EHR_OnAsyncEndCB;
                     eventRxEndCallbackContext = (void*)ehStruct;
                 }
-                //**SRS_EVENTHUBRECEIVER_29_064: \[**`EventHubReceiver_ReceiveEndAsync` shall call EventHubReceiver_ReceiveEndAsync_LL.**\]**
+                //**Codes_SRS_EVENTHUBRECEIVER_29_064: \[**EventHubReceiver_ReceiveEndAsync shall call EventHubReceiver_ReceiveEndAsync_LL.**\]**
                 if ((result = EventHubReceiver_LL_ReceiveEndAsync(ehStruct->eventHubReceiverLLHandle, eventRxEndCallback, eventRxEndCallbackContext)) != EVENTHUBRECEIVER_OK)
                 {
-                    //**SRS_EVENTHUBRECEIVER_29_063: \[**Upon failure, `EventHubReceiver_ReceiveEndAsync` shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
+                    //**Codes_SRS_EVENTHUBRECEIVER_29_063: \[**Upon failure, EventHubReceiver_ReceiveEndAsync shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
                     LogError("EventHubReceiver_LL_ReceiveEndAsync Error Code:%u.\r\n", result);
                 }
                 else
                 {
-                    //**SRS_EVENTHUBRECEIVER_29_062: \[**Upon Success, `EventHubReceiver_ReceiveEndAsync` shall return EVENTHUBRECEIVER_OK.**\]**
+                    //**Codes_SRS_EVENTHUBRECEIVER_29_062: \[**Upon Success, EventHubReceiver_ReceiveEndAsync shall return EVENTHUBRECEIVER_OK.**\]**
                     ehStruct->onEventReceiveCallback = NULL;
                     ehStruct->onEventReceiveUserContext = NULL;
                     ehStruct->onEventReceiveErrorCallback = NULL;
@@ -249,7 +323,7 @@ static int EHR_AsyncWorkLoopThreadEntry(void* userContextCallback)
         }
         else
         {
-            //**SRS_EVENTHUBRECEIVER_29_080: \[**`EHR_AsyncWorkLoopThreadEntry` shall synchronously call EventHubReceiver_LL_DoWork.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_080: \[**EHR_AsyncWorkLoopThreadEntry shall synchronously call EventHubReceiver_LL_DoWork.**\]**
             EventHubReceiver_LL_DoWork(ehStruct->eventHubReceiverLLHandle);
             callbacks.onEventReceiveCallback = ehStruct->onEventReceiveCallback;
             callbacks.onEventReceiveUserContext = ehStruct->onEventReceiveUserContext;
@@ -259,9 +333,9 @@ static int EHR_AsyncWorkLoopThreadEntry(void* userContextCallback)
             callbacks.onEventReceiveEndUserContext = ehStruct->onEventReceiveEndUserContext;
             (void)Unlock(ehStruct->lockInfo);
         }
-        //**SRS_EVENTHUBRECEIVER_29_081: \[**`EHR_AsyncWorkLoopThreadEntry` shall invoke any queued user callbacks as a result of `EventHubReceiver_LL_DoWork` calling after the lock has been released.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_081: \[**EHR_AsyncWorkLoopThreadEntry shall invoke any queued user callbacks as a result of EventHubReceiver_LL_DoWork calling after the lock has been released.**\]**
         AsyncDispatchCallbackListProcess(ehStruct, &callbacks);
-        //**SRS_EVENTHUBRECEIVER_29_082: \[**`EHR_AsyncWorkLoopThreadEntry` shall poll using ThreadAPI_Sleep with an interval of 1ms.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_082: \[**EHR_AsyncWorkLoopThreadEntry shall poll using ThreadAPI_Sleep with an interval of 1ms.**\]**
         ThreadAPI_Sleep(EVENTHUBRECEIVER_LL_DO_WORK_TIMEPERIOD_MS);
     }
 
@@ -272,16 +346,16 @@ ASYNC_CALLBACK_DISPATCH_STRUCT* DispatchCreateHelper(EVENTHUBRECEIVER_RESULT res
 {
     ASYNC_CALLBACK_DISPATCH_STRUCT* dispatch;
 
-    //**SRS_EVENTHUBRECEIVER_29_045: \[**The deferred callbacks shall allocate memory to dispatch the resulting callbacks after calling EventHubReceiver_LL_DoWork. **\]**
+    //**Codes_SRS_EVENTHUBRECEIVER_29_045: \[**The deferred callbacks shall allocate memory to dispatch the resulting callbacks after calling EventHubReceiver_LL_DoWork. **\]**
     if ((dispatch = (ASYNC_CALLBACK_DISPATCH_STRUCT*)malloc(sizeof(ASYNC_CALLBACK_DISPATCH_STRUCT))) == NULL)
     {
-        //**SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, error messages shall be logged.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_049: \[**Upon failures, error messages shall be logged and any allocated memory or data structures shall be deallocated.**\]**
         LogError("Could not create dispatch struct.\r\n");
     }
-    //**SRS_EVENTHUBRECEIVER_29_047: \[**`EHR_OnAsyncReceiveCB` shall clone the event data using API EventData_Clone. **\]**
+    //**Codes_SRS_EVENTHUBRECEIVER_29_047: \[**EHR_OnAsyncReceiveCB shall clone the event data using API EventData_Clone. **\]**
     else if (eventDataHandle && ((dispatch->dataHandle = EventData_Clone(eventDataHandle)) == NULL))
     {
-        //**SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, error messages shall be logged and any allocated memory or data structures shall be deallocated.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_049: \[**Upon failures, error messages shall be logged and any allocated memory or data structures shall be deallocated.**\]**
         LogError("Could not clone EVENTDATA handle.\r\n");
         free(dispatch);
         dispatch = NULL;
@@ -292,7 +366,7 @@ ASYNC_CALLBACK_DISPATCH_STRUCT* DispatchCreateHelper(EVENTHUBRECEIVER_RESULT res
         {
             dispatch->dataHandle = NULL;
         }
-        //**SRS_EVENTHUBRECEIVER_29_046: \[**The deferred callbacks shall save off the callback result. **\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_046: \[**The deferred callbacks shall save off the callback result. **\]**
         dispatch->callbackResultCode = resultCode;
         dispatch->type = type;
     }
@@ -306,7 +380,7 @@ static void EHR_OnAsyncReceiveCB(EVENTHUBRECEIVER_RESULT result, EVENTDATA_HANDL
     ASYNC_CALLBACK_DISPATCH_STRUCT* dispatch = DispatchCreateHelper(result, eventDataHandle, DISPATCH_RECEIVEASYNC);
     if (dispatch != NULL)
     {
-        //**SRS_EVENTHUBRECEIVER_29_048: \[**The deferred callbacks shall enqueue the dispatch by calling DList_InsertTailList**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_048: \[**The deferred callbacks shall enqueue the dispatch by calling DList_InsertTailList**\]**
         AsyncDispatchCallbackListAdd(ehStruct, dispatch);
     }
 }
@@ -317,7 +391,7 @@ static void EHR_OnAsyncReceiveErrorCB(EVENTHUBRECEIVER_RESULT errorCode, void* c
     ASYNC_CALLBACK_DISPATCH_STRUCT* dispatch = DispatchCreateHelper(errorCode, NULL, DISPATCH_RECEIVEASYNC_ERROR);
     if (dispatch != NULL)
     {
-        //**SRS_EVENTHUBRECEIVER_29_048: \[**The deferred callbacks shall enqueue the dispatch by calling DList_InsertTailList**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_048: \[**The deferred callbacks shall enqueue the dispatch by calling DList_InsertTailList**\]**
         AsyncDispatchCallbackListAdd(ehStruct, dispatch);
     }
 }
@@ -328,7 +402,7 @@ static void EHR_OnAsyncEndCB(EVENTHUBRECEIVER_RESULT result, void* context)
     ASYNC_CALLBACK_DISPATCH_STRUCT* dispatch = DispatchCreateHelper(result, NULL, DISPATCH_RECEIVEASYNC_END);
     if (dispatch != NULL)
     {
-        //**SRS_EVENTHUBRECEIVER_29_048: \[**The deferred callbacks shall enqueue the dispatch by calling DList_InsertTailList**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_048: \[**The deferred callbacks shall enqueue the dispatch by calling DList_InsertTailList**\]**
         AsyncDispatchCallbackListAdd(ehStruct, dispatch);
     }
 }
@@ -348,7 +422,7 @@ static EVENTHUBRECEIVER_RESULT ExecuteCommonReceiveFromStartTimestampAsync
     THREADAPI_RESULT threadResult;
     EVENTHUBRECEIVER_STRUCT* ehStruct = (EVENTHUBRECEIVER_STRUCT*)eventHubReceiverHandle;
 
-    //**SRS_EVENTHUBRECEIVER_29_030: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+    //**Codes_SRS_EVENTHUBRECEIVER_29_030: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
     if (ehStruct == NULL || onEventReceiveCallback == NULL || onEventReceiveErrorCallback == NULL)
     {
         LogError("Invalid arguments\r\n");
@@ -356,7 +430,7 @@ static EVENTHUBRECEIVER_RESULT ExecuteCommonReceiveFromStartTimestampAsync
     }
     else if (Lock(ehStruct->lockInfo) == LOCK_OK)
     {
-        //**SRS_EVENTHUBRECEIVER_29_039: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall return an error code of EVENTHUBRECEIVER_NOT_ALLOWED if a user called EventHubReceiver_Receive* more than once on the same handle.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_039: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall return an error code of EVENTHUBRECEIVER_NOT_ALLOWED if a user called EventHubReceiver_Receive* more than once on the same handle.**\]**
         if (ehStruct->state != RECEIVER_STATE_INACTIVE)
         {
             result = EVENTHUBRECEIVER_NOT_ALLOWED;
@@ -364,11 +438,11 @@ static EVENTHUBRECEIVER_RESULT ExecuteCommonReceiveFromStartTimestampAsync
         }
         else
         {
-            //**SRS_EVENTHUBRECEIVER_29_033: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall pass `EHR_OnAsyncReceiveCB`, `EHR_OnAsyncReceiveErrorCB` along with eventHubReceiverHandle as corresponding context arguments to `EventHubReceiver_LL_ReceiveFromStartTimestamp*Async` so as to defer execution of these callbacks to the workloop thread.**\]**
-			if (waitTimeoutInMs == 0)
+            //**Codes_SRS_EVENTHUBRECEIVER_29_033: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall pass EHR_OnAsyncReceiveCB, EHR_OnAsyncReceiveErrorCB along with eventHubReceiverHandle as corresponding context arguments to EventHubReceiver_LL_ReceiveFromStartTimestamp*Async so as to defer execution of these callbacks to the workloop thread.**\]**
+            if (waitTimeoutInMs == 0)
             {
-                //**SRS_EVENTHUBRECEIVER_29_034: \[**`EventHubReceiver_ReceiveFromStartTimestampAsync` shall invoke `EventHubReceiver_ReceiveFromStartTimestampAsync_LL`.**\]**
-                //**SRS_EVENTHUBRECEIVER_29_035: \[**`EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync` invoke `EventHubReceiver_ReceiveFromStartTimestampAsync_LL` if waitTimeout is zero.**\]**
+                //**Codes_SRS_EVENTHUBRECEIVER_29_034: \[**EventHubReceiver_ReceiveFromStartTimestampAsync shall invoke EventHubReceiver_ReceiveFromStartTimestampAsync_LL.**\]**
+                //**Codes_SRS_EVENTHUBRECEIVER_29_035: \[**EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync invoke EventHubReceiver_ReceiveFromStartTimestampAsync_LL if waitTimeout is zero.**\]**
                 result = EventHubReceiver_LL_ReceiveFromStartTimestampAsync(ehStruct->eventHubReceiverLLHandle,
                     EHR_OnAsyncReceiveCB,
                     ehStruct,
@@ -378,7 +452,7 @@ static EVENTHUBRECEIVER_RESULT ExecuteCommonReceiveFromStartTimestampAsync
             }
             else
             {
-                //**SRS_EVENTHUBRECEIVER_29_036: \[**`EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync` invoke `EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_LL` if waitTimeout is non zero.**\]**
+                //**Codes_SRS_EVENTHUBRECEIVER_29_036: \[**EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync invoke EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync_LL if waitTimeout is non zero.**\]**
                 result = EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync(ehStruct->eventHubReceiverLLHandle,
                     EHR_OnAsyncReceiveCB,
                     ehStruct,
@@ -389,23 +463,23 @@ static EVENTHUBRECEIVER_RESULT ExecuteCommonReceiveFromStartTimestampAsync
             }
             if (result != EVENTHUBRECEIVER_OK)
             {
-                //**SRS_EVENTHUBRECEIVER_29_037: \[**If `EventHubReceiver_LL_ReceiveFromStartTimestamp*Async` returns an error, any allocated memory is freed and the error code is returned to the user and a message will logged.**\]**
+                //**Codes_SRS_EVENTHUBRECEIVER_29_037: \[**If EventHubReceiver_LL_ReceiveFromStartTimestamp*Async returns an error, any allocated memory is freed and the error code is returned to the user and a message will logged.**\]**
                 LogError("EventHubReceiver_LL_ReceiveFromStartTimestamp*Async Error Code:%u \r\n", result);
             }
-            //**SRS_EVENTHUBRECEIVER_29_038: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall create workloop thread which performs the requirements under "EHR_AsyncWorkLoopThreadEntry"**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_038: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall create workloop thread which performs the requirements under "EHR_AsyncWorkLoopThreadEntry"**\]**
             else if (ehStruct->threadHandle == NULL)
             {
                 ehStruct->threadState = THREAD_RUN;
                 if ((threadResult = ThreadAPI_Create(&ehStruct->threadHandle, EHR_AsyncWorkLoopThreadEntry, (void*)ehStruct)) != THREADAPI_OK)
                 {
-                    //**SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, EVENTHUBRECEIVER_ERROR shall be returned.**\]**
+                    //**Codes_SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, EVENTHUBRECEIVER_ERROR shall be returned.**\]**
                     LogError("Could not create workloop thread %u.\r\n", threadResult);
                     ehStruct->threadState = THREAD_END;
                     result = EVENTHUBRECEIVER_ERROR;
                 }
                 else
                 {
-                    //**SRS_EVENTHUBRECEIVER_29_041: \[**Upon Success EVENTHUBRECEIVER_OK shall be returned.**\]**
+                    //**Codes_SRS_EVENTHUBRECEIVER_29_041: \[**Upon Success EVENTHUBRECEIVER_OK shall be returned.**\]**
                     result = EVENTHUBRECEIVER_OK;
                 }
             }
@@ -413,7 +487,7 @@ static EVENTHUBRECEIVER_RESULT ExecuteCommonReceiveFromStartTimestampAsync
             if (result == EVENTHUBRECEIVER_OK)
             {
                 ehStruct->state = RECEIVER_STATE_ACTIVE;
-                //**SRS_EVENTHUBRECEIVER_29_031: \[**`EventHubReceiver_ReceiveFromStartTimestamp*Async` shall save off the user supplied callbacks and contexts.**\]**
+                //**Codes_SRS_EVENTHUBRECEIVER_29_031: \[**EventHubReceiver_ReceiveFromStartTimestamp*Async shall save off the user supplied callbacks and contexts.**\]**
                 ehStruct->onEventReceiveCallback = onEventReceiveCallback;
                 ehStruct->onEventReceiveUserContext = onEventReceiveUserContext;
                 ehStruct->onEventReceiveErrorCallback = onEventReceiveErrorCallback;
@@ -426,7 +500,7 @@ static EVENTHUBRECEIVER_RESULT ExecuteCommonReceiveFromStartTimestampAsync
     }
     else
     {
-        //**SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, EVENTHUBRECEIVER_ERROR shall be returned.**\]**
+        //**Codes_SRS_EVENTHUBRECEIVER_29_042: \[**Upon failures, EVENTHUBRECEIVER_ERROR shall be returned.**\]**
         result = EVENTHUBRECEIVER_ERROR;
         LogError("Could not acquire lock.\r\n");
     }
@@ -473,7 +547,7 @@ EVENTHUBRECEIVER_RESULT EventHubReceiver_SetConnectionTracing
 {
     EVENTHUBRECEIVER_RESULT result;
     EVENTHUBRECEIVER_STRUCT* ehStruct = (EVENTHUBRECEIVER_STRUCT*)eventHubReceiverHandle;
-    //**SRS_EVENTHUBRECEIVER_29_020: \[**`EventHubReceiver_Set_ConnectionTracing` shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
+    //**Codes_SRS_EVENTHUBRECEIVER_29_020: \[**EventHubReceiver_Set_ConnectionTracing shall validate arguments, in case they are invalid, error code EVENTHUBRECEIVER_INVALID_ARG will be returned.**\]**
     if (ehStruct == NULL)
     {
         LogError("Invalid arguments\r\n");
@@ -483,11 +557,11 @@ EVENTHUBRECEIVER_RESULT EventHubReceiver_SetConnectionTracing
     {
         if (Lock(ehStruct->lockInfo) == LOCK_OK)
         {
-            //**SRS_EVENTHUBRECEIVER_29_021: \[**`EventHubReceiver_Set_ConnectionTracing` shall pass the arguments to `EventHubReceiver_LL_SetConnectionTracing`.**\]**
-            //**SRS_EVENTHUBRECEIVER_29_023: \[**Upon Success, `EventHubReceiver_Set_ConnectionTracing` shall return EVENTHUBRECEIVER_OK.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_021: \[**EventHubReceiver_Set_ConnectionTracing shall pass the arguments to EventHubReceiver_LL_SetConnectionTracing.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_023: \[**Upon Success, EventHubReceiver_Set_ConnectionTracing shall return EVENTHUBRECEIVER_OK.**\]**
             result = EventHubReceiver_LL_SetConnectionTracing(ehStruct->eventHubReceiverLLHandle, traceEnabled);
             (void)Unlock(ehStruct->lockInfo);
-            //**SRS_EVENTHUBRECEIVER_29_022: \[**If `EventHubReceiver_LL_SetConnectionTracing` returns an error, the code is returned to the user and a message will logged.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_022: \[**If EventHubReceiver_LL_SetConnectionTracing returns an error, the code is returned to the user and a message will logged.**\]**
             if (result != EVENTHUBRECEIVER_OK)
             {
                 LogError("EventHubReceiver_LL_SetConnectionTracing Error Code:%u \r\n", result);
@@ -495,7 +569,7 @@ EVENTHUBRECEIVER_RESULT EventHubReceiver_SetConnectionTracing
         }
         else
         {
-            //**SRS_EVENTHUBRECEIVER_29_024: \[**Upon failure, `EventHubReceiver_Set_ConnectionTracing` shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
+            //**Codes_SRS_EVENTHUBRECEIVER_29_024: \[**Upon failure, EventHubReceiver_Set_ConnectionTracing shall return EVENTHUBRECEIVER_ERROR and a message will be logged.**\]**
             result = EVENTHUBRECEIVER_ERROR;
             LogError("Could not acquire lock.\r\n");
         }
