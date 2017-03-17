@@ -1733,11 +1733,11 @@ void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventhub_client_ll)
             (eventhub_client_ll->amqp_state == SENDER_AMQP_PENDING_SENDER_CREATE)) &&
             ((error_code = initialize_uamqp_stack(eventhub_client_ll)) != 0))
         {
+            LogError("Error initializing uAMPQ sender stack. Code:%d Status:%u\r\n", error_code, eventhub_client_ll->amqp_state);
             if (eventhub_client_ll->on_error_cb != NULL)
             {
-                eventhub_client_ll->on_error_cb(EVENTHUBCLIENT_SENDER_AMQP_UNINITIALIZED, eventhub_client_ll->error_callback_context);
+                eventhub_client_ll->on_error_cb(EVENTHUBCLIENT_AMQP_INIT_FAILURE, eventhub_client_ll->error_callback_context);
             }
-            LogError("Error initializing uAMPQ sender stack. Code:%d Status:%u\r\n", error_code, eventhub_client_ll->amqp_state);
         }
         else if (eventhub_client_ll->message_sender_state == MESSAGE_SENDER_STATE_ERROR)
         {
