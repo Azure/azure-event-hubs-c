@@ -21,7 +21,7 @@ x64/
 [Oo]bj/
 !/build/release/
 target/
-/c/cmake
+/cmake
 
 # Jenkins build files
 /jenkins/jenkins-cli.jar

@@ -77,6 +77,17 @@ static const char sasTokenDelim[] = "%2f";
 
 static int UpdateEventHubAuthACBSStatus(EVENTHUBAUTH_CBS_STRUCT* eventHubAuth);
 
+static void on_cbs_open_complete(void* context, CBS_OPEN_COMPLETE_RESULT open_complete_result)
+{
+    (void)context;
+    (void)open_complete_result;
+}
+
+static void on_cbs_error(void* context)
+{
+    (void)context;
+}
+
 static int GetSecondsSinceEpoch(uint64_t* seconds)
 {
     int result;
@@ -758,13 +769,13 @@ EVENTHUBAUTH_CBS_HANDLE EventHubAuthCBS_Create(const EVENTHUBAUTH_CBS_CONFIG* ev
         if (isError == false)
         {
             //**Codes_SRS_EVENTHUB_AUTH_29_030: \[**EventHubAuthCBS_Create shall initialize a CBS handle by calling API cbs_create.**\]**
-            if ((result->cbsHandle = cbs_create(cbsSessionHandle, NULL, NULL)) == NULL)
+            if ((result->cbsHandle = cbs_create(cbsSessionHandle)) == NULL)
             {
                 LogError("Could Not Create CBS Handle\r\n");
                 isError = true;
             }
-            //**Codes_SRS_EVENTHUB_AUTH_29_031: \[**EventHubAuthCBS_Create shall open the CBS handle by calling API cbs_open.**\]**
-            else if ((errorCode = cbs_open(result->cbsHandle)) != 0)
+            //**Codes_SRS_EVENTHUB_AUTH_29_031: \[**EventHubAuthCBS_Create shall open the CBS handle by calling API `cbs_open_async`.**\]**
+            else if ((errorCode = cbs_open_async(result->cbsHandle, on_cbs_open_complete, result->cbsHandle, on_cbs_error, result->cbsHandle)) != 0)
             {
                 LogError("Could Not Open CBS Handle %d\r\n", errorCode);
                 isError = true;
@@ -962,7 +973,7 @@ EVENTHUBAUTH_RESULT EventHubAuthCBS_Authenticate(EVENTHUBAUTH_CBS_HANDLE eventHu
             eventHubAuth->sasTokenPutTime = secondsSinceEpoch;
             eventHubAuth->cbOperation = EVENTHUBAUTH_OP_PUT;
             //**Codes_SRS_EVENTHUB_AUTH_29_109: \[**EventHubAuthCBS_Authenticate shall establish (put) the new token by calling API cbs_put_token and passing in the CBS handle, "servicebus.windows.net:sastoken", URI string buffer, SAS token string buffer, OnCBSPutTokenOperationComplete and eventHubAuthHandle.**\]**
-            if ((errorCode = cbs_put_token(eventHubAuth->cbsHandle, SAS_TOKEN_TYPE, uri, sasToken, OnCBSPutTokenOperationComplete, eventHubAuth)) != 0)
+            if ((errorCode = cbs_put_token_async(eventHubAuth->cbsHandle, SAS_TOKEN_TYPE, uri, sasToken, OnCBSPutTokenOperationComplete, eventHubAuth)) != 0)
             {
                 //**Codes_SRS_EVENTHUB_AUTH_29_111: \[**EventHubAuthCBS_Authenticate shall return EVENTHUBAUTH_RESULT_ERROR on error.**\]**
                 LogError("cbs_put_token Returned Error %d\r\n", errorCode);

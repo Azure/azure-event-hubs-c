@@ -140,7 +140,7 @@ MOCKABLE_FUNCTION(, EVENTHUBAUTH_CBS_HANDLE, EventHubAuthCBS_Create, EVENTHUBAUT
 
 **SRS_EVENTHUB_AUTH_29_030: \[**`EventHubAuthCBS_Create` shall initialize a CBS handle by calling API cbs_create.**\]**
 
-**SRS_EVENTHUB_AUTH_29_031: \[**`EventHubAuthCBS_Create` shall open the CBS handle by calling API cbs_open.**\]**
+**SRS_EVENTHUB_AUTH_29_031: \[**`EventHubAuthCBS_Create` shall open the CBS handle by calling API `cbs_open_async`.**\]**
 
 **SRS_EVENTHUB_AUTH_29_032: \[**`EventHubAuthCBS_Create` shall initialize its internal data structures using the configuration data passed in.**\]**
 

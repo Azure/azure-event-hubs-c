@@ -786,7 +786,7 @@ static uint64_t TestSetupCallStack_SenderEventHubAuthCBS_SASTokenParse(const cha
 //**Tests_SRS_EVENTHUB_AUTH_29_028: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a BUFFER_HANDLE using API BUFFER_create and pass in the eventHubAuthConfig->sharedAccessKey buffer and its length.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_029: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a new STRING_HANDLE by Base64 encoding the buffer handle created above by using API Base64_Encode.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_030: \[**EventHubAuthCBS_Create shall initialize a CBS handle by calling API cbs_create.**\]**
-//**Tests_SRS_EVENTHUB_AUTH_29_031: \[**EventHubAuthCBS_Create shall open the CBS handle by calling API cbs_open.**\]**
+//**Tests_SRS_EVENTHUB_AUTH_29_031: \[**EventHubAuthCBS_Create shall open the CBS handle by calling API `cbs_open_async.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_032: \[**EventHubAuthCBS_Create shall initialize its internal data structures using the configuration data passed in.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_033: \[**EventHubAuthCBS_Create shall return a non-NULL handle encapsulating the storage of the data provided.**\]**
 static uint64_t TestSetupCallStack_EventHubAuthCBS_Create(EVENTHUBAUTH_MODE mode, EVENTHUBAUTH_CREDENTIAL_TYPE credential)
@@ -887,10 +887,10 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Create(EVENTHUBAUTH_MODE mode
     }
 
 
-    STRICT_EXPECTED_CALL(cbs_create(TEST_SESSION_HANDLE_VALID, NULL, NULL));
+    STRICT_EXPECTED_CALL(cbs_create(TEST_SESSION_HANDLE_VALID));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(cbs_open(TEST_CBS_HANDLE_VALID));
+    STRICT_EXPECTED_CALL(cbs_open_async(TEST_CBS_HANDLE_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
@@ -1038,8 +1038,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Authenticate_Common
     STRICT_EXPECTED_CALL(STRING_c_str(sasToken));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(cbs_put_token(TEST_CBS_HANDLE_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5).IgnoreArgument(6);
+    STRICT_EXPECTED_CALL(cbs_put_token_async(TEST_CBS_HANDLE_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
@@ -1242,6 +1241,8 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     REGISTER_UMOCK_ALIAS_TYPE(MAP_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(STRING_TOKENIZER_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_AMQP_MANAGEMENT_STATE_CHANGED, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_CBS_OPEN_COMPLETE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_CBS_ERROR, void*);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, TestHook_malloc);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
@@ -1276,11 +1277,11 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
     REGISTER_GLOBAL_MOCK_RETURN(cbs_create, TEST_CBS_HANDLE_VALID);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(cbs_create, NULL);
-    REGISTER_GLOBAL_MOCK_RETURN(cbs_open, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(cbs_open, -1);
+    REGISTER_GLOBAL_MOCK_RETURN(cbs_open_async, 0);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(cbs_open_async, -1);
     REGISTER_UMOCK_ALIAS_TYPE(ON_CBS_OPERATION_COMPLETE, void*);
-    REGISTER_GLOBAL_MOCK_HOOK(cbs_put_token, TestHook_cbs_put_token);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(cbs_put_token, -1);
+    REGISTER_GLOBAL_MOCK_HOOK(cbs_put_token_async, TestHook_cbs_put_token);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(cbs_put_token_async, -1);
 
     REGISTER_GLOBAL_MOCK_HOOK(get_time, TestHook_get_time);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(get_time, TEST_TIME_T_INVALID);
