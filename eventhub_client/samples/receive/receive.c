@@ -127,7 +127,7 @@ int Receive_Sample(void)
             // enable connection tracing
             EventHubReceiver_SetConnectionTracing(eventHubReceiveHandle, true);
             // register callback functions to read event payload from the hub
-            errorCode = EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync(eventHubReceiveHandle, OnReceiveCB, NULL, OnErrorCB, NULL, nowTimestamp, 1000);
+            errorCode = EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync(eventHubReceiveHandle, OnReceiveCB, NULL, OnErrorCB, NULL, nowTimestamp, 10000);
             if (errorCode != EVENTHUBRECEIVER_OK)
             {
                 (void)printf("ERROR: EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync returned NULL!\r\n");

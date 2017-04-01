@@ -744,6 +744,8 @@ static int EventHubAMQP_InitializeStackCommon
             hostName = EventHubConnectionParams_GetHostName(connectionParams);
             tlsIOConfig.hostname = hostName;
             tlsIOConfig.port = TLS_PORT;
+            tlsIOConfig.underlying_io_interface = NULL;
+            tlsIOConfig.underlying_io_parameters = NULL;
 
             //**Codes_SRS_EVENTHUBRECEIVER_LL_29_505: \[**The interface passed to xio_create shall be obtained by calling platform_get_default_tlsio.**\]**
             if ((tlsioInterface = platform_get_default_tlsio()) == NULL)
