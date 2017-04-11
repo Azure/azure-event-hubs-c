@@ -368,6 +368,9 @@ public:
         }
     MOCK_METHOD_END(COND_RESULT, COND_OK);
 
+    MOCK_STATIC_METHOD_1(, void, ThreadAPI_Sleep, unsigned int, milliseconds)
+    MOCK_VOID_METHOD_END()
+
     MOCK_STATIC_METHOD_1(, void, Condition_Deinit, COND_HANDLE, handle)
         free(handle);
     MOCK_VOID_METHOD_END()
@@ -409,6 +412,8 @@ DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientMocks, , void, EventData_Destroy, EV
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientMocks, , const char*, EventData_GetPartitionKey, EVENTDATA_HANDLE, eventDataHandle);
 DECLARE_GLOBAL_MOCK_METHOD_5(CEventHubClientMocks, , EVENTDATA_RESULT, EventData_GetPropertyByIndex, EVENTDATA_HANDLE, eventDataHandle, size_t, propertyIndex, const char**, propertyName, const unsigned char**, propertyValue, size_t*, propertySize);
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientMocks, , size_t, EventData_GetPropertyCount, EVENTDATA_HANDLE, eventDataHandle);
+
+DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientMocks, , void, ThreadAPI_Sleep, unsigned int, milliseconds);
 
 //DECLARE_GLOBAL_MOCK_METHOD_0(CEventHubClientMocks, , const char*, EventHubClient_GetVersionString);
 

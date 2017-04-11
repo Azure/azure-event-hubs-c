@@ -58,6 +58,8 @@ static int EventhubClientThread(void* userContextCallback)
         {
             LOG_ERROR(EVENTHUBCLIENT_ERROR);
         }
+
+        ThreadAPI_Sleep(1);
     }
     return 0;
 }
