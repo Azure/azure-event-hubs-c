@@ -629,7 +629,7 @@ TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_NULLParam_eventHubHandle)
     EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(NULL, sasToken);
 
     // assert
-    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_INVALID_ARG, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBCLIENT_INVALID_ARG, result, "Failed Return Value Test");
 
     // cleanup
 }
@@ -648,7 +648,7 @@ TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_NULLParam_eventHubSasToken)
     EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_INVALID_ARG, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBCLIENT_INVALID_ARG, result, "Failed Return Value Test");
     ehMocks.AssertActualAndExpectedCalls();
 
     // cleanup
@@ -676,7 +676,7 @@ TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_Succeeds)
     EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(h, sasToken);
 
     // assert
-    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBCLIENT_OK, result, "Failed Return Value Test");
     ehMocks.AssertActualAndExpectedCalls();
 
     // cleanup
@@ -704,7 +704,7 @@ TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_Lock_Fails)
     EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(h, sasToken);
 
     // assert
-    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_ERROR, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBCLIENT_ERROR, result, "Failed Return Value Test");
     ehMocks.AssertActualAndExpectedCalls();
 
     // cleanup
@@ -732,7 +732,7 @@ TEST_FUNCTION(EventHubClient_RefreshSASTokenAsync_Refresh_Fails)
     EVENTHUBCLIENT_RESULT result = EventHubClient_RefreshSASTokenAsync(h, sasToken);
 
     // assert
-    ASSERT_ARE_EQUAL(int, EVENTHUBCLIENT_ERROR, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBCLIENT_ERROR, result, "Failed Return Value Test");
     ehMocks.AssertActualAndExpectedCalls();
 
     // cleanup
