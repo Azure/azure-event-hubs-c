@@ -928,7 +928,7 @@ EVENTHUBCLIENT_LL_HANDLE EventHubClient_LL_CreateFromConnectionString(const char
         {
             /* Codes_SRS_EVENTHUBCLIENT_LL_03_002: [EventHubClient_LL_CreateFromConnectionString shall allocate a new event hub client LL instance.] */
             /* Codes_SRS_EVENTHUBCLIENT_LL_03_016: [EventHubClient_LL_CreateFromConnectionString shall return a non-NULL handle value upon success.] */
-            if ((eventhub_client_ll = malloc(sizeof(EVENTHUBCLIENT_LL))) == NULL)
+            if ((eventhub_client_ll = (EVENTHUBCLIENT_LL*)malloc(sizeof(EVENTHUBCLIENT_LL))) == NULL)
             {
                 LogError("Memory Allocation Failed for eventhub_client_ll.");
             }
@@ -1344,7 +1344,7 @@ EVENTHUBCLIENT_RESULT EventHubClient_LL_SendAsync(EVENTHUBCLIENT_LL_HANDLE event
         {
             newEntry->currentStatus = WAITING_TO_BE_SENT;
             newEntry->eventCount = 1;
-            newEntry->eventDataList = malloc(sizeof(EVENTDATA_HANDLE));
+            newEntry->eventDataList = (EVENTDATA_HANDLE*)malloc(sizeof(EVENTDATA_HANDLE));
             (void)tickcounter_get_current_ms(eventhub_client_ll->counter, &newEntry->idle_timer);
 
             if (newEntry->eventDataList == NULL)
@@ -1414,7 +1414,7 @@ EVENTHUBCLIENT_RESULT EventHubClient_LL_SendBatchAsync(EVENTHUBCLIENT_LL_HANDLE 
                 newEntry->eventCount = count;
                 (void)tickcounter_get_current_ms(eventhub_client_ll->counter, &newEntry->idle_timer);
 
-                newEntry->eventDataList = malloc(sizeof(EVENTDATA_HANDLE)*count);
+                newEntry->eventDataList = (EVENTDATA_HANDLE*)malloc(sizeof(EVENTDATA_HANDLE)*count);
                 if (newEntry->eventDataList == NULL)
                 {
                     /* Codes_SRS_EVENTHUBCLIENT_LL_07_013: [EventHubClient_LL_SendBatchAsync shall return EVENTHUBCLIENT_ERROR for any Error that is encountered.] */

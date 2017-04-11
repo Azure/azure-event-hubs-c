@@ -748,7 +748,7 @@ EVENTHUBAUTH_CBS_HANDLE EventHubAuthCBS_Create(const EVENTHUBAUTH_CBS_CONFIG* ev
                     isError = true;
                 }
                 //**Codes_SRS_EVENTHUB_AUTH_29_028: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a BUFFER_HANDLE using API BUFFER_create and pass in the eventHubAuthConfig->sharedAccessKey buffer and its length.**\]**
-                else if ((bufferHandle = BUFFER_create(sharedAccessKey, strlen(sharedAccessKey))) == NULL)
+                else if ((bufferHandle = BUFFER_create((const unsigned char*)sharedAccessKey, strlen(sharedAccessKey))) == NULL)
                 {
                     LogError("Could Not Create Buffer Handle\r\n");
                     isError = true;
@@ -870,7 +870,7 @@ void EventHubAuthCBS_Destroy(EVENTHUBAUTH_CBS_HANDLE eventHubAuthHandle)
 
 EVENTHUBAUTH_RESULT EventHubAuthCBS_Authenticate(EVENTHUBAUTH_CBS_HANDLE eventHubAuthHandle)
 {
-    EVENTHUBAUTH_STATUS result;
+    EVENTHUBAUTH_RESULT result;
     bool putToken;
     int errorCode;
     uint64_t secondsSinceEpoch;
@@ -983,7 +983,7 @@ EVENTHUBAUTH_RESULT EventHubAuthCBS_Authenticate(EVENTHUBAUTH_CBS_HANDLE eventHu
             {
                 //**Codes_SRS_EVENTHUB_AUTH_29_110: \[**EventHubAuthCBS_Authenticate shall return EVENTHUBAUTH_RESULT_OK on success and transition status to EVENTHUBAUTH_STATUS_IN_PROGRESS.**\]**
                 eventHubAuth->cbsStatus = EVENTHUBAUTH_STATUS_IN_PROGRESS;
-                result = EVENTHUBAUTH_STATUS_OK;
+                result = EVENTHUBAUTH_RESULT_OK;
             }
         }
     }

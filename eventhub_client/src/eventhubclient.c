@@ -75,14 +75,14 @@ static void EventhubClientLLCallback(EVENTHUBCLIENT_CONFIRMATION_RESULT result, 
 
 EVENTHUB_CALLBACK_STRUCT * EventHubClient_InitUserContext(void)
 {
-    EVENTHUB_CALLBACK_STRUCT* eventhubUserContext = malloc(sizeof(EVENTHUB_CALLBACK_STRUCT) );
+    EVENTHUB_CALLBACK_STRUCT* eventhubUserContext = (EVENTHUB_CALLBACK_STRUCT*)malloc(sizeof(EVENTHUB_CALLBACK_STRUCT) );
     if ( eventhubUserContext != NULL)
     {
         eventhubUserContext->callbackStatus = CALLBACK_WAITING;
-        eventhubUserContext->confirmationResult = -1;
+        eventhubUserContext->confirmationResult = EVENTHUBCLIENT_CONFIRMATION_ERROR;
         // init and set the lock. completion unlocks
         eventhubUserContext->completionLock = Lock_Init();
-       Lock(eventhubUserContext->completionLock);
+        Lock(eventhubUserContext->completionLock);
         eventhubUserContext->completionCondition = Condition_Init();
     }
     return eventhubUserContext;
@@ -203,7 +203,7 @@ EVENTHUBCLIENT_STRUCT* EventHubClient_CreateCommon(EVENTHUBCLIENT_LL_HANDLE llHa
     EVENTHUBCLIENT_STRUCT* result;
 
     //**Codes_SRS_EVENTHUBCLIENT_29_103: \[**Upon Success of EventHubClient_LL_CreateFromSASToken, EventHubClient_CreateFromSASToken shall allocate the internal structures as required by this module.**\]**
-    result = malloc(sizeof(EVENTHUBCLIENT_STRUCT));
+    result = (EVENTHUBCLIENT_STRUCT*)malloc(sizeof(EVENTHUBCLIENT_STRUCT));
     if (result == NULL)
     {
         /* Codes_SRS_EVENTHUBCLIENT_03_006: [EventHubClient_CreateFromConnectionString shall return a NULL value if EventHubClient_CreateFromConnectionString_LL returns NULL.] */

@@ -9,6 +9,7 @@
 #include "azure_c_shared_utility/map.h" 
 
 #ifdef __cplusplus
+#include <cstdint>
 #include <cstddef>
 extern "C" 
 {
@@ -26,7 +27,7 @@ extern "C"
 
 DEFINE_ENUM(EVENTDATA_RESULT, EVENTDATA_RESULT_VALUES);
 
-typedef struct EVENT_DATA* EVENTDATA_HANDLE;
+typedef struct EVENT_DATA_TAG* EVENTDATA_HANDLE;
 
 MOCKABLE_FUNCTION(, EVENTDATA_HANDLE, EventData_CreateWithNewMemory, const unsigned char*, data, size_t, length);
 MOCKABLE_FUNCTION(, EVENTDATA_RESULT, EventData_GetData, EVENTDATA_HANDLE, eventDataHandle, const unsigned char**, buffer, size_t*, size);
