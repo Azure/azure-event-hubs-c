@@ -512,7 +512,7 @@ static MESSAGE_RECEIVER_HANDLE TestHook_messagereceiver_create(LINK_HANDLE link,
     return TEST_MESSAGE_RECEIVER_HANDLE_VALID;
 }
 
-static int TestHook_messagereceiver_open(MESSAGE_RECEIVER_HANDLE message_receiver, ON_MESSAGE_RECEIVED on_message_received, const void* callback_context)
+static int TestHook_messagereceiver_open(MESSAGE_RECEIVER_HANDLE message_receiver, ON_MESSAGE_RECEIVED on_message_received, void* callback_context)
 {
     (void)message_receiver;
     OnRxCBStruct.onMsgReceivedCallback = on_message_received;
