@@ -593,11 +593,9 @@ EVENTHUBAUTH_CBS_HANDLE EventHubAuthCBS_Create(const EVENTHUBAUTH_CBS_CONFIG* ev
     //**Codes_SRS_EVENTHUB_AUTH_29_005: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->sasTokenExpirationTimeInSec or eventHubAuthConfig->sasTokenRefreshPeriodInSecs is zero or eventHubAuthConfig->sasTokenRefreshPeriodInSecs is greater than eventHubAuthConfig->sasTokenExpirationTimeInSec.**\]**
     //**Codes_SRS_EVENTHUB_AUTH_29_006: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->sharedAccessKeyName or eventHubAuthConfig->sharedAccessKey are NULL.**\]**
     //**Codes_SRS_EVENTHUB_AUTH_29_007: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->mode is EVENTHUBAUTH_MODE_RECEIVER and eventHubAuthConfig->receiverConsumerGroup or eventHubAuthConfig->receiverPartitionId is NULL.**\]**
-    //**Codes_SRS_EVENTHUB_AUTH_29_008: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->mode is EVENTHUBAUTH_MODE_SENDER and eventHubAuthConfig->senderPublisherId is NULL.**\]**
     else if ((eventHubAuthConfig->credential == EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO) &&
               ((eventHubAuthConfig->sharedAccessKeyName == NULL) || (eventHubAuthConfig->sharedAccessKey == NULL) ||
                (eventHubAuthConfig->hostName == NULL) || (eventHubAuthConfig->eventHubPath == NULL) ||
-               ((eventHubAuthConfig->mode == EVENTHUBAUTH_MODE_SENDER) && (eventHubAuthConfig->senderPublisherId == NULL)) ||
                ((eventHubAuthConfig->mode == EVENTHUBAUTH_MODE_RECEIVER) && ((eventHubAuthConfig->receiverConsumerGroup == NULL) || (eventHubAuthConfig->receiverPartitionId == NULL))) ||
                 (eventHubAuthConfig->sasTokenExpirationTimeInSec == 0) || (eventHubAuthConfig->sasTokenRefreshPeriodInSecs == 0) ||
                 (eventHubAuthConfig->sasTokenExpirationTimeInSec <= eventHubAuthConfig->sasTokenRefreshPeriodInSecs)))
@@ -708,15 +706,17 @@ EVENTHUBAUTH_CBS_HANDLE EventHubAuthCBS_Create(const EVENTHUBAUTH_CBS_CONFIG* ev
                 else
                 {
                     //**Codes_SRS_EVENTHUB_AUTH_29_023: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if mode is EVENTHUBAUTH_MODE_SENDER, EventHubAuthCBS_Create shall further concatenate the URI with "/publishers/" using API STRING_concat.**\]**
-                    if ((errorCode = STRING_concat(result->uri, "/publishers/")) != 0)
+                    if ((eventHubAuthConfig->senderPublisherId != NULL) &&
+                        ((errorCode = STRING_concat(result->uri, "/publishers/")) != 0))
                     {
                         LogError("Could Not Concatenate \"/publishers/\" to the URI handle\r\n");
                         isError = true;
                     }
                     //**Codes_SRS_EVENTHUB_AUTH_29_024: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if mode is EVENTHUBAUTH_MODE_SENDER, EventHubAuthCBS_Create shall further concatenate the URI with eventHubAuthConfig->senderPublisherId using API STRING_concat_with_STRING.**\]**
-                    else if ((errorCode = STRING_concat_with_STRING(result->uri, eventHubAuthConfig->senderPublisherId)) != 0)
+                    else if ((eventHubAuthConfig->senderPublisherId != NULL) &&
+                        ((errorCode = STRING_concat_with_STRING(result->uri, eventHubAuthConfig->senderPublisherId)) != 0))
                     {
-                        LogError("Could Not Concatenate Consumer Group to the URI handle\r\n");
+                        LogError("Could Not Concatenate Publisher Id to the URI handle\r\n");
                         isError = true;
                     }
                     else

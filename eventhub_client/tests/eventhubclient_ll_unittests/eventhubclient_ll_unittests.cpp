@@ -764,12 +764,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL((*mocks), STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
         STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
-        STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
-        STRICT_EXPECTED_CALL((*mocks), STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
         STRICT_EXPECTED_CALL((*mocks), STRING_construct(TEST_EVENTHUB_PATH))
             .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
-        STRICT_EXPECTED_CALL((*mocks), STRING_construct(TEST_PUBLISHER_ID))
-            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
         STRICT_EXPECTED_CALL((*mocks), Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_CONNSTR_HANDLE));
     }
@@ -949,12 +945,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "AnotherOne"));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
         STRICT_EXPECTED_CALL(mocks, STRING_construct("AnotherOne"))
             .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_PUBLISHER_ID))
-            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
 
@@ -1477,55 +1469,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         ASSERT_IS_NULL(result);
     }
 
-    /* Tests_SRS_EVENTHUBCLIENT_LL_03_004: [For all other errors, EventHubClient_LL_CreateFromConnectionString shall return NULL.] */
-    TEST_FUNCTION(when_concatenating_string_publishers_in_the_target_address_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
-    {
-        // arrange
-        CEventHubClientLLMocks mocks;
-
-        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
-            .SetReturn(TEST_CONNSTR_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
-        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
-            .SetReturn(TEST_ENDPOINT);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
-            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
-            .SetReturn(TEST_KEYNAME_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEY))
-            .SetReturn((STRING_HANDLE)TEST_KEY_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
-            .SetReturn(TEST_TARGET_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"))
-            .SetReturn(1);
-        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-
-        // act
-        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-        mocks.AssertActualAndExpectedCalls();
-
-        // assert
-        ASSERT_IS_NULL(result);
-    }
-
     TEST_FUNCTION(when_constructing_the_event_hub_path_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
     {
         // arrange
@@ -1555,8 +1498,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
         STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_EVENTHUB_PATH))
             .SetReturn((STRING_HANDLE)NULL);
         STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
@@ -1564,108 +1505,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-
-        // act
-        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-        mocks.AssertActualAndExpectedCalls();
-
-        // assert
-        ASSERT_IS_NULL(result);
-    }
-
-    /* Tests_SRS_EVENTHUBCLIENT_LL_03_004: [For all other errors, EventHubClient_LL_CreateFromConnectionString shall return NULL.] */
-    TEST_FUNCTION(when_concatenating_publisher_id_in_the_target_address_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
-    {
-        // arrange
-        CEventHubClientLLMocks mocks;
-
-        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
-            .SetReturn(TEST_CONNSTR_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
-        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
-            .SetReturn(TEST_ENDPOINT);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
-            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
-            .SetReturn(TEST_KEYNAME_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEY))
-            .SetReturn((STRING_HANDLE)TEST_KEY_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
-            .SetReturn(TEST_TARGET_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID))
-            .SetReturn(1);
-        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
-
-        // act
-        EVENTHUBCLIENT_LL_HANDLE result = EventHubClient_LL_CreateFromConnectionString(CONNECTION_STRING, TEST_EVENTHUB_PATH);
-        mocks.AssertActualAndExpectedCalls();
-
-        // assert
-        ASSERT_IS_NULL(result);
-    }
-
-    TEST_FUNCTION(when_constructing_the_publisherid_fails_then_EventHubClient_LL_CreateFromConnectionString_fails)
-    {
-        // arrange
-        CEventHubClientLLMocks mocks;
-
-        STRICT_EXPECTED_CALL(mocks, EventHubClient_GetVersionString());
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(CONNECTION_STRING))
-            .SetReturn(TEST_CONNSTR_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, connectionstringparser_parse(TEST_CONNSTR_HANDLE));
-        EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-        EXPECTED_CALL(mocks, DList_InitializeListHead(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(mocks, tickcounter_create());
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "Endpoint"))
-            .SetReturn(TEST_ENDPOINT);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct_n(TEST_HOSTNAME, strlen(TEST_HOSTNAME)))
-            .SetReturn(TEST_HOSTNAME_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKeyName"))
-            .SetReturn(TEST_KEYNAME);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEYNAME))
-            .SetReturn(TEST_KEYNAME_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(TEST_CONNSTR_MAP_HANDLE, "SharedAccessKey"))
-            .SetReturn(TEST_KEY);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_KEY))
-            .SetReturn((STRING_HANDLE)TEST_KEY_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("amqps://"))
-            .SetReturn(TEST_TARGET_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_EVENTHUB_PATH)).SetReturn(TEST_EVENTHUB_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_PUBLISHER_ID))
-            .SetReturn((STRING_HANDLE)NULL);
-        STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
@@ -1765,12 +1604,8 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(TEST_TARGET_STRING_HANDLE, TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/"));
         STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_EVENTHUB_PATH));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, "/publishers/"));
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(TEST_TARGET_STRING_HANDLE, TEST_PUBLISHER_ID));
         STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_EVENTHUB_PATH))
             .SetReturn(TEST_EVENTHUB_STRING_HANDLE);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_PUBLISHER_ID))
-            .SetReturn(TEST_PUBLISHER_STRING_HANDLE);
         STRICT_EXPECTED_CALL(mocks, Map_Destroy(TEST_CONNSTR_MAP_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_CONNSTR_HANDLE));
 
@@ -2666,7 +2501,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
@@ -2750,7 +2584,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, tickcounter_destroy(TICK_COUNT_HANDLE_TEST));
@@ -2891,11 +2724,13 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_TARGET_STRING_HANDLE));
         STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
-        STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
         if (credential == EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO)
         {
             STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_KEYNAME_STRING_HANDLE));
             STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_KEY_STRING_HANDLE));
+        } else if (credential == EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT)
+        {
+            STRICT_EXPECTED_CALL((*mocks), STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
         }
         STRICT_EXPECTED_CALL((*mocks), DList_RemoveHeadList(saved_pending_list));
 
@@ -2975,7 +2810,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_TARGET_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEYNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_EVENTHUB_STRING_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_PUBLISHER_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_KEY_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, STRING_delete(TEST_HOSTNAME_STRING_HANDLE));
         STRICT_EXPECTED_CALL(mocks, DList_RemoveHeadList(saved_pending_list));

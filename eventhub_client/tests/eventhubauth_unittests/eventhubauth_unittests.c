@@ -1816,14 +1816,6 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
     ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Invalid Mode #1");
-
-    // arrange
-    TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
-    cfg.mode = EVENTHUBAUTH_MODE_SENDER;
-    // act
-    h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
-    // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Invalid Mode #2");
 }
 
 //**Tests_SRS_EVENTHUB_AUTH_29_002: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->mode is not EVENTHUBAUTH_MODE_SENDER or EVENTHUBAUTH_MODE_RECEIVER.**\]**
@@ -1831,7 +1823,6 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
 //**Tests_SRS_EVENTHUB_AUTH_29_004: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->hostName or eventHubAuthConfig->eventHubPath are NULL.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_005: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->sasTokenExpirationTimeInSec or eventHubAuthConfig->sasTokenRefreshPeriodInSecs is zero or eventHubAuthConfig->sasTokenRefreshPeriodInSecs is greater than eventHubAuthConfig->sasTokenExpirationTimeInSec.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_006: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->sharedAccessKeyName or eventHubAuthConfig->sharedAccessKey are NULL.**\]**
-//**Tests_SRS_EVENTHUB_AUTH_29_008: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->mode is EVENTHUBAUTH_MODE_SENDER and eventHubAuthConfig->senderPublisherId is NULL.**\]**
 TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
 {
     EVENTHUBAUTH_CBS_HANDLE h;
@@ -1868,14 +1859,6 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
     ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL SharedAccessKey");
-
-    // arrange
-    TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
-    cfg.senderPublisherId = NULL;
-    // act
-    h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
-    // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL PublisherId");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);

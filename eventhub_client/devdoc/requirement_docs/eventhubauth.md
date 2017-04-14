@@ -96,8 +96,6 @@ MOCKABLE_FUNCTION(, EVENTHUBAUTH_CBS_HANDLE, EventHubAuthCBS_Create, EVENTHUBAUT
 
 **SRS_EVENTHUB_AUTH_29_007: \[**`EventHubAuthCBS_Create` shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->mode is EVENTHUBAUTH_MODE_RECEIVER and eventHubAuthConfig->receiverConsumerGroup or eventHubAuthConfig->receiverPartitionId is NULL.**\]**
 
-**SRS_EVENTHUB_AUTH_29_008: \[**`EventHubAuthCBS_Create` shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO and if eventHubAuthConfig->mode is EVENTHUBAUTH_MODE_SENDER and eventHubAuthConfig->senderPublisherId is NULL.**\]**
-
 **SRS_EVENTHUB_AUTH_29_009: \[**`EventHubAuthCBS_Create` shall return NULL if eventHubAuthConfig->credential is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT and if eventHubAuthConfig->extSASToken is NULL or eventHubAuthConfig->extSASTokenURI is NULL or eventHubAuthConfig->extSASTokenExpTSInEpochSec equals 0.**\]**
 
 **SRS_EVENTHUB_AUTH_29_010: \[**`EventHubAuthCBS_Create` shall allocate new memory to store the specified configuration data by using API malloc.**\]**

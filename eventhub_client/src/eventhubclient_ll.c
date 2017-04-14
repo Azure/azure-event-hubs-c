@@ -880,8 +880,8 @@ static int eventhub_client_assemble_target_address(EVENTHUBCLIENT_LL* eventhub_c
         (STRING_concat_with_STRING(eventhub_client_ll->target_address, eventhub_client_ll->host_name) != 0) ||
         (STRING_concat(eventhub_client_ll->target_address, "/") != 0) ||
         (STRING_concat(eventhub_client_ll->target_address, event_hub_path) != 0) ||
-        (STRING_concat(eventhub_client_ll->target_address, "/publishers/") != 0) ||
-        (STRING_concat(eventhub_client_ll->target_address, publisher_id) != 0))
+        ((publisher_id != NULL) && (STRING_concat(eventhub_client_ll->target_address, "/publishers/") != 0)) ||
+        ((publisher_id != NULL) && (STRING_concat(eventhub_client_ll->target_address, publisher_id) != 0)))
     {
         result = __LINE__;
     }
@@ -1002,8 +1002,8 @@ EVENTHUBCLIENT_LL_HANDLE EventHubClient_LL_CreateFromConnectionString(const char
                         error = true;
                         LogError("Couldn't create key string");
                     }
-                    /* Codes_SRS_EVENTHUBCLIENT_LL_01_024: [The target address shall be amqps://{eventhub hostname}/{eventhub name}/publishers/<PUBLISHER_NAME>.] */
-                    else if (eventhub_client_assemble_target_address(eventhub_client_ll, eventHubPath, "sender") != 0)
+                    /* Codes_SRS_EVENTHUBCLIENT_LL_01_024: [The target address shall be amqps://{eventhub hostname}/{eventhub name}.] */
+                    else if (eventhub_client_assemble_target_address(eventhub_client_ll, eventHubPath, NULL) != 0)
                     {
                         error = true;
                         LogError("Couldn't assemble target address");
@@ -1013,14 +1013,10 @@ EVENTHUBCLIENT_LL_HANDLE EventHubClient_LL_CreateFromConnectionString(const char
                         error = true;
                         LogError("Couldn't create event hub path");
                     }
-                    else if ((eventhub_client_ll->sender_publisher_id = STRING_construct("sender")) == NULL)
-                    {
-                        error = true;
-                        LogError("Couldn't create Sender Publisher Handle\r\n");
-                    }
                     else
                     {
                         error = false;
+                        eventhub_client_ll->sender_publisher_id = NULL;
                         eventhub_client_ll->credential = EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO;
                     }
                 }
@@ -1215,7 +1211,11 @@ void EventHubClient_LL_Destroy(EVENTHUBCLIENT_LL_HANDLE eventhub_client_ll)
         STRING_delete(eventhub_client_ll->target_address);
         STRING_delete(eventhub_client_ll->host_name);
         STRING_delete(eventhub_client_ll->event_hub_path);
-        STRING_delete(eventhub_client_ll->sender_publisher_id);
+        if (eventhub_client_ll->sender_publisher_id != NULL)
+        {
+            STRING_delete(eventhub_client_ll->sender_publisher_id);
+        }
+
         if (eventhub_client_ll->keyName)
         {
             STRING_delete(eventhub_client_ll->keyName);
