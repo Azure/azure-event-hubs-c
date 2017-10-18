@@ -1564,7 +1564,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_StatusOk_ExtRefreshTo
     return failedFunctionBitmask;
 }
 
-//**Tests_SRS_EVENTHUBRECEIVER_LL_29_641: \[**When `EHR_LL_OnMessageReceived` is invoked, message_get_body_amqp_data shall be called to obtain the data into a BINARY_DATA buffer.**\]**
+//**Tests_SRS_EVENTHUBRECEIVER_LL_29_641: \[**When `EHR_LL_OnMessageReceived` is invoked, message_get_body_amqp_data_in_place shall be called to obtain the data into a BINARY_DATA buffer.**\]**
 //**Tests_SRS_EVENTHUBRECEIVER_LL_29_642: \[**`EHR_LL_OnMessageReceived` shall create a EVENT_DATA handle using EventData_CreateWithNewMemory and pass in the buffer data pointer and size as arguments.**\]**
 //**Tests_SRS_EVENTHUBRECEIVER_LL_29_643: \[**`EHR_LL_OnMessageReceived` shall obtain the application properties using message_get_application_properties() and populate the EVENT_DATA handle map with these key value pairs.**\]**
 //**Tests_SRS_EVENTHUBRECEIVER_LL_29_644: \[**`EHR_LL_OnMessageReceived` shall obtain event data specific properties using message_get_message_annotations() and populate the EVENT_DATA handle with these properties.**\]**
@@ -1581,7 +1581,7 @@ static uint64_t TestSetupCallStack_OnMessageReceived(void)
     //////////////////////////////////////////////////////////////////////////////////////////
     //   Event Data                                                                         //
     //////////////////////////////////////////////////////////////////////////////////////////
-    STRICT_EXPECTED_CALL(message_get_body_amqp_data(TEST_MESSAGE_HANDLE_VALID, 0, IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(message_get_body_amqp_data_in_place(TEST_MESSAGE_HANDLE_VALID, 0, IGNORED_PTR_ARG))
         .IgnoreArgument(3);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -1921,8 +1921,8 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     REGISTER_GLOBAL_MOCK_RETURN(messagereceiver_close, 0);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(messagereceiver_close, -1);
 
-    REGISTER_GLOBAL_MOCK_RETURN(message_get_body_amqp_data, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(message_get_body_amqp_data, -1);
+    REGISTER_GLOBAL_MOCK_RETURN(message_get_body_amqp_data_in_place, 0);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(message_get_body_amqp_data_in_place, -1);
     REGISTER_GLOBAL_MOCK_HOOK(message_get_message_annotations, TestHook_message_get_message_annotations);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(message_get_message_annotations, -1);
     REGISTER_GLOBAL_MOCK_HOOK(message_get_application_properties, TestHook_message_get_application_properties);

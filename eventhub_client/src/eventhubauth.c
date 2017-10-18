@@ -18,6 +18,7 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/string_tokenizer.h"
 #include "azure_c_shared_utility/urlencode.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 #include "azure_uamqp_c/cbs.h"
 #include "azure_uamqp_c/sasl_mssbcbs.h"
@@ -753,8 +754,8 @@ EVENTHUBAUTH_CBS_HANDLE EventHubAuthCBS_Create(const EVENTHUBAUTH_CBS_CONFIG* ev
                     LogError("Could Not Create Buffer Handle\r\n");
                     isError = true;
                 }
-                //**Codes_SRS_EVENTHUB_AUTH_29_029: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a new STRING_HANDLE by Base64 encoding the buffer handle created above by using API Base64_Encode.**\]**
-                else if ((result->encodedSASKeyValue = Base64_Encode(bufferHandle)) == NULL)
+                //**Codes_SRS_EVENTHUB_AUTH_29_029: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a new STRING_HANDLE by Base64 encoding the buffer handle created above by using API Base64_Encoder.**\]**
+                else if ((result->encodedSASKeyValue = Base64_Encoder(bufferHandle)) == NULL)
                 {
                     LogError("Could Not Base64 Encode the Shared Key Buffer\r\n");
                     isError = true;

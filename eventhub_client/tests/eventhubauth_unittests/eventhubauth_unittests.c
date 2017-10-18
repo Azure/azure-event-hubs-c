@@ -784,7 +784,7 @@ static uint64_t TestSetupCallStack_SenderEventHubAuthCBS_SASTokenParse(const cha
 //**Tests_SRS_EVENTHUB_AUTH_29_026: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a new STRING_HANDLE by encoding the URI using API URL_Encode.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_027: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall obtain the underlying C string buffer of eventHubAuthConfig->sharedAccessKey using API STRING_c_str.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_028: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a BUFFER_HANDLE using API BUFFER_create and pass in the eventHubAuthConfig->sharedAccessKey buffer and its length.**\]**
-//**Tests_SRS_EVENTHUB_AUTH_29_029: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a new STRING_HANDLE by Base64 encoding the buffer handle created above by using API Base64_Encode.**\]**
+//**Tests_SRS_EVENTHUB_AUTH_29_029: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a new STRING_HANDLE by Base64 encoding the buffer handle created above by using API Base64_Encoder.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_030: \[**EventHubAuthCBS_Create shall initialize a CBS handle by calling API cbs_create.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_031: \[**EventHubAuthCBS_Create shall open the CBS handle by calling API `cbs_open_async.**\]**
 //**Tests_SRS_EVENTHUB_AUTH_29_032: \[**EventHubAuthCBS_Create shall initialize its internal data structures using the configuration data passed in.**\]**
@@ -859,7 +859,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Create(EVENTHUBAUTH_MODE mode
         STRICT_EXPECTED_CALL(BUFFER_create((const unsigned char*)SHAREDACCESSKEY, strlen(SHAREDACCESSKEY)));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(Base64_Encode(TEST_BUFFER_HANDLE_VALID_SHAREDACCESSKEY));
+        STRICT_EXPECTED_CALL(Base64_Encoder(TEST_BUFFER_HANDLE_VALID_SHAREDACCESSKEY));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
         STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE_VALID_SHAREDACCESSKEY));
@@ -1269,8 +1269,8 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     REGISTER_GLOBAL_MOCK_RETURN(BUFFER_create, TEST_BUFFER_HANDLE_VALID_SHAREDACCESSKEY);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(BUFFER_create, NULL);
 
-    REGISTER_GLOBAL_MOCK_RETURN(Base64_Encode, TEST_STRING_HANDLE_AUTO_KEYBASE64ENCODED);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(Base64_Encode, NULL);
+    REGISTER_GLOBAL_MOCK_RETURN(Base64_Encoder, TEST_STRING_HANDLE_AUTO_KEYBASE64ENCODED);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(Base64_Encoder, NULL);
 
     REGISTER_GLOBAL_MOCK_RETURN(SASToken_Create, TEST_STRING_HANDLE_AUTO_SASTOKEN);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(SASToken_Create, NULL);

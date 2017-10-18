@@ -1734,8 +1734,8 @@ static AMQP_VALUE EHR_LL_OnMessageReceived(const void* context, MESSAGE_HANDLE m
     AMQP_VALUE result;
     int errorCode;
 
-    //**Codes_SRS_EVENTHUBRECEIVER_LL_29_641: \[**When EHR_LL_OnMessageReceived is invoked, message_get_body_amqp_data shall be called to obtain the data into a BINARY_DATA buffer.**\]**
-    if ((errorCode = message_get_body_amqp_data(message, 0, &binaryData)) != 0)
+    //**Codes_SRS_EVENTHUBRECEIVER_LL_29_641: \[**When EHR_LL_OnMessageReceived is invoked, message_get_body_amqp_data_in_place shall be called to obtain the data into a BINARY_DATA buffer.**\]**
+    if ((errorCode = message_get_body_amqp_data_in_place(message, 0, &binaryData)) != 0)
     {
         //**Codes_SRS_EVENTHUBRECEIVER_LL_29_645: \[**If any errors are seen EHR_LL_OnMessageReceived shall reject the incoming message by calling messaging_delivery_rejected() and return.**\]**
         LogError("message_get_body_amqp_data Failed. Code:%d.\r\n", errorCode);

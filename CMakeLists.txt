@@ -22,9 +22,31 @@ if(IN_OPENWRT)
 endif()
 
 add_subdirectory(azure-c-shared-utility)
+
+#do not add or build any tests of the dependencies
+set(original_run_e2e_tests ${run_e2e_tests})
+set(original_run_int_tests ${run_int_tests})
+set(original_run_unittests ${run_unittests})
+
+set(run_e2e_tests OFF)
+set(run_int_tests OFF)
+set(run_unittests OFF)
+
+if(${original_run_e2e_tests} OR ${original_run_unittests})
+    add_subdirectory(deps/azure-ctest)
+    add_subdirectory(deps/azure-c-testrunnerswitcher)
+    add_subdirectory(deps/umock-c)
+endif()
+
 add_subdirectory(azure-uamqp-c)
 
 include_directories(${UAMQP_INC_FOLDER})
+
+set_platform_files(${CMAKE_CURRENT_LIST_DIR}/azure-c-shared-utility)
+
+set(run_e2e_tests ${original_run_e2e_tests})
+set(run_int_tests ${original_run_int_tests})
+set(run_unittests ${original_run_unittests})
 
 enable_testing()
 

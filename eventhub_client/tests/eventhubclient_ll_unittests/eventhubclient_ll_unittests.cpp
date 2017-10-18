@@ -36,6 +36,7 @@ IN THE SOFTWARE.
 
 #include "azure_uamqp_c/amqp_definitions.h"
 #include "azure_uamqp_c/amqpvalue.h"
+#include "azure_uamqp_c/async_operation.h"
 #include "azure_uamqp_c/cbs.h"
 #include "azure_uamqp_c/connection.h"
 #include "azure_uamqp_c/link.h"
@@ -103,6 +104,8 @@ static tickcounter_ms_t g_tickcounter_value = (tickcounter_ms_t)1000;
 #define TEST_EVENTHUB_STRING_HANDLE (STRING_HANDLE)0x4C
 #define TEST_PUBLISHER_STRING_HANDLE (STRING_HANDLE)0x4D
 #define TEST_CONNSTR_MAP_HANDLE     (MAP_HANDLE)0x50
+
+static ASYNC_OPERATION_HANDLE test_async_operation = (ASYNC_OPERATION_HANDLE)0x51;
 
 #define TEST_HOSTNAME_PARSER_STRING_HANDLE (STRING_HANDLE)0x60
 #define TEST_EVENTHUB_PARSER_STRING_HANDLE (STRING_HANDLE)0x61
@@ -367,10 +370,10 @@ public:
     MOCK_METHOD_END(int, 0);
     MOCK_STATIC_METHOD_1(, int, messagesender_close, MESSAGE_SENDER_HANDLE, message_sender);
     MOCK_METHOD_END(int, 0);
-    MOCK_STATIC_METHOD_4(, int, messagesender_send, MESSAGE_SENDER_HANDLE, message_sender, MESSAGE_HANDLE, message, ON_MESSAGE_SEND_COMPLETE, on_message_send_complete, void*, callback_context);
+    MOCK_STATIC_METHOD_5(, ASYNC_OPERATION_HANDLE, messagesender_send_async, MESSAGE_SENDER_HANDLE, message_sender, MESSAGE_HANDLE, message, ON_MESSAGE_SEND_COMPLETE, on_message_send_complete, void*, callback_context, tickcounter_ms_t, timeout);
         saved_on_message_send_complete = on_message_send_complete;
         saved_on_message_send_complete_context = callback_context;
-    MOCK_METHOD_END(int, 0);
+    MOCK_METHOD_END(ASYNC_OPERATION_HANDLE, test_async_operation);
 
     /* saslmechanism mocks */
     MOCK_STATIC_METHOD_2(, SASL_MECHANISM_HANDLE, saslmechanism_create, const SASL_MECHANISM_INTERFACE_DESCRIPTION*, sasl_mechanism_interface_description, void*, sasl_mechanism_create_parameters);
@@ -593,7 +596,7 @@ DECLARE_GLOBAL_MOCK_METHOD_3(CEventHubClientLLMocks, , MESSAGE_SENDER_HANDLE, me
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , void, messagesender_destroy, MESSAGE_SENDER_HANDLE, message_sender);
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , int, messagesender_open, MESSAGE_SENDER_HANDLE, message_sender);
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , int, messagesender_close, MESSAGE_SENDER_HANDLE, message_sender);
-DECLARE_GLOBAL_MOCK_METHOD_4(CEventHubClientLLMocks, , int, messagesender_send, MESSAGE_SENDER_HANDLE, message_sender, MESSAGE_HANDLE, message, ON_MESSAGE_SEND_COMPLETE, on_message_send_complete, void*, callback_context);
+DECLARE_GLOBAL_MOCK_METHOD_5(CEventHubClientLLMocks, , ASYNC_OPERATION_HANDLE, messagesender_send_async, MESSAGE_SENDER_HANDLE, message_sender, MESSAGE_HANDLE, message, ON_MESSAGE_SEND_COMPLETE, on_message_send_complete, void*, callback_context, tickcounter_ms_t, timeout);
 
 DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , SASL_MECHANISM_HANDLE, saslmechanism_create, const SASL_MECHANISM_INTERFACE_DESCRIPTION*, sasl_mechanism_interface_description, void*, sasl_mechanism_create_parameters);
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , void, saslmechanism_destroy, SASL_MECHANISM_HANDLE, sasl_mechanism);
@@ -4632,7 +4635,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .CopyOutArgumentBuffer(2, &no_property_keys_ptr, sizeof(no_property_keys_ptr))
             .CopyOutArgumentBuffer(3, &no_property_values_ptr, sizeof(no_property_values_ptr))
             .CopyOutArgumentBuffer(4, &no_property_size, sizeof(no_property_size));
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4);
         STRICT_EXPECTED_CALL(mocks, connection_dowork(TEST_CONNECTION_HANDLE));
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
@@ -4687,7 +4690,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .CopyOutArgumentBuffer(2, &no_property_keys_ptr, sizeof(no_property_keys_ptr))
             .CopyOutArgumentBuffer(3, &no_property_values_ptr, sizeof(no_property_values_ptr))
             .CopyOutArgumentBuffer(4, &no_property_size, sizeof(no_property_size));
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4);
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
 
@@ -4705,7 +4708,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .CopyOutArgumentBuffer(2, &no_property_keys_ptr, sizeof(no_property_keys_ptr))
             .CopyOutArgumentBuffer(3, &no_property_values_ptr, sizeof(no_property_values_ptr))
             .CopyOutArgumentBuffer(4, &no_property_size, sizeof(no_property_size));
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4);
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
 
@@ -4849,9 +4852,9 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .CopyOutArgumentBuffer(2, &no_property_keys_ptr, sizeof(no_property_keys_ptr))
             .CopyOutArgumentBuffer(3, &no_property_values_ptr, sizeof(no_property_values_ptr))
             .CopyOutArgumentBuffer(4, &no_property_size, sizeof(no_property_size));
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4)
-            .SetReturn(1);
+            .SetReturn((ASYNC_OPERATION_HANDLE)NULL);
         STRICT_EXPECTED_CALL(mocks, sendAsyncConfirmationCallback(EVENTHUBCLIENT_CONFIRMATION_ERROR, (void*)0x4242));
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
         EXPECTED_CALL(mocks, DList_RemoveEntryList(IGNORED_PTR_ARG));
@@ -4959,7 +4962,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .CopyOutArgumentBuffer(2, &no_property_keys_ptr, sizeof(no_property_keys_ptr))
             .CopyOutArgumentBuffer(3, &no_property_values_ptr, sizeof(no_property_values_ptr))
             .CopyOutArgumentBuffer(4, &no_property_size, sizeof(no_property_size));
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4);
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
 
@@ -5030,7 +5033,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, message_set_application_properties(TEST_MESSAGE_HANDLE, TEST_UAMQP_MAP));
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_UAMQP_MAP));
         STRICT_EXPECTED_CALL(mocks, message_add_body_amqp_data(TEST_MESSAGE_HANDLE, binary_data));
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4);
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
         STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TICK_COUNT_HANDLE_TEST, IGNORED_PTR_ARG))
@@ -5085,7 +5088,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .IgnoreArgument(3)
             .CopyOutArgumentBuffer(4, &one_property_size, sizeof(one_property_size));
         STRICT_EXPECTED_CALL(mocks, message_add_body_amqp_data(TEST_MESSAGE_HANDLE, binary_data));
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4);
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
 
@@ -5392,7 +5395,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, message_set_application_properties(TEST_MESSAGE_HANDLE, TEST_UAMQP_MAP));
         STRICT_EXPECTED_CALL(mocks, amqpvalue_destroy(TEST_UAMQP_MAP));
         STRICT_EXPECTED_CALL(mocks, message_add_body_amqp_data(TEST_MESSAGE_HANDLE, binary_data));
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4);
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
         STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TICK_COUNT_HANDLE_TEST, IGNORED_PTR_ARG))
@@ -6046,7 +6049,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, message_add_body_amqp_data(TEST_MESSAGE_HANDLE, binary_data));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4);
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
 
@@ -6742,7 +6745,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         STRICT_EXPECTED_CALL(mocks, message_add_body_amqp_data(TEST_MESSAGE_HANDLE, binary_data));
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
-        STRICT_EXPECTED_CALL(mocks, messagesender_send(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(mocks, messagesender_send_async(TEST_MESSAGE_SENDER_HANDLE, TEST_MESSAGE_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
             .IgnoreArgument(3).IgnoreArgument(4);
         STRICT_EXPECTED_CALL(mocks, message_destroy(TEST_MESSAGE_HANDLE));
 

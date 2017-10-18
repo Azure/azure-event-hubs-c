@@ -1863,12 +1863,12 @@ void EventHubClient_LL_DoWork(EVENTHUBCLIENT_LL_HANDLE eventhub_client_ll)
                                 {
                                     has_timeout = true;
                                 }
-                                /* Codes_SRS_EVENTHUBCLIENT_LL_01_069: [The AMQP message shall be given to uAMQP by calling messagesender_send, while passing as arguments the message sender handle, the message handle, a callback function and its context.] */
-                                else if (messagesender_send(eventhub_client_ll->message_sender, message, on_message_send_complete, currentListEntry) != 0)
+                                /* Codes_SRS_EVENTHUBCLIENT_LL_01_069: [The AMQP message shall be given to uAMQP by calling messagesender_send_async, while passing as arguments the message sender handle, the message handle, a callback function and its context.] */
+                                else if (messagesender_send_async(eventhub_client_ll->message_sender, message, on_message_send_complete, currentListEntry, 0) == NULL)
                                 {
-                                    /* Codes_SRS_EVENTHUBCLIENT_LL_01_053: [If messagesender_send failed then the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.] */
+                                    /* Codes_SRS_EVENTHUBCLIENT_LL_01_053: [If messagesender_send_async failed then the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.] */
                                     is_error = true;
-                                    LogError("messagesender_send failed.");
+                                    LogError("messagesender_send_async failed.");
                                 }
                             }
 
