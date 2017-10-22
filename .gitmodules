@@ -1,9 +1,3 @@
-[submodule "azure-c-shared-utility"]
-	path = azure-c-shared-utility
-	url = https://github.com/Azure/azure-c-shared-utility.git
-[submodule "azure-uamqp-c"]
-	path = azure-uamqp-c
-	url = https://github.com/Azure/azure-uamqp-c.git
 [submodule "deps/umock-c"]
 	path = deps/umock-c
 	url = https://github.com/Azure/umock-c
