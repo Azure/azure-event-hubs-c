@@ -21,7 +21,7 @@ if(IN_OPENWRT)
     INCLUDE_DIRECTORIES("$ENV{TOOLCHAIN_DIR}/usr/include" "$ENV{TARGET_LDFLAGS}" "$ENV{TARGET_CPPFLAGS}" "$ENV{TARGET_CFLAGS}")
 endif()
 
-add_subdirectory(azure-c-shared-utility)
+add_subdirectory(deps/azure-c-shared-utility)
 
 #do not add or build any tests of the dependencies
 set(original_run_e2e_tests ${run_e2e_tests})
@@ -38,11 +38,11 @@ if(${original_run_e2e_tests} OR ${original_run_unittests})
     add_subdirectory(deps/umock-c)
 endif()
 
-add_subdirectory(azure-uamqp-c)
+add_subdirectory(deps/azure-uamqp-c)
 
 include_directories(${UAMQP_INC_FOLDER})
 
-set_platform_files(${CMAKE_CURRENT_LIST_DIR}/azure-c-shared-utility)
+set_platform_files(${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-shared-utility)
 
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_int_tests ${original_run_int_tests})
@@ -188,7 +188,7 @@ endfunction()
 
 add_subdirectory(testtools)
 
-set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/azure-c-shared-utility/adapters")
+set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-shared-utility/adapters")
 if(WIN32)
     set(LOCK_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/lock_win32.c)
     set(THREAD_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/threadapi_win32.c)
