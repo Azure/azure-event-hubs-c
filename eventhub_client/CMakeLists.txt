@@ -51,6 +51,13 @@ add_library(eventhub_client
 target_link_libraries(eventhub_client uamqp)
 linkSharedUtil(eventhub_client)
 
+install(TARGETS eventhub_client
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+install(FILES ${eventhub_client_h_files}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_event_hubs)
+
 add_subdirectory(samples)
 
 if (${run_unittests})
