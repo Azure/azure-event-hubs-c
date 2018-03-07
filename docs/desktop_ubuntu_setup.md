@@ -38,16 +38,17 @@ To configure an Event Hub, see [Create an Event Hub](./create_event_hub.md). Be 
 
 2. Install the prerequisite packages by issuing the following commands in a terminal window:
 
-	```
+```
   sudo apt-get update
   sudo apt-get install -y curl libcurl4-openssl-dev uuid-dev uuid g++ make cmake git
-	```
+```
 
 3. Download the SDK to the machine by issuing the following command in your terminal window:
 
-  ```
-	git clone https://github.com/Azure/azure-event-hubs.git
-	```
+```
+	git clone --recursive https://github.com/Azure/azure-event-hubs.git
+
+```
 
   You will be prompted for your GitHub username and password -- if you have two-factor authentication enabled for your account, you'll need to generate and then use a personal access token in place of your password.
 
@@ -58,7 +59,7 @@ To configure an Event Hub, see [Create an Event Hub](./create_event_hub.md). Be 
 Before performing these steps, you'll need the following prerequisite information:
 
 - Event Hub name.
-- Event Hub **SendRule** connection string.
+- Event Hub connection string.
 
 Now, configure the sample:
 
@@ -72,26 +73,41 @@ Now, configure the sample:
 
 6. Repeat the previous steps, but for step 1 open the file ~/azure-event-hubs/c/eventhub_client/samples/send_batch/send_batch.c.
 
+## Update the receive sample
+
+Before performing this step, you'll need the following prerequisite information:
+
+- Event Hub Name
+- Event Hub connection string
+- Event Hub consumer group
+- Partition number
+
+1. On your Ubuntu machine, open the file ~/azure-event-hubs/c/eventhub_client/samples/receive/receive.c in a text editor.
+
+2. Replace the placeholder value for the **connectionString** variable with your Event Hub connection string. Replace the placeholder value for the **eventHubPath** variable with your Event Hub name. Replace the placeholder value for the **consumerGroup** variable with your consumer group. Replace the placeholder value for the **partitionId** variable with the desired partition ID.
+
+3. Save your changes.
+
 ## Build the samples
 
 You can now build the SDK samples using the following command:
 
-	```
+```
   ~/azure-event-hubs/c/build_all/linux/build.sh
-	```
+```
 
 ## Run the samples
 
 1. Run the **send** sample by issuing the following command:
 
-  ```
-	~/azure-event-hubs/c/eventhub_client/samples/send/linux/send
-	```
+```
+	~/cmake/eventhub_client/samples/send/send
+```
 
 2. Run the **send_batch** sample by issuing the following command:
 
-  ```
-	~/azure-event-hubs/c/eventhub_client/samples/send_batch/linux/send_batch
+```
+	~/cmake/eventhub_client/samples/send_batch/linux/receive
 	```
 
 3. For each sample, verify that the sample output messages show **Successful**. If not, then you may have incorrectly pasted the Event Hub connection information.
