@@ -65,7 +65,7 @@ To configure an Event Hub, see [Create an Event Hub](./create_event_hub.md). Be 
 
 2. Download the SDK to the board by issuing the following command in PuTTY:
 
-		git clone https://github.com/Azure/azure-event-hubs.git
+		git clone --recursive https://github.com/Azure/azure-event-hubs.git
 
 	You will be prompted for your GitHub username and password -- if you have two-factor authentication enabled for your account, you'll need to generate/use a personal access token in place of your password.
 

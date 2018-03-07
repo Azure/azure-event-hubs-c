@@ -68,18 +68,18 @@ https://www.raspberrypi.org/documentation/troubleshooting/hardware/networking/ip
 
 2. Install the prerequisite packages by issuing the following commands in your PuTTY session:
 
-	```
+```
   sudo apt-get update
   sudo apt-get install -y curl libcurl4-openssl-dev uuid-dev uuid g++ make cmake git
-	```
+```
 
   Note: In Windows, you can right-click on a PuTTY window to paste in commands.
 
 3. Download the SDK to the board by issuing the following command in your PuTTY session:
 
-  ```
-	git clone https://github.com/Azure/azure-event-hubs.git
-	```
+```
+	git clone --recursive https://github.com/Azure/azure-event-hubs.git
+```
 
   You will be prompted for your GitHub username and password -- if you have two-factor authentication enabled for your account, you'll need to generate and then use a personal access token in place of your password.
 
@@ -96,9 +96,9 @@ Now, configure the sample:
 
 1. On the board, run the following command:
 
-  ```
+```
 	nano azure-event-hubs/c/eventhub_client/samples/send/send.c
-	```
+```
 
 2. This launches a console-based text editor. Scroll down to the connection information.
 
@@ -110,31 +110,31 @@ Now, configure the sample:
 
 6. Repeat the previous steps, but for step 1 run the following command, and paste your connection information in the same places:
 
-  ```
+```
 	nano azure-event-hubs/c/eventhub_client/samples/send_batch/send_batch.c
-	```
+```
 
 ## Build the samples
 
 You can now build the SDK samples using the following command:
 
-	```
+```
   ~/azure-event-hubs/c/build_all/linux/build.sh
-	```
+```
 
 ## Run the samples
 
 1. Run the **send** sample by issuing the following command:
 
-  ```
+```
 	~/azure-event-hubs/c/eventhub_client/samples/send/linux/send
-	```
+```
 
 2. Run the **send_batch** sample by issuing the following command:
 
-  ```
+```
 	~/azure-event-hubs/c/eventhub_client/samples/send_batch/linux/send_batch
-	```
+```
 
 3. For each sample, verify that the sample output messages show **Successful**. If not, then you may have incorrectly pasted the Event Hub connection information.
 

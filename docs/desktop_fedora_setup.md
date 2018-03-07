@@ -38,16 +38,16 @@ To configure an Event Hub, see [Create an Event Hub](./create_event_hub.md). Be 
 
 2. Install the prerequisite packages by issuing the following commands in a terminal window:
 
-	```
+```
   sudo dnf check-update -y
   sudo dnf install -y libcurl-devel openssl-devel libuuid-devel uuid-devel gcc-c++ make cmake git
-	```
+```
 
 3. Download the SDK to the machine by issuing the following command in your terminal window:
 
-  ```
-	git clone https://github.com/Azure/azure-event-hubs.git
-	```
+```
+	git clone --recursive https://github.com/Azure/azure-event-hubs.git
+```
 
   You will be prompted for your GitHub username and password -- if you have two-factor authentication enabled for your account, you'll need to generate and then use a personal access token in place of your password.
 
@@ -76,23 +76,23 @@ Now, configure the sample:
 
 You can now build the SDK samples using the following command:
 
-	```
+```
   ~/azure-event-hubs/c/build_all/linux/build.sh
-	```
+```
 
 ## Run the samples
 
 1. Run the **send** sample by issuing the following command:
 
-  ```
+```
 	~/azure-event-hubs/c/eventhub_client/samples/send/linux/send
-	```
+```
 
 2. Run the **send_batch** sample by issuing the following command:
 
-  ```
+```
 	~/azure-event-hubs/c/eventhub_client/samples/send_batch/linux/send_batch
-	```
+```
 
 3. For each sample, verify that the sample output messages show **Successful**. If not, then you may have incorrectly pasted the Event Hub connection information.
 
