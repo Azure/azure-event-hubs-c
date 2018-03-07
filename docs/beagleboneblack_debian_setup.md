@@ -18,7 +18,7 @@
     
 > This document is known to be outdated    
 
-#Azure Event Hubs Client for C: BeagleBone Black setup
+##Azure Event Hubs Client for C: BeagleBone Black setup
 
 The following procedure describes the process of connecting a [BeagleBone Black](http://beagleboard.org/black) device and building the Event Hubs SDK samples (**send** and **send_batch**).
 
@@ -57,16 +57,16 @@ To configure an Event Hub, see [Create an Event Hub](./create_event_hub.md). Be 
 
 1. Open a PuTTY session and connect to the board, as described in the previous section "Verify that you can connect to the device."
 1. Install the prerequisite packages by issuing the following commands  in your PuTTY session:
-
+```
 		sudo apt-get update
 		sudo apt-get install -y curl libcurl4-openssl-dev uuid-dev uuid g++ make cmake git
-
+```
   Note: In Windows, you can right-click on a PuTTY window to paste in commands.
 
 2. Download the SDK to the board by issuing the following command in PuTTY:
-
+```
 		git clone --recursive https://github.com/Azure/azure-event-hubs.git
-
+```
 	You will be prompted for your GitHub username and password -- if you have two-factor authentication enabled for your account, you'll need to generate/use a personal access token in place of your password.
 
 3. Verify that you now have a copy of our source code under the directory ~/azure-event-hubs.
@@ -81,9 +81,9 @@ Before performing these steps, you'll need the following prerequisite informatio
 Now, configure the sample:
 
 1. On the board, run the following command:
-
+```
 		nano azure-event-hubs/c/eventhub_client/samples/send/send.c
-
+```
 2. This launches a console-based text editor. Scroll down to the connection information.
 
 3. Replace the placeholder value for the **connectionString** variable (you can right-click a PuTTY window to paste a value) with your **SendRule** Event Hub connection string. Replace the placeholder value for the **eventHubPath** variable with your Event Hub name.
@@ -93,25 +93,25 @@ Now, configure the sample:
 5. Press **Ctrl+X** to exit nano.
 
 6. Repeat the previous steps, but for step 1 run the following command, and paste your connection information in the same place:
-
+```
 		nano azure-event-hubs/c/eventhub_client/samples/send_batch/send_batch.c
-
+```
 ## Build the samples
 
 You can now build the SDK code using the following command:
-
+```
 		~/azure-event-hubs/c/build_all/linux/build.sh
-
+```
 ## Run the samples
 
 1. Run the **send** sample by issuing the following command:
-
+```
 		~/azure-event-hubs/c/eventhub_client/samples/send/linux/send
-
+```
 2. Run the **send_batch** sample by issuing the following command:
-
+```
 		~/azure-event-hubs/c/eventhub_client/samples/send_batch/linux/send_batch
-
+```
 3. For each sample, verify that the sample output messages show **Successful**. If not, then you may have incorrectly pasted the Event Hub connection information.
 
 >Note: The tools folder in this repository includes the **CSharp_ConsumeEventsFromEventHub** C# application that can receive messages from an Event Hub. This is useful to help you verify that the samples are sending messages correctly to the Event Hub.

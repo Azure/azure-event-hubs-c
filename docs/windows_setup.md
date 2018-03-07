@@ -39,23 +39,23 @@ You will be prompted for your GitHub username and password -- if you have two-fa
 ## To build the Windows samples
 
 1) In Visual Studio 2013, open the solution for the samples you want to build. The Visual Studio solution files are located in:
-
- - \azure-event-hubs\c\eventhub_client\samples\send\windows
-
+```
+\azure-event-hubs\c\eventhub_client\samples\send\windows
+```
 	or
-
- - \azure-event-hubs\c\eventhub_client\samples\send_batch\windows
-
+```
+\azure-event-hubs\c\eventhub_client\samples\send_batch\windows
+```
 2) Update the Event Hub connection information in the sample application. Save your changes.
 
 3) Rebuild the sample project (right-click the project and click **Build**).
 
 3) Press **F5** to run the sample application, or after a successful build, run the executable located in the directory:
-
-- \azure-event-hubs\c\eventhub_client\samples\send\windows\Win32[Debug|Release]
-
+```
+\azure-event-hubs\c\eventhub_client\samples\send\windows\Win32[Debug|Release]
+```
 or
-
-- \azure-event-hubs\c\eventhub_client\samples\send_batch\windows\Win32[Debug|Release]
-
+```
+\azure-event-hubs\c\eventhub_client\samples\send_batch\windows\Win32[Debug|Release]
+```
 >Note: The tools folder in this repository includes the **CSharp_ConsumeEventsFromEventHub** C# application that can receive messages from an Event Hub. This is useful to help you verify that the samples are sending messages correctly to the Event Hub.
