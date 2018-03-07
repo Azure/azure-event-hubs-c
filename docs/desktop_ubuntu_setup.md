@@ -16,8 +16,6 @@
   ms.date="05/29/2015"
   ms.author="dobett"/>
 
-> This document is known to be outdated
-
 # How to build the samples in Ubuntu
 
 The following procedure describes the process of building and running the Event Hubs SDK samples (**send** and **send_batch**) in an Ubuntu desktop environment. The samples enable your Ubuntu machine to act as a device that can connect to an Azure Event Hub.
@@ -107,6 +105,11 @@ You can now build the SDK samples using the following command:
 
 ```
 ~/cmake/eventhub_client/samples/send_batch/linux/receive
+```
+
+3. Run the **receive** sample by issuing the following command:
+```
+~/cmake/eventhub_client/samples/receive/receive
 ```
 
 3. For each sample, verify that the sample output messages show **Successful**. If not, then you may have incorrectly pasted the Event Hub connection information.
