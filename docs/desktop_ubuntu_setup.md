@@ -92,7 +92,7 @@ Before performing this step, you'll need the following prerequisite information:
 You can now build the SDK samples using the following command:
 
 ```
-  ~/azure-event-hubs/c/build_all/linux/build.sh
+~/azure-event-hubs/c/build_all/linux/build.sh
 ```
 
 ## Run the samples

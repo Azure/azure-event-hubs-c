@@ -42,7 +42,7 @@ You will be prompted for your GitHub username and password -- if you have two-fa
 ```
 \azure-event-hubs\c\eventhub_client\samples\send\windows
 ```
-	or
+or
 ```
 \azure-event-hubs\c\eventhub_client\samples\send_batch\windows
 ```
