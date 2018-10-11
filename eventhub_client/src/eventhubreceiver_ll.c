@@ -31,6 +31,13 @@
 #include "azure_uamqp_c/sasl_plain.h"
 #include "azure_uamqp_c/sasl_mssbcbs.h"
 #include "azure_uamqp_c/session.h"
+#include "azure_uamqp_c/amqp_definitions_filter_set.h"
+#include "azure_uamqp_c/amqp_definitions_terminus_durability.h"
+#include "azure_uamqp_c/amqp_definitions_terminus_expiry_policy.h"
+#include "azure_uamqp_c/amqp_definitions_seconds.h"
+#include "azure_uamqp_c/amqp_definitions_node_properties.h"
+#include "azure_uamqp_c/amqp_definitions_source.h"
+#include "azure_uamqp_c/amqp_definitions_application_properties.h"
 
 #include "eventhubauth.h"
 #include "eventhubreceiver_ll.h"
@@ -1560,7 +1567,7 @@ static int ProcessApplicationProperties(MESSAGE_HANDLE message, EVENTDATA_HANDLE
 
     if ((eventDataMap = EventData_Properties(eventDataHandle)) == NULL)
     {
-        LogError("EventData_Properties Failed %d.\r\n");
+        LogError("EventData_Properties Failed.\r\n");
         result = __LINE__;
     }
     else if ((errorCode = message_get_application_properties(message, &handle)) != 0)

@@ -597,7 +597,7 @@ static uint64_t TestSetupCallStack_ReceiverEventHubAuthCBS_SASTokenParse(const c
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -760,7 +760,7 @@ static uint64_t TestSetupCallStack_SenderEventHubAuthCBS_SASTokenParse(const cha
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -894,7 +894,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Create(EVENTHUBAUTH_MODE mode
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -973,7 +973,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Destroy(bool isSASTokenAuthAt
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1042,7 +1042,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Authenticate_Common
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1079,7 +1079,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Authenticate_PutCallback(CBS_
     }
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1336,8 +1336,8 @@ TEST_FUNCTION(EventHubAuthCBS_SASTokenExtParseSender_Success)
     cfg = EventHubAuthCBS_SASTokenParse(SASTOKEN_EXT_SENDER);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_IS_NOT_NULL_WITH_MSG(cfg, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_IS_NOT_NULL(cfg, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Config_Destroy(cfg);
@@ -1381,8 +1381,8 @@ TEST_FUNCTION(EventHubAuthCBS_SASTokenExtParseReceiver_Success)
     cfg = EventHubAuthCBS_SASTokenParse(SASTOKEN_EXT_RECEIVER);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_IS_NOT_NULL_WITH_MSG(cfg, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_IS_NOT_NULL(cfg, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Config_Destroy(cfg);
@@ -1430,7 +1430,7 @@ TEST_FUNCTION(EventHubAuthCBKPS_Config_Destroy_NULL_Param_eventHubAuthConfig)
     EventHubAuthCBS_Config_Destroy(NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1457,7 +1457,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All)
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1481,7 +1481,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All_Valid_H
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1505,7 +1505,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All_Valid_E
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1529,7 +1529,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All_Valid_C
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1553,7 +1553,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All_Valid_P
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1577,7 +1577,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All_Valid_P
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1601,7 +1601,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All_Valid_S
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1625,7 +1625,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All_Valid_S
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1649,7 +1649,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All_Valid_E
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1673,7 +1673,7 @@ TEST_FUNCTION(EventHubAuthCBS_Config_Destroy_eventHubAuthConfig_NULL_All_Valid_E
     EventHubAuthCBS_Config_Destroy(cfg);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -1726,7 +1726,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL HostName");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL HostName");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1734,7 +1734,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL EventHubPath");    
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL EventHubPath");    
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1742,7 +1742,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL SharedAccessKeyName");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL SharedAccessKeyName");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1750,7 +1750,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL SharedAccessKey");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL SharedAccessKey");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1758,7 +1758,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL ConsumerGroup");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL ConsumerGroup");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1766,7 +1766,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL PartitionId");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL PartitionId");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1774,7 +1774,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Zero Expiration Time");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Zero Expiration Time");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1782,7 +1782,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Zero Expiration Time");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Zero Expiration Time");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1790,7 +1790,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Zero Refresh Time");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Zero Refresh Time");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1799,7 +1799,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Refresh Time Greater than Expiration Time");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Refresh Time Greater than Expiration Time");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1807,7 +1807,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Invalid Credential");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Invalid Credential");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigReceiverAuto(&cfg);
@@ -1815,7 +1815,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_ReceiverAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Invalid Mode #1");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Invalid Mode #1");
 }
 
 //**Tests_SRS_EVENTHUB_AUTH_29_002: \[**EventHubAuthCBS_Create shall return NULL if eventHubAuthConfig->mode is not EVENTHUBAUTH_MODE_SENDER or EVENTHUBAUTH_MODE_RECEIVER.**\]**
@@ -1834,7 +1834,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL HostName");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL HostName");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1842,7 +1842,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL EventHubPath");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL EventHubPath");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1850,7 +1850,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL SharedAccessKeyName");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL SharedAccessKeyName");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1858,7 +1858,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL SharedAccessKey");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL SharedAccessKey");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1866,7 +1866,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Zero Expiration Time");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Zero Expiration Time");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1874,7 +1874,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Zero Expiration Time");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Zero Expiration Time");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1882,7 +1882,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Zero Refresh Time");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Zero Refresh Time");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1891,7 +1891,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Refresh Time Greater than Expiration Time");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Refresh Time Greater than Expiration Time");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1899,7 +1899,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Invalid Credential");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Invalid Credential");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1907,7 +1907,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Invalid Mode #1");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Invalid Mode #1");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderAuto(&cfg);
@@ -1915,7 +1915,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_SenderAuto_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Invalid Mode #2");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Invalid Mode #2");
 }
 
 TEST_FUNCTION(EventHubAuthCBS_CreateReceiverAuto_Success)
@@ -1931,8 +1931,8 @@ TEST_FUNCTION(EventHubAuthCBS_CreateReceiverAuto_Success)
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_IS_NOT_NULL_WITH_MSG(h, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_IS_NOT_NULL(h, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -1951,8 +1951,8 @@ TEST_FUNCTION(EventHubAuthCBS_CreateSenderAuto_Success)
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_IS_NOT_NULL_WITH_MSG(h, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_IS_NOT_NULL(h, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2032,7 +2032,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_Ext_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL Ext SAS Token Handle");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL Ext SAS Token Handle");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderExt(&cfg);
@@ -2040,7 +2040,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_Ext_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL Ext SAS Token URI Handle");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL Ext SAS Token URI Handle");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderExt(&cfg);
@@ -2048,7 +2048,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_Ext_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With NULL Ext SAS Token Expiration Timestamp");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With NULL Ext SAS Token Expiration Timestamp");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderExt(&cfg);
@@ -2056,7 +2056,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_Ext_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Invalid Credential");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Invalid Credential");
 
     // arrange
     TestHelper_InitEventhHubAuthConfigSenderExt(&cfg);
@@ -2064,7 +2064,7 @@ TEST_FUNCTION(EventHubAuthCBS_Create_Ext_InvalidConfigParams)
     // act
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
     // assert
-    ASSERT_IS_NULL_WITH_MSG(h, "Unexpected Non NULL Data Handle With Invalid Mode");
+    ASSERT_IS_NULL(h, "Unexpected Non NULL Data Handle With Invalid Mode");
 }
 
 TEST_FUNCTION(EventHubAuthCBS_CreateReceiverExt_Success)
@@ -2080,8 +2080,8 @@ TEST_FUNCTION(EventHubAuthCBS_CreateReceiverExt_Success)
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_IS_NOT_NULL_WITH_MSG(h, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_IS_NOT_NULL(h, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2100,8 +2100,8 @@ TEST_FUNCTION(EventHubAuthCBS_CreateSenderExt_Success)
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_IS_NOT_NULL_WITH_MSG(h, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_IS_NOT_NULL(h, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2180,7 +2180,7 @@ TEST_FUNCTION(EventHubAuthCBS_Destroy_NULLParam)
     EventHubAuthCBS_Destroy(NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2200,7 +2200,7 @@ TEST_FUNCTION(EventHubAuthCBS_Destroy_ReceiverAutoSuccess)
     EventHubAuthCBS_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2220,7 +2220,7 @@ TEST_FUNCTION(EventHubAuthCBS_Destroy_SenderAutoSuccess)
     EventHubAuthCBS_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2240,7 +2240,7 @@ TEST_FUNCTION(EventHubAuthCBS_Destroy_ReceiverExtSuccess)
     EventHubAuthCBS_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2260,7 +2260,7 @@ TEST_FUNCTION(EventHubAuthCBS_Destroy_SenderExtSuccess)
     EventHubAuthCBS_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2302,14 +2302,14 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Ext_Success)
     result = EventHubAuthCBS_Authenticate(h);
 
     // assert 1
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // act 2
     (void)EventHubAuthCBS_GetStatus(h, &status);
 
     // assert 2
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Status Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Status Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2347,8 +2347,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Ext_Negative)
             (void)EventHubAuthCBS_GetStatus(h, &currentStatus);
 
             // assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
-            ASSERT_ARE_EQUAL_WITH_MSG(int, priorStatus, currentStatus, "Failed Status Should Remain Unchanged Test");
+            ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
+            ASSERT_ARE_EQUAL(int, priorStatus, currentStatus, "Failed Status Should Remain Unchanged Test");
         }
 
         EventHubAuthCBS_Destroy(h);
@@ -2382,14 +2382,14 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Ext_MultipleAuthSuccess)
     result = EventHubAuthCBS_Authenticate(h);
 
     // assert 1
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // act 2
     (void)EventHubAuthCBS_GetStatus(h, &status);
 
     // assert 2
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Status Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Status Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2436,8 +2436,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Ext_MultipleNegative)
             (void)EventHubAuthCBS_GetStatus(h, &currentStatus);
 
             // assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
-            ASSERT_ARE_EQUAL_WITH_MSG(int, priorStatus, currentStatus, "Failed Status Should Remain Unchanged Test");
+            ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
+            ASSERT_ARE_EQUAL(int, priorStatus, currentStatus, "Failed Status Should Remain Unchanged Test");
         }
         EventHubAuthCBS_Destroy(h);
     }
@@ -2465,14 +2465,14 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Auto_Success)
     result = EventHubAuthCBS_Authenticate(h);
 
     // assert 1
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // act 2
     (void)EventHubAuthCBS_GetStatus(h, &status);
 
     // assert 2
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Status Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Status Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2513,8 +2513,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Auto_Negative)
             (void)EventHubAuthCBS_GetStatus(h, &currentStatus);
 
             // assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
-            ASSERT_ARE_EQUAL_WITH_MSG(int, priorStatus, currentStatus, "Failed Status Should Remain Unchanged Test");
+            ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
+            ASSERT_ARE_EQUAL(int, priorStatus, currentStatus, "Failed Status Should Remain Unchanged Test");
         }
         EventHubAuthCBS_Destroy(h);
     }
@@ -2547,14 +2547,14 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Auto_MultipleSuccess)
     result = EventHubAuthCBS_Authenticate(h);
 
     // assert 1
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // act 2
     (void)EventHubAuthCBS_GetStatus(h, &status);
 
     // assert 2
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Status Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Status Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2599,7 +2599,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Auto_MultipleNegative)
             (void)EventHubAuthCBS_GetStatus(h, &currentStatus);
 
             // assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
+            ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
         }
         EventHubAuthCBS_Destroy(h);
     }
@@ -2626,13 +2626,13 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Ext_StatusTest_Success)
     (void)EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Return Status Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed Return Status Value Test");
 
     // authenticate again before the put operation completed
     result = EventHubAuthCBS_Authenticate(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2657,7 +2657,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Ext_MultipleNotPermitted
     result = EventHubAuthCBS_Authenticate(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2682,7 +2682,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_Auto_MultipleNotPermitte
     result = EventHubAuthCBS_Authenticate(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2706,7 +2706,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_OnCBSPutTokenOperationCo
     g_TestGlobal.sasTokenPutCB(g_TestGlobal.sasTokenPutCBContext, CBS_OPERATION_RESULT_OK, 0, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2735,8 +2735,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_OnCBSPutTokenOperationCo
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_OK, status, "Failed Return Status Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed Return Status Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2765,8 +2765,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Authenticate_OnCBSPutTokenOperationCo
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_FAILURE, status, "Failed Return Status Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_FAILURE, status, "Failed Return Status Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2807,8 +2807,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ExtSASTokenNULL)
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_INVALID_ARG, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_INVALID_ARG, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2829,8 +2829,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverExtNoAuthSASTokenSucc
     result = EventHubAuthCBS_Refresh(h, TEST_STRING_HANDLE_EXT_SASTOKEN_REFRESH_RECEIVER);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2857,8 +2857,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverExtWithAuthSASTokenSu
     result = EventHubAuthCBS_Refresh(h, TEST_STRING_HANDLE_EXT_SASTOKEN_REFRESH_RECEIVER);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2880,8 +2880,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderExtNoAuthSASTokenSucces
     result = EventHubAuthCBS_Refresh(h, TEST_STRING_HANDLE_EXT_SASTOKEN_REFRESH_SENDER);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2907,8 +2907,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderExtWithAuthSASTokenSucc
     result = EventHubAuthCBS_Refresh(h, TEST_STRING_HANDLE_EXT_SASTOKEN_REFRESH_SENDER);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2926,7 +2926,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermittedNoAut
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
 
     (void)EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IDLE, status, "Could Not Execute Test Because Status Is Not Valid");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IDLE, status, "Could Not Execute Test Because Status Is Not Valid");
 
     // arrange
     umock_c_reset_all_calls();
@@ -2935,8 +2935,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermittedNoAut
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -2964,7 +2964,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermittedAuthC
     g_TestGlobal.sasTokenPutCB(g_TestGlobal.sasTokenPutCBContext, CBS_OPERATION_RESULT_OK, 0, NULL);
 
     (void)EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_OK, status, "Could Not Execute Test Because Status Is Not Valid");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Could Not Execute Test Because Status Is Not Valid");
 
     // arrange
     (void)TestSetupCallStack_EventHubAuthCBS_Refresh_AutoWithNoRefreshRequired(cfg.mode);
@@ -2973,8 +2973,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermittedAuthC
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3016,7 +3016,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermittedAuthC
             result = EventHubAuthCBS_Refresh(h, NULL);
 
             // assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
+            ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
             
             // cleanup
             EventHubAuthCBS_Destroy(h);
@@ -3049,8 +3049,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermittedAuthP
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3077,7 +3077,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermittedWithA
     (void)EventHubAuthCBS_Authenticate(h);
 
     (void)EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Could Not Execute Test Because Status Is Not In Progress");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Could Not Execute Test Because Status Is Not In Progress");
     
     // arrange
     (void)TestSetupCallStack_EventHubAuthCBS_Refresh_AutoWithNoRefreshRequired(cfg.mode);
@@ -3086,15 +3086,15 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermittedWithA
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack In Progress Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value In Progress Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack In Progress Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value In Progress Test");
 
     do
     {
         (void)EventHubAuthCBS_GetStatus(h, &status);
     } while (status == EVENTHUBAUTH_STATUS_IN_PROGRESS);
 
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_TIMEOUT, status, "Could Not Execute Test Because Status Is Not In Timeout");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_TIMEOUT, status, "Could Not Execute Test Because Status Is Not In Timeout");
 
     // arrange
     umock_c_reset_all_calls();
@@ -3103,8 +3103,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermittedWithA
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Timeout Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Timeout Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Timeout Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Timeout Test");
     (void)EventHubAuthCBS_GetStatus(h, &status);
 
     // cleanup
@@ -3144,8 +3144,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoNotPermitedExpire
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3185,8 +3185,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoAuthWithRefreshRe
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3218,7 +3218,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoAuthWithRefreshRe
         
         // authenticate
         result = EventHubAuthCBS_Authenticate(h);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_NOT_PERMITED");
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_NOT_PERMITED");
         
         // complete authentication
         g_TestGlobal.sasTokenPutCB(g_TestGlobal.sasTokenPutCBContext, CBS_OPERATION_RESULT_OK, 0, NULL);
@@ -3239,11 +3239,11 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_ReceiverAutoAuthWithRefreshRe
             // assert
             if (result != EVENTHUBAUTH_RESULT_ERROR)
             {
-                ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_NOT_PERMITED");
+                ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_NOT_PERMITED");
             }
             if (result != EVENTHUBAUTH_RESULT_NOT_PERMITED)
             {
-                ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_ERROR");
+                ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_ERROR");
             }
         }
 
@@ -3272,7 +3272,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermittedNoAuthS
     h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
 
     (void)EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IDLE, status, "Could Not Execute Test Because Status Is Not Valid");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IDLE, status, "Could Not Execute Test Because Status Is Not Valid");
 
     // arrange
     umock_c_reset_all_calls();
@@ -3281,8 +3281,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermittedNoAuthS
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3306,7 +3306,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermittedAuthCom
     g_TestGlobal.sasTokenPutCB(g_TestGlobal.sasTokenPutCBContext, CBS_OPERATION_RESULT_OK, 0, NULL);
 
     (void)EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_OK, status, "Could Not Execute Test Because Status Is Not Valid");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Could Not Execute Test Because Status Is Not Valid");
 
     // arrange
     (void)TestSetupCallStack_EventHubAuthCBS_Refresh_AutoWithNoRefreshRequired(cfg.mode);
@@ -3315,8 +3315,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermittedAuthCom
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3364,7 +3364,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermittedAuthCom
             result = EventHubAuthCBS_Refresh(h, NULL);
 
             // assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
+            ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test");
 
             // cleanup
             EventHubAuthCBS_Destroy(h);
@@ -3403,8 +3403,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermittedAuthPut
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3431,7 +3431,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermittedWithAut
     (void)EventHubAuthCBS_Authenticate(h);
 
     (void)EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Could Not Execute Test Because Status Is Not In Progress");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Could Not Execute Test Because Status Is Not In Progress");
 
     // arrange
     TestSetupCallStack_EventHubAuthCBS_Refresh_AutoWithNoRefreshRequired(cfg.mode);
@@ -3440,15 +3440,15 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermittedWithAut
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack In Progress Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value In Progress Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack In Progress Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value In Progress Test");
 
     do
     {
         (void)EventHubAuthCBS_GetStatus(h, &status);
     } while (status == EVENTHUBAUTH_STATUS_IN_PROGRESS);
 
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_TIMEOUT, status, "Could Not Execute Test Because Status Is Not In Timeout");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_TIMEOUT, status, "Could Not Execute Test Because Status Is Not In Timeout");
 
     // arrange
     umock_c_reset_all_calls();
@@ -3457,8 +3457,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermittedWithAut
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Timeout Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Timeout Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Timeout Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Timeout Test");
     (void)EventHubAuthCBS_GetStatus(h, &status);
 
     // cleanup
@@ -3498,8 +3498,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoNotPermitedExpiredS
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3539,8 +3539,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoAuthWithRefreshRequ
     result = EventHubAuthCBS_Refresh(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3572,7 +3572,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoAuthWithRefreshRequ
         h = EventHubAuthCBS_Create(&cfg, TEST_SESSION_HANDLE_VALID);
         // authenticate
         result = EventHubAuthCBS_Authenticate(h);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_NOT_PERMITED");
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_NOT_PERMITED");
         // complete authentication
         g_TestGlobal.sasTokenPutCB(g_TestGlobal.sasTokenPutCBContext, CBS_OPERATION_RESULT_OK, 0, NULL);
 
@@ -3592,11 +3592,11 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_Refresh_SenderAutoAuthWithRefreshRequ
             // assert
             if (result != EVENTHUBAUTH_RESULT_ERROR)
             {
-                ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_NOT_PERMITED");
+                ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_NOT_PERMITED, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_NOT_PERMITED");
             }
             if (result != EVENTHUBAUTH_RESULT_NOT_PERMITED)
             {
-                ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_ERROR");
+                ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_ERROR, result, "Failed Return Value Test For EVENTHUBAUTH_RESULT_ERROR");
             }
         }
 
@@ -3623,7 +3623,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_NULLParam_eventHubAuthHandl
     result = EventHubAuthCBS_GetStatus(NULL, &status);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_INVALID_ARG, result, "Failed Return Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_INVALID_ARG, result, "Failed Return Test");
 
     // cleanup
 }
@@ -3643,7 +3643,7 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_NULLParam_status)
     result = EventHubAuthCBS_GetStatus(h, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_INVALID_ARG, result, "Failed Return Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_INVALID_ARG, result, "Failed Return Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3664,8 +3664,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusIdleNonAuth_status)
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IDLE, status, "Failed Status Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IDLE, status, "Failed Status Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3694,16 +3694,16 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusInProgressAndTimeoutA
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test. Line:" TOSTRING(__LINE__));
 
     do
     {
         result = EventHubAuthCBS_GetStatus(h, &status);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
     } while (status == EVENTHUBAUTH_STATUS_IN_PROGRESS);
 
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_TIMEOUT, status, "Failed Timeout Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_TIMEOUT, status, "Failed Timeout Status Test. Line:" TOSTRING(__LINE__));
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3736,8 +3736,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusFailedAuth_status)
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_FAILURE, status, "Failed Status Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_FAILURE, status, "Failed Status Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3764,8 +3764,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusOKToRefreshRequiredTo
     (void)EventHubAuthCBS_Authenticate(h);
 
     result = EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test. Line:" TOSTRING(__LINE__));
 
     // complete authentication
     g_TestGlobal.sasTokenPutCB(g_TestGlobal.sasTokenPutCBContext, CBS_OPERATION_RESULT_OK, 0, NULL);
@@ -3774,30 +3774,30 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusOKToRefreshRequiredTo
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
 
     do
     {
         result = EventHubAuthCBS_GetStatus(h, &status);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
     } while (status == EVENTHUBAUTH_STATUS_OK);
 
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, status, "Failed Refresh Required Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, status, "Failed Refresh Required Status Test. Line:" TOSTRING(__LINE__));
 
     result = EventHubAuthCBS_Refresh(h, NULL);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed EventHubAuthCBS_Refresh Return Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed EventHubAuthCBS_Refresh Return Test. Line:" TOSTRING(__LINE__));
 
     result = EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test. Line:" TOSTRING(__LINE__));
 
     // complete authentication
     g_TestGlobal.sasTokenPutCB(g_TestGlobal.sasTokenPutCBContext, CBS_OPERATION_RESULT_OK, 0, NULL);
 
     result = EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3830,25 +3830,25 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusOKToRefreshRequiredTo
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
 
     EVENTHUBAUTH_STATUS prevStatus = status;
     do
     {
         result = EventHubAuthCBS_GetStatus(h, &status);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
     } while (status == EVENTHUBAUTH_STATUS_OK);
 
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, status, "Failed Refresh Required Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, status, "Failed Refresh Required Status Test. Line:" TOSTRING(__LINE__));
 
     do
     {
         result = EventHubAuthCBS_GetStatus(h, &status);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Refresh Required Return Value Test. Line:" TOSTRING(__LINE__));
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Refresh Required Return Value Test. Line:" TOSTRING(__LINE__));
     } while (status == EVENTHUBAUTH_STATUS_REFRESH_REQUIRED);
 
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_STATUS_EXPIRED, status, "Failed Expired Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_EXPIRED, status, "Failed Expired Status Test. Line:" TOSTRING(__LINE__));
 
     // cleanup
     EventHubAuthCBS_Destroy(h);

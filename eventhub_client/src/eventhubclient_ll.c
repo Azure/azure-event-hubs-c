@@ -33,6 +33,8 @@
 #include "azure_uamqp_c/saslclientio.h"
 #include "azure_uamqp_c/sasl_mssbcbs.h"
 #include "azure_uamqp_c/session.h"
+#include "azure_uamqp_c/amqp_definitions_data.h"
+#include "azure_uamqp_c/amqp_definitions_application_properties.h"
 
 #include "eventhubauth.h"
 #include "eventhubclient_ll.h"
@@ -723,12 +725,14 @@ static int initialize_uamqp_stack(EVENTHUBCLIENT_LL_HANDLE eventhub_client_ll)
     return result;
 }
 
-static void on_message_send_complete(void* context, MESSAGE_SEND_RESULT send_result)
+static void on_message_send_complete(void* context, MESSAGE_SEND_RESULT send_result, AMQP_VALUE delivery_state)
 {
     PDLIST_ENTRY currentListEntry = (PDLIST_ENTRY)context;
     EVENTHUBCLIENT_CONFIRMATION_RESULT callback_confirmation_result;
     PEVENTHUB_EVENT_LIST currentEvent = containingRecord(currentListEntry, EVENTHUB_EVENT_LIST, entry);
     size_t index;
+
+    (void)delivery_state;
 
     if (send_result == MESSAGE_SEND_OK)
     {

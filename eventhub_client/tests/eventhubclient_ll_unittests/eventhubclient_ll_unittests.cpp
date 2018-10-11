@@ -160,6 +160,7 @@ static const AMQP_VALUE PARTITION_MAP = (AMQP_VALUE)0x7004;
 static const AMQP_VALUE PARTITION_NAME = (AMQP_VALUE)0x7005;
 static const AMQP_VALUE PARTITION_STRING_VALUE = (AMQP_VALUE)0x7006;
 static const AMQP_VALUE PARTITION_ANNOTATION = (AMQP_VALUE)0x7007;
+static const AMQP_VALUE test_delivery_state = (AMQP_VALUE)0x8000;
 
 static const char* const no_property_keys[] = { "test_property_key" };
 static const char* const no_property_values[] = { "test_property_value" };
@@ -5883,7 +5884,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
         // act
-        saved_on_message_send_complete(saved_on_message_send_complete_context, MESSAGE_SEND_OK);
+        saved_on_message_send_complete(saved_on_message_send_complete_context, MESSAGE_SEND_OK, test_delivery_state);
 
         // assert
         mocks.AssertActualAndExpectedCalls();
@@ -5924,7 +5925,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
         // act
-        saved_on_message_send_complete(saved_on_message_send_complete_context, MESSAGE_SEND_ERROR);
+        saved_on_message_send_complete(saved_on_message_send_complete_context, MESSAGE_SEND_ERROR, test_delivery_state);
 
         // assert
         mocks.AssertActualAndExpectedCalls();

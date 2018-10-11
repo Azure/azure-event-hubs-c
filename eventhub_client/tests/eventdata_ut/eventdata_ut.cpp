@@ -1141,7 +1141,7 @@ TEST_FUNCTION(EventData_EventData_GetEnqueuedTimestampUTC_Success)
 
     EVENTDATA_HANDLE eventDataHandle = EventData_CreateWithNewMemory(expectedData, expectedSize);
     timestamp = EventData_GetEnqueuedTimestampUTCInMs(eventDataHandle);
-    ASSERT_ARE_EQUAL_WITH_MSG(uint64_t, (uint64_t)0, timestamp, "Initial Timestamp Expected To Be Zero.");
+    ASSERT_ARE_EQUAL(uint64_t, (uint64_t)0, timestamp, "Initial Timestamp Expected To Be Zero.");
 
     (void)EventData_SetEnqueuedTimestampUTCInMs(eventDataHandle, 10);
     mocks.ResetAllCalls();
@@ -1150,7 +1150,7 @@ TEST_FUNCTION(EventData_EventData_GetEnqueuedTimestampUTC_Success)
     timestamp = EventData_GetEnqueuedTimestampUTCInMs(eventDataHandle);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(uint64_t, 10, timestamp, "Invalid timestamp value seen.");
+    ASSERT_ARE_EQUAL(uint64_t, 10, timestamp, "Invalid timestamp value seen.");
     mocks.AssertActualAndExpectedCalls();
 
     // cleanup

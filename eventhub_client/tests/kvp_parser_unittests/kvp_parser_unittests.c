@@ -298,7 +298,7 @@ uint64_t TestHelper_SetupKVPParserStack(TestKVPTestData* testData)
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -373,7 +373,7 @@ TEST_FUNCTION(kvp_parse_NULLParam_input)
     map = kvp_parser_parse(NULL, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 }
 
 //**Tests_SRS_KVP_PARSER_29_001: \[**kvp_parser_parse shall return NULL if either input_string, key_delim or value_delim is NULL.**\]**
@@ -386,7 +386,7 @@ TEST_FUNCTION(kvp_parse_NULLParam_key_delim)
     map = kvp_parser_parse(UNUSED_KVP_STRING, NULL, ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 }
 
 //**Tests_SRS_KVP_PARSER_29_001: \[**kvp_parser_parse shall return NULL if either input_string, key_delim or value_delim is NULL.**\]**
@@ -399,7 +399,7 @@ TEST_FUNCTION(kvp_parse_NULLParam_value_delim)
     map = kvp_parser_parse(UNUSED_KVP_STRING, "=", NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 }
 
 TEST_FUNCTION(kvp_parse_ZeroKVP_Success)
@@ -414,8 +414,8 @@ TEST_FUNCTION(kvp_parse_ZeroKVP_Success)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_MAP_HANDLE, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_MAP_HANDLE, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -432,8 +432,8 @@ TEST_FUNCTION(kvp_parse_OneKVP_Success)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_MAP_HANDLE, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_MAP_HANDLE, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -450,8 +450,8 @@ TEST_FUNCTION(kvp_parse_TwoKVP_Success)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "==", "&&");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_MAP_HANDLE, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_MAP_HANDLE, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -468,8 +468,8 @@ TEST_FUNCTION(kvp_parse_OneKVP_InvalidNULLKeyToken)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -486,8 +486,8 @@ TEST_FUNCTION(kvp_parse_OneKVP_InvalidZeroLenKeyToken)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -504,8 +504,8 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidFirstNULLKeyToken)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -522,8 +522,8 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidFirstZeroLenKeyToken)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -540,8 +540,8 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidSecondNULLKeyToken)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -558,8 +558,8 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidSecondZeroLenKeyToken)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -576,8 +576,8 @@ TEST_FUNCTION(kvp_parse_OneKVP_InvalidNULLValueToken)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -594,8 +594,8 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidFirstNULLValueToken)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -612,8 +612,8 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidSecondNULLValueToken)
     MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
 
     // cleanup
 }
@@ -639,7 +639,7 @@ TEST_FUNCTION(kvp_parse_NegativeTest)
             // act
             MAP_HANDLE map = kvp_parser_parse(UNUSED_KVP_STRING, "=", ";");
             // assert
-            ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, NULL, map, "Failed MAP Handle Test");
+            ASSERT_ARE_EQUAL(void_ptr, NULL, map, "Failed MAP Handle Test");
         }
     }
 

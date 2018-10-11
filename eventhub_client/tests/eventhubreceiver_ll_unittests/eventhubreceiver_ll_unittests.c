@@ -55,6 +55,13 @@ static void TestHook_free(void* ptr)
 #include "azure_uamqp_c/saslclientio.h"
 #include "azure_uamqp_c/sasl_mssbcbs.h"
 #include "azure_uamqp_c/sasl_plain.h"
+#include "azure_uamqp_c/amqp_definitions_terminus_durability.h"
+#include "azure_uamqp_c/amqp_definitions_terminus_expiry_policy.h"
+#include "azure_uamqp_c/amqp_definitions_seconds.h"
+#include "azure_uamqp_c/amqp_definitions_node_properties.h"
+#include "azure_uamqp_c/amqp_definitions_filter_set.h"
+#include "azure_uamqp_c/amqp_definitions_source.h"
+#include "azure_uamqp_c/amqp_definitions_application_properties.h"
 #include "eventdata.h"
 #include "eventhubauth.h"
 #include "version.h"
@@ -552,8 +559,8 @@ static int TestHook_message_get_application_properties(MESSAGE_HANDLE message, A
 
 static AMQP_VALUE TestHook_messaging_delivery_rejected(const char* error_condition, const char* error_description)
 {
-    ASSERT_IS_NOT_NULL_WITH_MSG(error_condition, "error_condition should be non NULL");
-    ASSERT_IS_NOT_NULL_WITH_MSG(error_condition, "error_description should be non NULL");
+    ASSERT_IS_NOT_NULL(error_condition, "error_condition should be non NULL");
+    ASSERT_IS_NOT_NULL(error_condition, "error_description should be non NULL");
     messagingDeliveryRejectedCalled = 1;
 
     return TEST_AMQP_MESSAGE_REJECTED_VALUE;
@@ -674,12 +681,12 @@ static EVENTHUBAUTH_CBS_CONFIG* TestHook_EventHubAuthCBS_SASTokenParse(const cha
         result->extSASTokenExpTSInEpochSec = SASTOKEN_EXT_REFRESH_EXPIRATION_TIMESTAMP_1;
         result->extSASToken = TEST_STRING_HANDLE_EXT_REFRESH_SASTOKEN_1;
         result->extSASTokenURI = TEST_STRING_HANDLE_EXT_REFRESH_1_RECEIVER_URI;
-        ASSERT_IS_NULL_WITH_MSG(gRefreshToken1, "gRefreshToken1 is non null");
+        ASSERT_IS_NULL(gRefreshToken1, "gRefreshToken1 is non null");
         gRefreshToken1 = result;
     }
     else
     {
-        ASSERT_IS_NULL_WITH_MSG(gDynamicParsedConfig, "gDynamicParsedConfig is non null");
+        ASSERT_IS_NULL(gDynamicParsedConfig, "gDynamicParsedConfig is non null");
         gDynamicParsedConfig = result;
     }
 
@@ -713,8 +720,8 @@ static void TestHook_EventHubAuthCBS_Config_Destroy(EVENTHUBAUTH_CBS_CONFIG* cfg
 static void EventHubHReceiver_LL_OnRxCB(EVENTHUBRECEIVER_RESULT result, EVENTDATA_HANDLE eventDataHandle, void* userContext)
 {
     (void)userContext;
-    if (result == EVENTHUBRECEIVER_OK) ASSERT_IS_NOT_NULL_WITH_MSG(eventDataHandle, "Unexpected NULL Data Handle");
-    if (result != EVENTHUBRECEIVER_OK) ASSERT_IS_NULL_WITH_MSG(eventDataHandle, "Unexpected Non NULL Data Handle");
+    if (result == EVENTHUBRECEIVER_OK) ASSERT_IS_NOT_NULL(eventDataHandle, "Unexpected NULL Data Handle");
+    if (result != EVENTHUBRECEIVER_OK) ASSERT_IS_NULL(eventDataHandle, "Unexpected Non NULL Data Handle");
     OnRxCBStruct.rxCallbackCalled = 1;
     OnRxCBStruct.rxCallbackResult = result;
 }
@@ -863,7 +870,7 @@ static uint64_t TestSetupCallStack_Create(void)
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -933,7 +940,7 @@ static uint64_t TestSetupCallStack_CreateFromSASToken(const char* sasToken)
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -948,7 +955,7 @@ static void TestSetupCallStack_ReceiveFromStartTimestampCommon(unsigned int wait
     //STRICT_EXPECTED_CALL(STRING_construct_sprintf(IGNORED_PTR_ARG, nowTS)).IgnoreArgument(1);
     // Since the above is not possible to do with the mocking framework 
     // use TestHelper_isSTRING_construct_sprintfInvoked() instead to see if STRING_construct_sprintf was invoked at all
-    // Ex: ASSERT_ARE_EQUAL_WITH_MSG(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
+    // Ex: ASSERT_ARE_EQUAL(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
 }
 
 static void TestSetupCallStack_ReceiveEndAsync(void)
@@ -990,7 +997,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_TearDown_Comm
     i++; // this function is not expected to fail and thus does not included in the bitmask
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     *currentIndex = i;
 
@@ -1025,7 +1032,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_TearDown_C
     failedFunctionBitmask = TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_TearDown_Common(failedFunctionBitmask, &i);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     *currentIndex = i;
 
@@ -1043,7 +1050,7 @@ static uint64_t TestSetupCallStack_DoWork_PreAuth_ActiveTearDown(void)
     failedFunctionBitmask = TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_TearDown_Common(failedFunctionBitmask, &i);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1059,7 +1066,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuth_ActiveTearDown(void)
     failedFunctionBitmask = TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_TearDown_Common(failedFunctionBitmask, &i);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1139,7 +1146,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Inter
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     *currentIndex = i;
 
@@ -1178,7 +1185,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1213,7 +1220,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
     failedFunctionBitmask = TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_TearDown_Common(failedFunctionBitmask, &i);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1246,7 +1253,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuth_AMQP_Stack_Teardown_Status_Fa
     failedFunctionBitmask = TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_TearDown_Common(failedFunctionBitmask, &i);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1270,7 +1277,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1300,7 +1307,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1329,7 +1336,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1467,7 +1474,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_Bringup(un
     }
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1495,7 +1502,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1528,7 +1535,7 @@ static uint64_t TestSetupCallStack_EventHubReceiver_LL_RefreshSASTokenAsync(cons
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1559,7 +1566,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_StatusOk_ExtRefreshTo
     i++;
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -1686,7 +1693,7 @@ static uint64_t TestSetupCallStack_OnMessageReceived(void)
     i++; // this function is not expected to fail and thus does not included in the bitmask
 
     // ensure that we do not have more that 64 mocked functions
-    ASSERT_IS_FALSE_WITH_MSG((i > 64), "More Mocked Functions than permitted bitmask width");
+    ASSERT_IS_FALSE((i > 64), "More Mocked Functions than permitted bitmask width");
 
     return failedFunctionBitmask;
 }
@@ -2055,8 +2062,8 @@ TEST_FUNCTION(EventHubReceiver_LL_Create_Success)
     EVENTHUBRECEIVER_LL_HANDLE h = EventHubReceiver_LL_Create(CONNECTION_STRING, EVENTHUB_PATH, CONSUMER_GROUP, PARTITION_ID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
-    ASSERT_IS_NOT_NULL_WITH_MSG(h, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
+    ASSERT_IS_NOT_NULL(h, "Failed Return Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2116,8 +2123,8 @@ static void EventHubReceiver_LL_Create_Fails_With_Invalid_HostName(const char* i
     EVENTHUBRECEIVER_LL_HANDLE h = EventHubReceiver_LL_Create(CONNECTION_STRING, EVENTHUB_PATH, CONSUMER_GROUP, PARTITION_ID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
-    ASSERT_IS_NULL_WITH_MSG(h, "Failed Return Value Test #2");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
+    ASSERT_IS_NULL(h, "Failed Return Value Test #2");
 
     // cleanup
 }
@@ -2199,8 +2206,8 @@ TEST_FUNCTION(EventHubReceiver_LL_CreateFromSASToken_InvalidMode)
     h = EventHubReceiver_LL_CreateFromSASToken(SASTOKEN);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_IS_NULL_WITH_MSG(h, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_IS_NULL(h, "Failed Return Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2218,8 +2225,8 @@ TEST_FUNCTION(EventHubReceiver_LL_CreateFromSASToken_Success)
     h = EventHubReceiver_LL_CreateFromSASToken(SASTOKEN);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_IS_NOT_NULL_WITH_MSG(h, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_IS_NOT_NULL(h, "Failed Return Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2266,7 +2273,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_NULL_Param_eventHubReceiverLLHandle)
     EventHubReceiver_LL_Destroy(NULL);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2284,7 +2291,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_AutoSASToken_NoActiveReceiver)
     EventHubReceiver_LL_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2303,7 +2310,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_ExtSASToken_NoActiveReceiver)
     EventHubReceiver_LL_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2324,7 +2331,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_AutoSASToken_ActiveReceiver)
     EventHubReceiver_LL_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2345,7 +2352,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_ExtSASToken_ActiveReceiver)
     EventHubReceiver_LL_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2368,7 +2375,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_ExtSASToken_ActiveReceiver_WithRefresh
     EventHubReceiver_LL_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2391,7 +2398,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_AutoSASToken_ActiveReceiver_AuthOk_Pre
     EventHubReceiver_LL_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2414,7 +2421,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_ExtSASToken_ActiveReceiver_AuthOk_PreF
     EventHubReceiver_LL_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2439,7 +2446,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_AutoSASToken_ActiveReceiver_PostAuth)
     EventHubReceiver_LL_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2464,7 +2471,7 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_ExtSASToken_ActiveReceiver_PostAuth)
     EventHubReceiver_LL_Destroy(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
 }
@@ -2509,8 +2516,8 @@ static void EventHubReceiver_LL_SetConnectionTracing_NoActiveConnection_Success_
     result = EventHubReceiver_LL_SetConnectionTracing(h, false);
 
     // assert, 1
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test #1");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test #1");
 
     // arrange, 2
     umock_c_reset_all_calls();
@@ -2519,8 +2526,8 @@ static void EventHubReceiver_LL_SetConnectionTracing_NoActiveConnection_Success_
     result = EventHubReceiver_LL_SetConnectionTracing(h, true);
 
     // assert, 2
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #2");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test #2");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #2");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test #2");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2567,8 +2574,8 @@ static void EventHubReceiver_LL_SetConnectionTracing_ActiveConnection_Success_Co
     result = EventHubReceiver_LL_SetConnectionTracing(h, false);
 
     // assert, 1
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test #1");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test #1");
 
     // arrange, 2
     umock_c_reset_all_calls();
@@ -2579,8 +2586,8 @@ static void EventHubReceiver_LL_SetConnectionTracing_ActiveConnection_Success_Co
     result = EventHubReceiver_LL_SetConnectionTracing(h, true);
 
     // assert, 2
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #2");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test #2");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #2");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test #2");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2665,9 +2672,9 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampAsync_Success_Common(EV
     result = EventHubReceiver_LL_ReceiveFromStartTimestampAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2715,9 +2722,9 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampAsync_Mulitple_Receive_
     result = EventHubReceiver_LL_ReceiveFromStartTimestampAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2758,8 +2765,8 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampAsync_Mulitple_Receive_
     result = EventHubReceiver_LL_ReceiveFromStartTimestampAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 0, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2798,7 +2805,7 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampAsync_Negative_Common(E
         // act, 1
         result = EventHubReceiver_LL_ReceiveFromStartTimestampAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS);
         // assert, 1
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test #1");
+        ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test #1");
     }
 
     // arrange, 2
@@ -2808,8 +2815,8 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampAsync_Negative_Common(E
     result = EventHubReceiver_LL_ReceiveFromStartTimestampAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS);
 
     // assert, 2
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
 
     // cleanup
     umock_c_negative_tests_deinit();
@@ -2888,9 +2895,9 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync_Succes
     result = EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS, TEST_EVENTHUB_RECEIVER_TIMEOUT_MS);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2934,8 +2941,8 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync_Mulitp
     result = EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS, TEST_EVENTHUB_RECEIVER_TIMEOUT_MS);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -2975,8 +2982,8 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync_Mulitp
     result = EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS, TEST_EVENTHUB_RECEIVER_TIMEOUT_MS);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 0, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3022,7 +3029,7 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync_Negati
         // act, 1
         result = EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS, TEST_EVENTHUB_RECEIVER_TIMEOUT_MS);
         // assert, 1
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test #1");
+        ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test #1");
     }
 
     // arrange, 2
@@ -3032,8 +3039,8 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync_Negati
     result = EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync(h, EventHubHReceiver_LL_OnRxCB, OnRxCBCtxt, EventHubHReceiver_LL_OnErrCB, OnErrCBCtxt, nowTS, TEST_EVENTHUB_RECEIVER_TIMEOUT_MS);
 
     // assert, 2
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
 
     // cleanup
     umock_c_negative_tests_deinit();
@@ -3094,11 +3101,11 @@ static void EventHubReceiver_LL_ReceiveEndAsync_WithActiveReceiver_Success_Commo
     result = EventHubReceiver_LL_ReceiveEndAsync(h, EventHubHReceiver_LL_OnRxEndCB, OnRxEndCBCtxt);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3136,11 +3143,11 @@ static void EventHubReceiver_LL_ReceiveEndAsync_WithInActiveReceiver_Failure_Com
     result = EventHubReceiver_LL_ReceiveEndAsync(h, EventHubHReceiver_LL_OnRxEndCB, OnRxEndCBCtxt);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3185,11 +3192,11 @@ static void EventHubReceiver_LL_ReceiveEndAsync_WithActiveReceiverAndAsyncEnd_Fa
     result = EventHubReceiver_LL_ReceiveEndAsync(h, EventHubHReceiver_LL_OnRxEndCB, OnRxEndCBCtxt);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3242,10 +3249,10 @@ static void EventHubReceiver_LL_DoWork_NoActiveReceiver_Success_Common(EVENTHUBA
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3263,34 +3270,34 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_NoActiveReceiver_UsingExtSASToken_Succe
 
 static void TestHelper_ValidateAndAssertCBSAuthConfig(const EVENTHUBAUTH_CBS_CONFIG* cfg, unsigned int waitTimeoutInMs)
 {
-    ASSERT_IS_NOT_NULL_WITH_MSG(cfg, "Failed EventHubCBS Auth Config Is NULL");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBAUTH_MODE_RECEIVER, cfg->mode, "Invalid EventHubCBS Auth Config Param Mode");
-    ASSERT_IS_NULL_WITH_MSG(cfg->senderPublisherId, "Invalid EventHubCBS Auth Config Param Publisher ID");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, waitTimeoutInMs, cfg->sasTokenAuthFailureTimeoutInSecs * 1000, "Invalid EventHubCBS Auth Config Timeout Param");
+    ASSERT_IS_NOT_NULL(cfg, "Failed EventHubCBS Auth Config Is NULL");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_MODE_RECEIVER, cfg->mode, "Invalid EventHubCBS Auth Config Param Mode");
+    ASSERT_IS_NULL(cfg->senderPublisherId, "Invalid EventHubCBS Auth Config Param Publisher ID");
+    ASSERT_ARE_EQUAL(int, waitTimeoutInMs, cfg->sasTokenAuthFailureTimeoutInSecs * 1000, "Invalid EventHubCBS Auth Config Timeout Param");
 
     if (cfg->credential == EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO)
     {
-        ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_HOSTNAME_STRING_HANDLE_VALID, cfg->hostName, "Invalid EventHubCBS Auth Config Param Hostname");
-        ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_EVENTHUBPATH_STRING_HANDLE_VALID, cfg->eventHubPath, "Invalid EventHubCBS Auth Config Param Event Hub Path");
-        ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_SHAREDACCESSKEYNAME_STRING_HANDLE_VALID, cfg->sharedAccessKeyName, "Invalid EventHubCBS Auth Config Param Shared Access Key Name");
-        ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_SHAREDACCESSKEY_STRING_HANDLE_VALID, cfg->sharedAccessKey, "Invalid EventHubCBS Auth Config Param Shared Access Key");
-        ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_CONSUMERGROUP_STRING_HANDLE_VALID, cfg->receiverConsumerGroup, "Invalid EventHubCBS Auth Config Param Consumer Group");
-        ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_PARTITIONID_STRING_HANDLE_VALID, cfg->receiverPartitionId, "Invalid EventHubCBS Auth Config Param Partition ID");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, AUTH_REFRESH_SECS, cfg->sasTokenRefreshPeriodInSecs, "Invalid EventHubCBS Auth Config Refresh Period Param");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, AUTH_EXPIRATION_SECS, cfg->sasTokenExpirationTimeInSec, "Invalid EventHubCBS Auth Config Expiration Time Param");
-        ASSERT_IS_NULL_WITH_MSG(cfg->extSASToken, "Invalid EventHubCBS Auth Config Param Shared Access Key");
-        ASSERT_ARE_EQUAL_WITH_MSG(uint64_t, 0, cfg->extSASTokenExpTSInEpochSec, "Invalid EventHubCBS Auth Config Expiration Time Param");
+        ASSERT_ARE_EQUAL(void_ptr, TEST_HOSTNAME_STRING_HANDLE_VALID, cfg->hostName, "Invalid EventHubCBS Auth Config Param Hostname");
+        ASSERT_ARE_EQUAL(void_ptr, TEST_EVENTHUBPATH_STRING_HANDLE_VALID, cfg->eventHubPath, "Invalid EventHubCBS Auth Config Param Event Hub Path");
+        ASSERT_ARE_EQUAL(void_ptr, TEST_SHAREDACCESSKEYNAME_STRING_HANDLE_VALID, cfg->sharedAccessKeyName, "Invalid EventHubCBS Auth Config Param Shared Access Key Name");
+        ASSERT_ARE_EQUAL(void_ptr, TEST_SHAREDACCESSKEY_STRING_HANDLE_VALID, cfg->sharedAccessKey, "Invalid EventHubCBS Auth Config Param Shared Access Key");
+        ASSERT_ARE_EQUAL(void_ptr, TEST_CONSUMERGROUP_STRING_HANDLE_VALID, cfg->receiverConsumerGroup, "Invalid EventHubCBS Auth Config Param Consumer Group");
+        ASSERT_ARE_EQUAL(void_ptr, TEST_PARTITIONID_STRING_HANDLE_VALID, cfg->receiverPartitionId, "Invalid EventHubCBS Auth Config Param Partition ID");
+        ASSERT_ARE_EQUAL(int, AUTH_REFRESH_SECS, cfg->sasTokenRefreshPeriodInSecs, "Invalid EventHubCBS Auth Config Refresh Period Param");
+        ASSERT_ARE_EQUAL(int, AUTH_EXPIRATION_SECS, cfg->sasTokenExpirationTimeInSec, "Invalid EventHubCBS Auth Config Expiration Time Param");
+        ASSERT_IS_NULL(cfg->extSASToken, "Invalid EventHubCBS Auth Config Param Shared Access Key");
+        ASSERT_ARE_EQUAL(uint64_t, 0, cfg->extSASTokenExpTSInEpochSec, "Invalid EventHubCBS Auth Config Expiration Time Param");
     }
     else if (cfg->credential == EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT)
     {
-        ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_STRING_HANDLE_EXT_SASTOKEN_PARSER_HOSTNAME, cfg->hostName, "Invalid EventHubCBS Auth Config Param Hostname");
-        ASSERT_ARE_EQUAL_WITH_MSG(void_ptr, TEST_STRING_HANDLE_EXT_SASTOKEN_PARSER_EVENTHUBPATH, cfg->eventHubPath, "Invalid EventHubCBS Auth Config Param Event Hub Path");
-        ASSERT_IS_NULL_WITH_MSG(cfg->sharedAccessKeyName, "Invalid EventHubCBS Auth Config Param Shared Access Key Name");
-        ASSERT_IS_NULL_WITH_MSG(cfg->sharedAccessKey, "Invalid EventHubCBS Auth Config Param Shared Access Key");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, cfg->sasTokenRefreshPeriodInSecs, "Invalid EventHubCBS Auth Config Refresh Period Param");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, cfg->sasTokenExpirationTimeInSec, "Invalid EventHubCBS Auth Config Expiration Time Param");
-        ASSERT_IS_NOT_NULL_WITH_MSG(cfg->extSASToken, "Invalid EventHubCBS Auth Config Param External SAS Token");
-        ASSERT_ARE_EQUAL_WITH_MSG(uint64_t, SASTOKEN_EXT_EXPIRATION_TIMESTAMP, cfg->extSASTokenExpTSInEpochSec, "Invalid EventHubCBS Auth Config Expiration Time Param");
+        ASSERT_ARE_EQUAL(void_ptr, TEST_STRING_HANDLE_EXT_SASTOKEN_PARSER_HOSTNAME, cfg->hostName, "Invalid EventHubCBS Auth Config Param Hostname");
+        ASSERT_ARE_EQUAL(void_ptr, TEST_STRING_HANDLE_EXT_SASTOKEN_PARSER_EVENTHUBPATH, cfg->eventHubPath, "Invalid EventHubCBS Auth Config Param Event Hub Path");
+        ASSERT_IS_NULL(cfg->sharedAccessKeyName, "Invalid EventHubCBS Auth Config Param Shared Access Key Name");
+        ASSERT_IS_NULL(cfg->sharedAccessKey, "Invalid EventHubCBS Auth Config Param Shared Access Key");
+        ASSERT_ARE_EQUAL(int, 0, cfg->sasTokenRefreshPeriodInSecs, "Invalid EventHubCBS Auth Config Refresh Period Param");
+        ASSERT_ARE_EQUAL(int, 0, cfg->sasTokenExpirationTimeInSec, "Invalid EventHubCBS Auth Config Expiration Time Param");
+        ASSERT_IS_NOT_NULL(cfg->extSASToken, "Invalid EventHubCBS Auth Config Param External SAS Token");
+        ASSERT_ARE_EQUAL(uint64_t, SASTOKEN_EXT_EXPIRATION_TIMESTAMP, cfg->extSASTokenExpTSInEpochSec, "Invalid EventHubCBS Auth Config Expiration Time Param");
     }
     else
     {
@@ -3320,10 +3327,10 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_Uninitialized_Aut
 
     EventHubReceiver_LL_DoWork(h);
 
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
     TestHelper_ValidateAndAssertCBSAuthConfig(TestHelper_GetCBSAuthConfig(), waitTimeoutInMs);
 
     // cleanup
@@ -3427,10 +3434,10 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3527,10 +3534,10 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3658,10 +3665,10 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3700,7 +3707,7 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_ActiveReceiver_AutoSASToken_AMQPStackBr
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3779,17 +3786,17 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
     if (status == EVENTHUBAUTH_STATUS_TIMEOUT)
     {
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_TIMEOUT, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Invoked Test");
+        ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_TIMEOUT, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Invoked Test");
     }
     else
     {
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_FAILURE, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Invoked Test");
+        ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_FAILURE, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Invoked Test");
     }
 
     // cleanup
@@ -3924,10 +3931,10 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -3960,10 +3967,10 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_ActiveReceiver_ExtSASToken_WithRefreshT
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4089,7 +4096,7 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_ActiveReceiver_AutoSASToken_AMQPStackBr
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4161,11 +4168,11 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_FAILURE, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_FAILURE, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4204,11 +4211,11 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_FAILURE, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_FAILURE, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4247,11 +4254,11 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_TIMEOUT, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_TIMEOUT, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4290,11 +4297,11 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_FAILURE, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_SASTOKEN_AUTH_FAILURE, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4340,11 +4347,11 @@ static void EventHubReceiver_LL_DoWork_SASToken_ActiveReceiverPreAuthStackTeardo
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxEndCallbackResult, "Failed Receive Error Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxEndCallbackResult, "Failed Receive Error Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4393,11 +4400,11 @@ static void EventHubReceiver_LL_DoWork_SASToken_ActiveReceiverPostCompleteAuthSt
     EventHubReceiver_LL_DoWork(h);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxEndCallbackResult, "Failed Receive Error Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxEndCallbackResult, "Failed Receive Error Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4505,18 +4512,18 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_OnStateChanged_Callback_Success)
 
     // MSG_RECEIVER idle to MSG_RECEIVER open transition no error callback expected
     OnRxCBStruct.onMsgChangedCallback(OnRxCBStruct.onMsgChangedCallbackCtxt, MESSAGE_RECEIVER_STATE_OPEN, MESSAGE_RECEIVER_STATE_IDLE);
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #1");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #1");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #1");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #1");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #1");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #1");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #1");
 
     // MSG_RECEIVER open to MSG_RECEIVER error transition error callback expected
     OnRxCBStruct.onMsgChangedCallback(OnRxCBStruct.onMsgChangedCallbackCtxt, MESSAGE_RECEIVER_STATE_ERROR, MESSAGE_RECEIVER_STATE_OPEN);
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #2");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #2");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #2");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #2");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_CONNECTION_RUNTIME_ERROR, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value #2");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #2");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #2");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #2");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #2");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_CONNECTION_RUNTIME_ERROR, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value #2");
 
     // reset error callback data
     OnRxCBStruct.rxErrorCallbackCalled = 0;
@@ -4524,25 +4531,25 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_OnStateChanged_Callback_Success)
 
     // MSG_RECEIVER error to MSG_RECEIVER error transition no error callback expected
     OnRxCBStruct.onMsgChangedCallback(OnRxCBStruct.onMsgChangedCallbackCtxt, MESSAGE_RECEIVER_STATE_ERROR, MESSAGE_RECEIVER_STATE_ERROR);
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #3");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #3");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #3");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #3");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #3");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #3");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #3");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #3");
 
     // MSG_RECEIVER error to MSG_RECEIVER open transition no error callback expected
     OnRxCBStruct.onMsgChangedCallback(OnRxCBStruct.onMsgChangedCallbackCtxt, MESSAGE_RECEIVER_STATE_OPEN, MESSAGE_RECEIVER_STATE_ERROR);
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #4");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #4");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #4");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #4");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #4");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #4");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #4");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #4");
 
     // MSG_RECEIVER open to MSG_RECEIVER error transition error callback expected
     OnRxCBStruct.onMsgChangedCallback(OnRxCBStruct.onMsgChangedCallbackCtxt, MESSAGE_RECEIVER_STATE_ERROR, MESSAGE_RECEIVER_STATE_OPEN);
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #5");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #5");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #5");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #5");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_CONNECTION_RUNTIME_ERROR, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value #5");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test #5");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test #5");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test #5");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test #5");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_CONNECTION_RUNTIME_ERROR, OnRxCBStruct.rxErrorCallbackResult, "Failed Receive Error Callback Result Value #5");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4575,11 +4582,11 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_OnMessageReceived_Callback_Success)
     OnRxCBStruct.onMsgReceivedCallback(OnRxCBStruct.onMsgReceivedCallbackCtxt, TEST_MESSAGE_HANDLE_VALID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4608,11 +4615,11 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_OnMessageReceived_Callback_NullApplicat
     OnRxCBStruct.onMsgReceivedCallback(OnRxCBStruct.onMsgReceivedCallbackCtxt, TEST_MESSAGE_HANDLE_VALID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4641,11 +4648,11 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_OnMessageReceived_Callback_NullMessageA
     OnRxCBStruct.onMsgReceivedCallback(OnRxCBStruct.onMsgReceivedCallbackCtxt, TEST_MESSAGE_HANDLE_VALID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4675,11 +4682,11 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_OnMessageReceived_Callback_NullMessageA
     OnRxCBStruct.onMsgReceivedCallback(OnRxCBStruct.onMsgReceivedCallbackCtxt, TEST_MESSAGE_HANDLE_VALID);
 
     // assert
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Failed CallStack Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4720,10 +4727,10 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_OnMessageReceived_Callback_Negative)
             OnRxCBStruct.onMsgReceivedCallback(OnRxCBStruct.onMsgReceivedCallbackCtxt, TEST_MESSAGE_HANDLE_VALID);
 
             // assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-            ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-            ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-            ASSERT_ARE_EQUAL_WITH_MSG(int, 1, messagingDeliveryRejectedCalled, "Failed Message Reject API Invoked Test");
+            ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+            ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+            ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+            ASSERT_ARE_EQUAL(int, 1, messagingDeliveryRejectedCalled, "Failed Message Reject API Invoked Test");
         }
 
         EventHubReceiver_LL_Destroy(h);
@@ -4773,10 +4780,10 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_Msg_Timeout_Callback_Success)
 
     // assert
     // ensure callback was invoked
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_TIMEOUT, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
+    ASSERT_ARE_EQUAL(int, 1, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_TIMEOUT, OnRxCBStruct.rxCallbackResult, "Failed Receive Callback Result Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4817,9 +4824,9 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_Msg_Timeout_Callback_ZeroTimeoutValue_S
 
     // assert
     // ensure no callback was invoked
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+    ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4898,9 +4905,9 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_Msg_Timeout_Callback_Negative)
         // act
         EventHubReceiver_LL_DoWork(h);
         // assert
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
+        ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxCallbackCalled, "Failed Receive Callback Invoked Test");
+        ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxErrorCallbackCalled, "Failed Receive Error Callback Invoked Test");
+        ASSERT_ARE_EQUAL(int, 0, OnRxCBStruct.rxEndCallbackCalled, "Failed Receive Async End Callback Invoked Test");
     }
 
     // cleanup
@@ -4925,7 +4932,7 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_NULLParam_eventHubReceive
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_INVALID_ARG, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_INVALID_ARG, result, "Failed Return Value Test");
 
     // cleanup
 }
@@ -4944,7 +4951,7 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_NULLParam_eventHubSasToke
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_INVALID_ARG, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_INVALID_ARG, result, "Failed Return Value Test");
 
     // cleanup
 }
@@ -4964,7 +4971,7 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_AutoSASToken_Should_NotBe
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -4988,7 +4995,7 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_AutoSASTokenActiveReceive
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -5011,7 +5018,7 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_NoactiveReceiver_Success)
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -5038,7 +5045,7 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_MultipleRefresh_ShouldFai
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_NOT_ALLOWED, result, "Failed Return Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -5062,7 +5069,7 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_Success)
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_OK, result, "Failed Return Value Test");
 
     // cleanup
     EventHubReceiver_LL_Destroy(h);
@@ -5097,7 +5104,7 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_Negative)
             result = EventHubReceiver_LL_RefreshSASTokenAsync(h, SASTOKEN_REFRESH1);
 
             // assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test");
+            ASSERT_ARE_EQUAL(int, EVENTHUBRECEIVER_ERROR, result, "Failed Return Value Test");
 
             EventHubReceiver_LL_Destroy(h);
         }
