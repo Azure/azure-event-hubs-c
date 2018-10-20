@@ -187,7 +187,6 @@ typedef struct TEST_EVENTHUB_RECEIVER_ASYNC_CALLBACK_TAG
 // EventHubReceiver LL Test Data
 //#################################################################################################
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 static int IS_INVOKED_STRING_construct_sprintf = 0;
 static int STRING_construct_sprintf_Negative_Test = 0;
@@ -1790,7 +1789,6 @@ BEGIN_TEST_SUITE(eventhubreceiver_ll_unittests)
 
 TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -1980,7 +1978,6 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     umock_c_deinit();
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)

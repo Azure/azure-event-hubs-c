@@ -76,7 +76,6 @@ typedef struct TEST_EVENTHUB_RECEIVER_ASYNC_CALLBACK_TAG
 // EventHubReceiver LL Test Data
 //#################################################################################################
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 static const char* CONNECTION_STRING = "Endpoint=sb://servicebusName.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=ICT5KKSJR/DW7OZVEQ7OPSSXU5TRMR6AIWLGI5ZIT/8=";
 static const char* EVENTHUB_PATH     = "eventHubName";
@@ -463,7 +462,6 @@ BEGIN_TEST_SUITE(eventhubreceiver_unittests)
 
 TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -535,7 +533,6 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     umock_c_deinit();
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)

@@ -471,13 +471,10 @@ DECLARE_GLOBAL_MOCK_METHOD_1(CEventDataMocks, , MAP_HANDLE, Map_Create, MAP_FILT
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventDataMocks, , void, Map_Destroy, MAP_HANDLE, handle)
 DECLARE_GLOBAL_MOCK_METHOD_1(CEventDataMocks, , MAP_HANDLE, Map_Clone, MAP_HANDLE, handle);
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
-
 BEGIN_TEST_SUITE(eventdata_unittests)
 
 TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = MicroMockCreateMutex();
     ASSERT_IS_NOT_NULL(g_testByTest);
 }
@@ -485,7 +482,6 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     MicroMockDestroyMutex(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)

@@ -674,13 +674,10 @@ DECLARE_GLOBAL_MOCK_METHOD_1(CEventHubClientLLMocks, , void, EventHubAuthCBS_Con
 DECLARE_GLOBAL_MOCK_METHOD_2(CEventHubClientLLMocks, , void, testHook_eventhub_error_callback, EVENTHUBCLIENT_ERROR_RESULT, eventhub_failure, void*, userContextCallback);
 
 // ** End of Mocks **
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
-
 BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
     TEST_SUITE_INITIALIZE(TestClassInitialize)
     {
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = MicroMockCreateMutex();
         ASSERT_IS_NOT_NULL(g_testByTest);
     }
@@ -688,7 +685,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
         MicroMockDestroyMutex(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
