@@ -742,6 +742,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
     static void setup_createfromconnectionstring_success(CEventHubClientLLMocks* mocks)
     {
+        (void)mocks;
         STRICT_EXPECTED_CALL((*mocks), EventHubClient_GetVersionString());
         STRICT_EXPECTED_CALL((*mocks), STRING_construct(CONNECTION_STRING))
             .SetReturn(TEST_CONNSTR_HANDLE);
@@ -774,6 +775,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
     static void setup_messenger_pre_auth_uamqp_stack_bringup_success(CEventHubClientLLMocks* mocks)
     {
+        (void)mocks;
         STRICT_EXPECTED_CALL((*mocks), STRING_c_str(TEST_HOSTNAME_STRING_HANDLE))
             .SetReturn(TEST_HOSTNAME);
         STRICT_EXPECTED_CALL((*mocks), saslmssbcbs_get_interface());
@@ -807,6 +809,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
     //**Tests_SRS_EVENTHUBCLIENT_LL_29_152: \[**If any ext refresh SAS token is present, it shall be called to destroyed by calling STRING_delete.**\]**
     static void setup_messenger_pre_auth_uamqp_stack_teardown_success(CEventHubClientLLMocks* mocks)
     {
+        (void)mocks;
         STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_Destroy(TEST_EVENTHUBCBSAUTH_HANDLE_VALID));
         STRICT_EXPECTED_CALL((*mocks), session_destroy(TEST_SESSION_HANDLE));
         STRICT_EXPECTED_CALL((*mocks), connection_destroy(TEST_CONNECTION_HANDLE));
@@ -817,6 +820,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
     static void setup_messenger_post_auth_complete_messenger_stack_bringup_success(CEventHubClientLLMocks* mocks)
     {
+        (void)mocks;
         STRICT_EXPECTED_CALL((*mocks), STRING_c_str(TEST_TARGET_STRING_HANDLE))
             .SetReturn("amqps://" TEST_HOSTNAME "/" TEST_EVENTHUB_PATH);
         STRICT_EXPECTED_CALL((*mocks), messaging_create_source("ingress"));
@@ -838,18 +842,21 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
     //**Tests_SRS_EVENTHUBCLIENT_LL_01_073: \[**The link shall be destroyed by calling link_destroy.**\]**
     static void setup_messenger_post_auth_complete_messenger_stack_teardown_success(CEventHubClientLLMocks* mocks)
     {
+        (void)mocks;
         STRICT_EXPECTED_CALL((*mocks), messagesender_destroy(TEST_MESSAGE_SENDER_HANDLE));
         STRICT_EXPECTED_CALL((*mocks), link_destroy(TEST_LINK_HANDLE));
     }
 
     static void setup_messenger_initialize_success(CEventHubClientLLMocks* mocks)
     {
+        (void)mocks;
         setup_messenger_pre_auth_uamqp_stack_bringup_success(mocks);
         setup_messenger_post_auth_complete_messenger_stack_bringup_success(mocks);
     }
 
     static void setup_createfromsastoken_success(CEventHubClientLLMocks* mocks)
     {
+        (void)mocks;
         STRICT_EXPECTED_CALL((*mocks), EventHubClient_GetVersionString());
         STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_SASTokenParse(TEST_SASTOKEN));
         EXPECTED_CALL((*mocks), gballoc_malloc(IGNORED_NUM_ARG));
@@ -2645,6 +2652,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
     void setup_refresh_sastoken_success(CEventHubClientLLMocks* mocks, EVENTHUBAUTH_CBS_CONFIG* cfg)
     {
+        (void)mocks;
         setup_parse_sastoken(cfg);
         cfg->extSASTokenURI = TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE;
         STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_SASTokenParse(TEST_REFRESH_SASTOKEN))
@@ -6364,6 +6372,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_DATA_1);
         unsigned char encoded_data_1[] = { 0x42 };
         size_t data_encoded_size = sizeof(encoded_data_1);
+        (void)encoded_data_1;
         STRICT_EXPECTED_CALL(mocks, amqpvalue_get_encoded_size(TEST_DATA_1, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &data_encoded_size, sizeof(data_encoded_size))
             .SetReturn(1);
@@ -6431,6 +6440,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
             .SetReturn(TEST_DATA_1);
         unsigned char encoded_data_1[] = { 0x42 };
         size_t data_encoded_size = sizeof(encoded_data_1);
+        (void)encoded_data_1;
         STRICT_EXPECTED_CALL(mocks, amqpvalue_get_encoded_size(TEST_DATA_1, IGNORED_PTR_ARG))
             .CopyOutArgumentBuffer(2, &data_encoded_size, sizeof(data_encoded_size));
         STRICT_EXPECTED_CALL(mocks, gballoc_malloc(data_encoded_size))
