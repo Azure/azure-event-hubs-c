@@ -19,7 +19,3 @@ set(${theseTestsName}_h_files
 )
 
 build_test_artifacts(${theseTestsName} ON)
-
-if(WIN32)
-    target_link_libraries(${theseTestsName}_dll testrunnerswitcher)
-endif()

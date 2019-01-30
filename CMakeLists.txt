@@ -9,6 +9,7 @@ option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF) 
 option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
+option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 
 #Use solution folders. 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -16,24 +17,13 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 add_definitions(-DREFCOUNT_ATOMIC_DONTCARE)
 add_definitions(-D__STDC_NO_ATOMICS__=1)
 
-add_subdirectory(deps/azure-c-shared-utility)
-
-#do not add or build any tests of the dependencies
-set(original_run_e2e_tests ${run_e2e_tests})
-set(original_run_int_tests ${run_int_tests})
-set(original_run_unittests ${run_unittests})
-
-set(run_e2e_tests OFF)
-set(run_int_tests OFF)
-set(run_unittests OFF)
-
 if(IN_OPENWRT)
     ADD_DEFINITIONS("$ENV{TARGET_LDFLAGS}" "$ENV{TARGET_CPPFLAGS}" "$ENV{TARGET_CFLAGS}")
     INCLUDE_DIRECTORIES("$ENV{TOOLCHAIN_DIR}/usr/include" "$ENV{TARGET_LDFLAGS}" "$ENV{TARGET_CPPFLAGS}" "$ENV{TARGET_CFLAGS}")
 endif()
 
 if(NOT ${use_installed_dependencies})
-    if(${original_run_e2e_tests} OR ${original_run_unittests})
+    if(${run_e2e_tests} OR ${run_unittests})
         if (NOT TARGET testrunnerswitcher)
             add_subdirectory(deps/azure-c-testrunnerswitcher)
         endif()
@@ -63,10 +53,6 @@ endif()
 set_platform_files(${SHARED_UTIL_FOLDER})
 
 include_directories(${UAMQP_INC_FOLDER})
-
-set(run_e2e_tests ${original_run_e2e_tests})
-set(run_int_tests ${original_run_int_tests})
-set(run_unittests ${original_run_unittests})
 
 enable_testing()
 
