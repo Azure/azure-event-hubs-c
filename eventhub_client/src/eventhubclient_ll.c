@@ -171,10 +171,16 @@ static int add_partition_key_to_message(MESSAGE_HANDLE message, EVENTDATA_HANDLE
                 }
                 else
                 {
-                    LogError("amqpvalue_create_message_annotations failed");
+                    LogError("message_set_message_annotations failed");
                     result = __LINE__;
                 }
             }
+            else
+            {
+                LogError("amqpvalue_create_message_annotations failed");
+                result = __LINE__;
+            }
+
             amqpvalue_destroy(partition_value);
             amqpvalue_destroy(partition_name);
             amqpvalue_destroy(partition_map);
@@ -504,7 +510,10 @@ static int initialize_uamqp_stack_common(EVENTHUBCLIENT_LL_HANDLE eventhub_clien
         const SASL_MECHANISM_INTERFACE_DESCRIPTION* sasl_mechanism_interface;
         const IO_INTERFACE_DESCRIPTION* tlsio_interface;
         const IO_INTERFACE_DESCRIPTION* saslclientio_interface;
-        TLSIO_CONFIG tls_io_config = { host_name_temp, 5671 };
+        TLSIO_CONFIG tls_io_config;
+
+        tls_io_config.hostname = host_name_temp;
+        tls_io_config.port = 5671;
 
         //**Codes_SRS_EVENTHUBCLIENT_LL_01_005: \[**The interface passed to saslmechanism_create shall be obtained by calling saslmssbcbs_get_interface.**\]**
         if ((sasl_mechanism_interface = saslmssbcbs_get_interface()) == NULL)
@@ -547,7 +556,9 @@ static int initialize_uamqp_stack_common(EVENTHUBCLIENT_LL_HANDLE eventhub_clien
             /* Codes_SRS_EVENTHUBCLIENT_LL_01_015: [The IO creation parameters passed to xio_create shall be in the form of a SASLCLIENTIO_CONFIG.] */
             /* Codes_SRS_EVENTHUBCLIENT_LL_01_016: [The underlying_io members shall be set to the previously created TLS IO.] */
             /* Codes_SRS_EVENTHUBCLIENT_LL_01_017: [The sasl_mechanism shall be set to the previously created SASL mechanism.] */
-            SASLCLIENTIO_CONFIG sasl_io_config = { eventhub_client_ll->tls_io, eventhub_client_ll->sasl_mechanism_handle };
+            SASLCLIENTIO_CONFIG sasl_io_config;
+            sasl_io_config.underlying_io = eventhub_client_ll->tls_io;
+            sasl_io_config.sasl_mechanism = eventhub_client_ll->sasl_mechanism_handle;
 
             /* Codes_SRS_EVENTHUBCLIENT_LL_01_012: [A SASL client IO shall be created by calling xio_create.] */
             if ((eventhub_client_ll->sasl_io = xio_create(saslclientio_interface, &sasl_io_config)) == NULL)
@@ -1568,7 +1579,6 @@ int create_batch_message(MESSAGE_HANDLE message, EVENTDATA_HANDLE* event_data_li
 {
     int result = 0;
     size_t index;
-    size_t length = 0;
 
     /* Codes_SRS_EVENTHUBCLIENT_LL_01_082: [If the number of event data entries for the message is greater than 1 (batched) then the message format shall be set to 0x80013700 by calling message_set_message_format.] */
     if (message_set_message_format(message, 0x80013700) != 0)
@@ -1602,7 +1612,9 @@ int create_batch_message(MESSAGE_HANDLE message, EVENTDATA_HANDLE* event_data_li
                 }
                 else
                 {
-                    data bin_data = { payload.bytes, (uint32_t)payload.length };
+                    data bin_data;
+                    bin_data.bytes = payload.bytes;
+                    bin_data.length = (uint32_t)payload.length;
 
                     /* Codes_SRS_EVENTHUBCLIENT_LL_01_088: [The event payload shall be serialized as an AMQP message data section.] */
                     AMQP_VALUE data_value = amqpvalue_create_data(bin_data);
@@ -1676,7 +1688,9 @@ int create_batch_message(MESSAGE_HANDLE message, EVENTDATA_HANDLE* event_data_li
                                     {
                                         /* Codes_SRS_EVENTHUBCLIENT_LL_01_085: [The event shall be added to the message by into a separate data section by calling message_add_body_amqp_data.] */
                                         /* Codes_SRS_EVENTHUBCLIENT_LL_01_086: [The buffer passed to message_add_body_amqp_data shall contain the properties and the binary event payload serialized as AMQP values.] */
-                                        BINARY_DATA body_binary_data = { event_data_binary.bytes, event_data_binary.length };
+                                        BINARY_DATA body_binary_data;
+                                        body_binary_data.bytes = event_data_binary.bytes;
+                                        body_binary_data.length = event_data_binary.length;
                                         if (message_add_body_amqp_data(message, body_binary_data) != 0)
                                         {
                                             /* Codes_SRS_EVENTHUBCLIENT_LL_01_089: [If message_add_body_amqp_data fails, the callback associated with the message shall be called with EVENTHUBCLIENT_CONFIRMATION_ERROR and the message shall be freed from the pending list.] */

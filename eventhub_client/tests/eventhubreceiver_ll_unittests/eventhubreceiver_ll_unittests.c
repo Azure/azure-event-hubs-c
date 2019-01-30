@@ -558,6 +558,8 @@ static int TestHook_message_get_application_properties(MESSAGE_HANDLE message, A
 
 static AMQP_VALUE TestHook_messaging_delivery_rejected(const char* error_condition, const char* error_description)
 {
+    (void)error_condition;
+    (void)error_description;
     ASSERT_IS_NOT_NULL(error_condition, "error_condition should be non NULL");
     ASSERT_IS_NOT_NULL(error_condition, "error_description should be non NULL");
     messagingDeliveryRejectedCalled = 1;
@@ -1697,7 +1699,7 @@ static uint64_t TestSetupCallStack_OnMessageReceived(void)
     return failedFunctionBitmask;
 }
 
-static void TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(EVENTHUBAUTH_CREDENTIAL_TYPE credential, bool wasExtRefreshDone)
+static void TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(EVENTHUBAUTH_CREDENTIAL_TYPE credential)
 {
     STRICT_EXPECTED_CALL(STRING_delete(TEST_HOSTNAME_STRING_HANDLE_VALID));
 
@@ -1731,7 +1733,7 @@ static void TestSetupCallStack_EventHubReceiver_LL_Destroy_NoActiveReceiver(EVEN
     // arrange
     umock_c_reset_all_calls();
 
-    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(credential, false);
+    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(credential);
 }
 
 static void TestSetupCallStack_EventHubReceiver_LL_Destroy_ActiveReceiver_NoAuth(EVENTHUBAUTH_CREDENTIAL_TYPE credential)
@@ -1741,7 +1743,7 @@ static void TestSetupCallStack_EventHubReceiver_LL_Destroy_ActiveReceiver_NoAuth
 
     STRICT_EXPECTED_CALL(STRING_delete(TEST_FILTER_QUERY_STRING_HANDLE_VALID));
 
-    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(credential, false);
+    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(credential);
 }
 
 static void TestSetupCallStack_EventHubReceiver_LL_Destroy_ActiveReceiver_NoAuth_WithRefreshToken(void)
@@ -1753,7 +1755,7 @@ static void TestSetupCallStack_EventHubReceiver_LL_Destroy_ActiveReceiver_NoAuth
     //msr
     STRICT_EXPECTED_CALL(STRING_delete(TEST_STRING_HANDLE_EXT_REFRESH_SASTOKEN_1)).IgnoreAllArguments();
 
-    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT, true);
+    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT);
 }
 
 static void TestSetupCallStack_EventHubReceiver_LL_Destroy_ActiveReceiver_AuthOk_PreFullStack(EVENTHUBAUTH_CREDENTIAL_TYPE credential)
@@ -1766,7 +1768,7 @@ static void TestSetupCallStack_EventHubReceiver_LL_Destroy_ActiveReceiver_AuthOk
 
     (void)TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_TearDown_Common(tmp, &i);
 
-    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(credential, false);
+    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(credential);
 }
 
 static void TestSetupCallStack_EventHubReceiver_LL_Destroy_ActiveReceiver_PostAuth(EVENTHUBAUTH_CREDENTIAL_TYPE credential)
@@ -1779,7 +1781,7 @@ static void TestSetupCallStack_EventHubReceiver_LL_Destroy_ActiveReceiver_PostAu
 
     (void)TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_TearDown_Common(tmp, &i);
 
-    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(credential, false);
+    TestSetupCallStack_EventHubReceiver_LL_Destroy_Common(credential);
 }
 
 //#################################################################################################
@@ -2297,7 +2299,6 @@ TEST_FUNCTION(EventHubReceiver_LL_Destroy_AutoSASToken_NoActiveReceiver)
 //**Tests_SRS_EVENTHUBRECEIVER_LL_29_202: \[**EventHubReceiver_LL_Destroy shall terminate the usage of the EVENTHUBRECEIVER_LL_STRUCT and cleanup all associated resources.**\]**
 TEST_FUNCTION(EventHubReceiver_LL_Destroy_ExtSASToken_NoActiveReceiver)
 {
-    uint64_t nowTS = TEST_EVENTHUB_RECEIVER_UTC_TIMESTAMP;
     EVENTHUBRECEIVER_LL_HANDLE h = EventHubReceiver_LL_CreateFromSASToken(SASTOKEN);
 
     // arrange
@@ -2786,6 +2787,8 @@ static void EventHubReceiver_LL_ReceiveFromStartTimestampAsync_Negative_Common(E
     uint64_t nowTS = TEST_EVENTHUB_RECEIVER_UTC_TIMESTAMP;
     EVENTHUBRECEIVER_RESULT result;
     EVENTHUBRECEIVER_LL_HANDLE h = EventHubReceiver_LL_Create(CONNECTION_STRING, EVENTHUB_PATH, CONSUMER_GROUP, PARTITION_ID);
+
+    (void)credential;
 
     int testResult = umock_c_negative_tests_init();
     ASSERT_ARE_EQUAL(int, 0, testResult);
@@ -4956,7 +4959,6 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_NULLParam_eventHubSasToke
 //**Tests_SRS_EVENTHUBRECEIVER_LL_29_402: \[**EventHubReceiver_LL_RefreshSASTokenAsync shall return EVENTHUBRECEIVER_NOT_ALLOWED if the token type is not EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT.**\]**
 TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_AutoSASToken_Should_NotBePermitted)
 {
-    uint64_t nowTS = TEST_EVENTHUB_RECEIVER_UTC_TIMESTAMP;
     EVENTHUBRECEIVER_LL_HANDLE h = EventHubReceiver_LL_Create(CONNECTION_STRING, EVENTHUB_PATH, CONSUMER_GROUP, PARTITION_ID);
     EVENTHUBRECEIVER_RESULT result;
 
@@ -5001,7 +5003,6 @@ TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_AutoSASTokenActiveReceive
 //**Tests_SRS_EVENTHUBRECEIVER_LL_29_401: \[**EventHubReceiver_LL_RefreshSASTokenAsync shall check if a receiver connection is currently active. If no receiver is active, EVENTHUBRECEIVER_NOT_ALLOWED shall be returned.**\]**
 TEST_FUNCTION(EventHubReceiver_LL_RefreshSASTokenAsync_NoactiveReceiver_Success)
 {
-    uint64_t nowTS = TEST_EVENTHUB_RECEIVER_UTC_TIMESTAMP;
     EVENTHUBRECEIVER_RESULT result;
     EVENTHUBRECEIVER_LL_HANDLE h = EventHubReceiver_LL_CreateFromSASToken(SASTOKEN);
 

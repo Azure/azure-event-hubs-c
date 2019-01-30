@@ -776,7 +776,9 @@ static int EventHubAMQP_InitializeStackCommon
             else
             {
                 //**Codes_SRS_EVENTHUBRECEIVER_LL_29_508: \[**A SASL client IO shall be created by calling xio_create using TLS IO interface created previously and the SASL mechanism created earlier. The SASL client IO interface to be used will be the one obtained above.**\]**
-                SASLCLIENTIO_CONFIG saslIOConfig = { eventHubCommStack->tlsIO, eventHubCommStack->saslMechanismHandle };
+                SASLCLIENTIO_CONFIG saslIOConfig;
+                saslIOConfig.underlying_io = eventHubCommStack->tlsIO;
+                saslIOConfig.sasl_mechanism = eventHubCommStack->saslMechanismHandle;
                 if ((eventHubCommStack->saslIO = xio_create(saslClientIOInterface, &saslIOConfig)) == NULL)
                 {
                     //**Codes_SRS_EVENTHUBRECEIVER_LL_29_509: \[**If xio_create fails then a log message will be logged and the function returns immediately.**\]**

@@ -16,11 +16,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 add_definitions(-DREFCOUNT_ATOMIC_DONTCARE)
 add_definitions(-D__STDC_NO_ATOMICS__=1)
 
-if(IN_OPENWRT)
-    ADD_DEFINITIONS("$ENV{TARGET_LDFLAGS}" "$ENV{TARGET_CPPFLAGS}" "$ENV{TARGET_CFLAGS}")
-    INCLUDE_DIRECTORIES("$ENV{TOOLCHAIN_DIR}/usr/include" "$ENV{TARGET_LDFLAGS}" "$ENV{TARGET_CPPFLAGS}" "$ENV{TARGET_CFLAGS}")
-endif()
-
 add_subdirectory(deps/azure-c-shared-utility)
 
 #do not add or build any tests of the dependencies
@@ -32,17 +27,42 @@ set(run_e2e_tests OFF)
 set(run_int_tests OFF)
 set(run_unittests OFF)
 
-if(${original_run_e2e_tests} OR ${original_run_unittests})
-    add_subdirectory(deps/azure-ctest)
-    add_subdirectory(deps/azure-c-testrunnerswitcher)
-    add_subdirectory(deps/umock-c)
+if(IN_OPENWRT)
+    ADD_DEFINITIONS("$ENV{TARGET_LDFLAGS}" "$ENV{TARGET_CPPFLAGS}" "$ENV{TARGET_CFLAGS}")
+    INCLUDE_DIRECTORIES("$ENV{TOOLCHAIN_DIR}/usr/include" "$ENV{TARGET_LDFLAGS}" "$ENV{TARGET_CPPFLAGS}" "$ENV{TARGET_CFLAGS}")
 endif()
 
-add_subdirectory(deps/azure-uamqp-c)
+if(NOT ${use_installed_dependencies})
+    if(${original_run_e2e_tests} OR ${original_run_unittests})
+        if (NOT TARGET testrunnerswitcher)
+            add_subdirectory(deps/azure-c-testrunnerswitcher)
+        endif()
+        if (NOT TARGET ctest)
+            add_subdirectory(deps/azure-ctest)
+        endif()
+        if (NOT TARGET umock_c)
+            add_subdirectory(deps/umock-c)
+        endif()
+    endif()
+    if (NOT TARGET aziotsharedutil)
+        add_subdirectory(deps/azure-c-shared-utility)
+    endif()
+    if (NOT TARGET uamqp)
+        add_subdirectory(deps/azure-uamqp-c)
+    endif()
+endif()
+include("dependencies.cmake")
+
+# Include the common build rules for C shared utility
+if(${use_installed_dependencies})
+    include(deps/azure-c-shared-utility/configs/azure_iot_build_rules.cmake)
+else()
+    include(${SHARED_UTIL_FOLDER}/configs/azure_iot_build_rules.cmake)
+endif()
+
+set_platform_files(${SHARED_UTIL_FOLDER})
 
 include_directories(${UAMQP_INC_FOLDER})
-
-set_platform_files(${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-shared-utility)
 
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_int_tests ${original_run_int_tests})
@@ -187,14 +207,4 @@ function(windows_unittests_add_lib whatIsBuilding)
 endfunction()
 
 add_subdirectory(testtools)
-
-set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-shared-utility/adapters")
-if(WIN32)
-    set(LOCK_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/lock_win32.c)
-    set(THREAD_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/threadapi_win32.c)
-else()
-    set(LOCK_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/lock_pthreads.c)
-    set(THREAD_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/threadapi_pthreads.c)
-endif()
-
 add_subdirectory(eventhub_client)

@@ -273,7 +273,7 @@ static bool operator==(const amqp_binary left, const amqp_binary& right)
     }
 }
 
-static void setup_parse_sastoken(EVENTHUBAUTH_CBS_CONFIG* cfg, const char* sasToken)
+static void setup_parse_sastoken(EVENTHUBAUTH_CBS_CONFIG* cfg)
 {
     cfg->hostName = TEST_HOSTNAME_PARSER_STRING_HANDLE;
     cfg->eventHubPath = TEST_EVENTHUB_PARSER_STRING_HANDLE;
@@ -557,7 +557,7 @@ public:
     MOCK_METHOD_END(EVENTHUBAUTH_RESULT, EVENTHUBAUTH_RESULT_OK)
 
     MOCK_STATIC_METHOD_1(, EVENTHUBAUTH_CBS_CONFIG*, EventHubAuthCBS_SASTokenParse, const char*, sasToken)
-        setup_parse_sastoken(&g_parsed_config, sasToken);
+        setup_parse_sastoken(&g_parsed_config);
     MOCK_METHOD_END(EVENTHUBAUTH_CBS_CONFIG*, &g_parsed_config)
 
     MOCK_STATIC_METHOD_1(, void, EventHubAuthCBS_Config_Destroy, EVENTHUBAUTH_CBS_CONFIG*, cfg)
@@ -730,12 +730,14 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
     static void eventhub_state_change_callback(EVENTHUBCLIENT_STATE eventhub_state, void* userContextCallback)
     {
-        //printf("eventhub_state_change_callback %s\r\n", ENUM_TO_STRING(EVENTHUBCLIENT_STATE, eventhub_state) );
+        (void)eventhub_state;
+        (void)userContextCallback;
     }
 
     static void eventhub_error_callback(EVENTHUBCLIENT_ERROR_RESULT eventhub_failure, void* userContextCallback)
     {
-        //printf("eventhub_error_callback %s\r\n", ENUM_TO_STRING(EVENTHUBCLIENT_ERROR_RESULT, eventhub_failure) );
+        (void)eventhub_failure;
+        (void)userContextCallback;
     }
 
     static void setup_createfromconnectionstring_success(CEventHubClientLLMocks* mocks)
@@ -1770,7 +1772,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         CEventHubClientLLMocks mocks;
 
         EVENTHUBAUTH_CBS_CONFIG cfg;
-        setup_parse_sastoken(&cfg, TEST_SASTOKEN);
+        setup_parse_sastoken(&cfg);
         cfg.mode = EVENTHUBAUTH_MODE_RECEIVER;
 
         // arrange
@@ -1797,7 +1799,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
         EVENTHUBAUTH_CBS_CONFIG cfg;
 
-        setup_parse_sastoken(&cfg, TEST_SASTOKEN);
+        setup_parse_sastoken(&cfg);
         cfg.mode = EVENTHUBAUTH_MODE_UNKNOWN;
 
         // arrange
@@ -2643,7 +2645,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
 
     void setup_refresh_sastoken_success(CEventHubClientLLMocks* mocks, EVENTHUBAUTH_CBS_CONFIG* cfg)
     {
-        setup_parse_sastoken(cfg, TEST_REFRESH_SASTOKEN);
+        setup_parse_sastoken(cfg);
         cfg->extSASTokenURI = TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE;
         STRICT_EXPECTED_CALL((*mocks), EventHubAuthCBS_SASTokenParse(TEST_REFRESH_SASTOKEN))
             .SetReturn(cfg);
@@ -2956,7 +2958,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
         mocks.ResetAllCalls();
 
-        setup_parse_sastoken(&cfg, TEST_REFRESH_SASTOKEN);
+        setup_parse_sastoken(&cfg);
         cfg.extSASTokenURI = TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE;
         STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_REFRESH_SASTOKEN))
             .SetReturn((EVENTHUBAUTH_CBS_CONFIG*)NULL);
@@ -2990,7 +2992,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
         mocks.ResetAllCalls();
 
-        setup_parse_sastoken(&cfg, TEST_REFRESH_SASTOKEN);
+        setup_parse_sastoken(&cfg);
         cfg.extSASTokenURI = TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE;
         STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(new_refresh_token))
             .SetReturn(&cfg);
@@ -3026,7 +3028,7 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         EventHubClient_LL_DoWork(eventHubHandle); // post auth do work
         mocks.ResetAllCalls();
 
-        setup_parse_sastoken(&cfg, TEST_REFRESH_SASTOKEN);
+        setup_parse_sastoken(&cfg);
         cfg.extSASTokenURI = TEST_SASTOKEN_URI_PARSER_REFRESH_STRING_HANDLE;
         STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_SASTokenParse(TEST_REFRESH_SASTOKEN))
             .SetReturn(&cfg);
@@ -4889,7 +4891,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         mocks.ResetAllCalls();
 
         unsigned char test_data[] = { 0x42 };
-        unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
@@ -5135,7 +5136,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
-        size_t one_property_size = 0;
         AMQP_VALUE NULL_VALUE = NULL;
 
         STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
@@ -5187,7 +5187,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
-        size_t one_property_size = 0;
         AMQP_VALUE NULL_VALUE = NULL;
 
         STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
@@ -5241,7 +5240,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
-        size_t one_property_size = 0;
         AMQP_VALUE NULL_VALUE = NULL;
 
         STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
@@ -5296,9 +5294,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
-
-        size_t one_property_size = 0;
-        AMQP_VALUE NULL_VALUE = NULL;
 
         STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
             .IgnoreArgument(2);
@@ -5429,12 +5424,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
-
-        const char* const one_property_keys[] = { "test_property_key" };
-        const char* const one_property_values[] = { "test_property_value" };
-        const char* const* one_property_keys_ptr = one_property_keys;
-        const char* const* one_property_values_ptr = one_property_values;
-        size_t one_property_size = 1;
 
         STRICT_EXPECTED_CALL(mocks, EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG))
             .IgnoreArgument(2);
@@ -5869,7 +5858,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         mocks.ResetAllCalls();
 
         unsigned char test_data[] = { 0x42 };
-        unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
@@ -5910,7 +5898,6 @@ BEGIN_TEST_SUITE(eventhubclient_ll_unittests)
         mocks.ResetAllCalls();
 
         unsigned char test_data[] = { 0x42 };
-        unsigned char* buffer = test_data;
         size_t length = sizeof(test_data);
         BINARY_DATA binary_data = { test_data, length };
 
