@@ -461,12 +461,17 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_FAIL("failure in test framework at ReleaseMutex");
     }
 }
+
 static void eventhub_state_change_callback(EVENTHUBCLIENT_STATE eventhub_state, void* userContextCallback)
 {
+    (void)eventhub_state;
+    (void)userContextCallback;
 }
 
 static void eventhub_error_callback(EVENTHUBCLIENT_ERROR_RESULT eventhub_failure, void* userContextCallback)
 {
+    (void)eventhub_failure;
+    (void)userContextCallback;
 }
 
 /*** EventHubClient_GetVersionString ***/

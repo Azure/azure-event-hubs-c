@@ -871,11 +871,12 @@ void EventHubAuthCBS_Destroy(EVENTHUBAUTH_CBS_HANDLE eventHubAuthHandle)
 
 EVENTHUBAUTH_RESULT EventHubAuthCBS_Authenticate(EVENTHUBAUTH_CBS_HANDLE eventHubAuthHandle)
 {
-    EVENTHUBAUTH_RESULT result;
+    EVENTHUBAUTH_RESULT result = EVENTHUBAUTH_RESULT_ERROR;
     bool putToken;
     int errorCode;
-    uint64_t secondsSinceEpoch;
-    STRING_HANDLE sasTokenHandle, uriHandle;
+    uint64_t secondsSinceEpoch = 0;
+    STRING_HANDLE sasTokenHandle = NULL;
+    STRING_HANDLE uriHandle = NULL;
     EVENTHUBAUTH_CBS_STRUCT* eventHubAuth = (EVENTHUBAUTH_CBS_STRUCT*)eventHubAuthHandle;
 
     //**Codes_SRS_EVENTHUB_AUTH_29_101: \[**EventHubAuthCBS_Authenticate shall return EVENTHUBAUTH_RESULT_INVALID_ARG if eventHubAuthHandle is NULL.**\]**
@@ -994,7 +995,7 @@ EVENTHUBAUTH_RESULT EventHubAuthCBS_Authenticate(EVENTHUBAUTH_CBS_HANDLE eventHu
 
 EVENTHUBAUTH_RESULT EventHubAuthCBS_Refresh(EVENTHUBAUTH_CBS_HANDLE eventHubAuthHandle, STRING_HANDLE extSASToken)
 {
-    EVENTHUBAUTH_RESULT result;
+    EVENTHUBAUTH_RESULT result = EVENTHUBAUTH_RESULT_ERROR;
     EVENTHUBAUTH_CBS_STRUCT* eventHubAuth = (EVENTHUBAUTH_CBS_STRUCT*)eventHubAuthHandle;
     int errorCode;
     bool performAuthentication;
@@ -1105,6 +1106,12 @@ EVENTHUBAUTH_RESULT EventHubAuthCBS_Refresh(EVENTHUBAUTH_CBS_HANDLE eventHubAuth
         {
             performAuthentication = true;
         }
+    }
+    else
+    {
+        LogError("Invalid credential type");
+        result = EVENTHUBAUTH_RESULT_INVALID_ARG;
+        performAuthentication = false;
     }
 
     if (performAuthentication == true)

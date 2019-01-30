@@ -366,6 +366,9 @@ extern "C"
 #endif
     unsigned long long strtoull_s(const char* nptr, char** endPtr, int base)
     {
+        (void)nptr;
+        (void)endPtr;
+        (void)base;
         return SASTOKEN_EXT_EXPIRATION_TIMESTAMP;
     }
 #ifdef __cplusplus
@@ -399,6 +402,10 @@ static STRING_HANDLE TestHook_STRING_clone(STRING_HANDLE handle)
 
 static int TestHook_cbs_put_token(CBS_HANDLE cbs, const char* type, const char* audience, const char* token, ON_CBS_OPERATION_COMPLETE on_operation_complete, void* context)
 {
+    (void)cbs;
+    (void)type;
+    (void)audience;
+    (void)token;
     g_TestGlobal.sasTokenPutCB = on_operation_complete;
     g_TestGlobal.sasTokenPutCBContext = context;
     return 0;
@@ -1090,6 +1097,8 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Refresh_AutoWithNoRefreshRequ
 {
     uint64_t failedFunctionBitmask = 0;
     int i = 0;
+
+    (void)mode;
 
     TestHelper_ResetTestGlobal(&g_TestGlobal);
     umock_c_reset_all_calls();
@@ -3830,7 +3839,6 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusOKToRefreshRequiredTo
     ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
     ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
 
-    EVENTHUBAUTH_STATUS prevStatus = status;
     do
     {
         result = EventHubAuthCBS_GetStatus(h, &status);

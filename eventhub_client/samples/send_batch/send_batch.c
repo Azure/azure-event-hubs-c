@@ -96,6 +96,10 @@ int SendBatch_Sample(void)
                 EventHubClient_Destroy(eventHubClientHandle);
             }
         }
+        else
+        {
+            result = 1;
+        }
         for (unsigned int i = 0; i < index; i++)
         {
             EventData_Destroy(eventDataList[i]);

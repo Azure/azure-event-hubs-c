@@ -241,7 +241,6 @@ uint64_t TestHelper_SetupKVPParserStack(TestKVPTestData* testData)
     while ((isError == false) && (ctr < testData->numPairs))
     {
         size_t keySize = (testData->kvpPairs[ctr].key != NULL) ? strlen(testData->kvpPairs[ctr].key) : 0;
-        size_t valueSize = (testData->kvpPairs[ctr].value != NULL) ? strlen(testData->kvpPairs[ctr].value) : 0;
 
         bool isKeyError = (testData->kvpPairs[ctr].key == NULL) ? true : ((keySize == 0) ? true : false);
         bool isValueError = (testData->kvpPairs[ctr].value == NULL) ? true : false;
@@ -407,7 +406,11 @@ TEST_FUNCTION(kvp_parse_ZeroKVP_Success)
     // arrange
     KVP *pairs = NULL;
     size_t numPairs = 0;
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -425,7 +428,11 @@ TEST_FUNCTION(kvp_parse_OneKVP_Success)
     // arrange
     KVP pairs[] = { { KEY1, VALUE1 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -443,7 +450,11 @@ TEST_FUNCTION(kvp_parse_TwoKVP_Success)
     // arrange
     KVP pairs[] = { { KEY1, VALUE1 },{ KEY2, VALUE2 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "==", "&&", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "==";
+    testData.valueDelim = "&&";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -461,7 +472,11 @@ TEST_FUNCTION(kvp_parse_OneKVP_InvalidNULLKeyToken)
     // arrange
     KVP pairs[] = { { NULL, VALUE1 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -479,7 +494,11 @@ TEST_FUNCTION(kvp_parse_OneKVP_InvalidZeroLenKeyToken)
     // arrange
     KVP pairs[] = { { "", VALUE1 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -497,7 +516,11 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidFirstNULLKeyToken)
     // arrange
     KVP pairs[] = { { NULL, VALUE1 },{ KEY2, VALUE2 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -515,7 +538,11 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidFirstZeroLenKeyToken)
     // arrange
     KVP pairs[] = { { "", VALUE1 },{ KEY2, VALUE2 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -533,7 +560,11 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidSecondNULLKeyToken)
     // arrange
     KVP pairs[] = { { KEY1, VALUE1 },{ NULL, VALUE2 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -551,7 +582,11 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidSecondZeroLenKeyToken)
     // arrange
     KVP pairs[] = { { KEY1, VALUE1 },{ "", VALUE2 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -569,7 +604,11 @@ TEST_FUNCTION(kvp_parse_OneKVP_InvalidNULLValueToken)
     // arrange
     KVP pairs[] = { { KEY1, NULL } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -587,7 +626,11 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidFirstNULLValueToken)
     // arrange
     KVP pairs[] = { { KEY1, NULL },{ KEY2, VALUE2 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -605,7 +648,11 @@ TEST_FUNCTION(kvp_parse_TwoKVP_InvalidSecondNULLValueToken)
     // arrange
     KVP pairs[] = { { KEY1, VALUE1 },{ KEY2, NULL } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     (void)TestHelper_SetupKVPParserStack(&testData);
 
     // act
@@ -625,7 +672,11 @@ TEST_FUNCTION(kvp_parse_NegativeTest)
     ASSERT_ARE_EQUAL(int, 0, testResult);
     KVP pairs[] = { { KEY1, VALUE1 } };
     size_t numPairs = sizeof(pairs) / sizeof(pairs[0]);
-    TestKVPTestData testData = { numPairs, "=", ";", pairs };
+    TestKVPTestData testData;
+    testData.numPairs = numPairs;
+    testData.keyDelim = "=";
+    testData.valueDelim = ";";
+    testData.kvpPairs = pairs;
     uint64_t failedCallBitmask = TestHelper_SetupKVPParserStack(&testData);
 
     umock_c_negative_tests_snapshot();
