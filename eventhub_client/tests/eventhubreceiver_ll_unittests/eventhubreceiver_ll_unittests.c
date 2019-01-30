@@ -4507,8 +4507,8 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_OnStateChanged_Callback_Success)
     umock_c_reset_all_calls();
 
     // assert
-    ASSERT_IS_NOT_NULL(OnRxCBStruct.onMsgChangedCallback);
-    ASSERT_IS_NOT_NULL(OnRxCBStruct.onMsgReceivedCallback);
+    ASSERT_IS_TRUE(OnRxCBStruct.onMsgChangedCallback != NULL);
+    ASSERT_IS_TRUE(OnRxCBStruct.onMsgReceivedCallback != NULL);
 
     // MSG_RECEIVER idle to MSG_RECEIVER open transition no error callback expected
     OnRxCBStruct.onMsgChangedCallback(OnRxCBStruct.onMsgChangedCallbackCtxt, MESSAGE_RECEIVER_STATE_OPEN, MESSAGE_RECEIVER_STATE_IDLE);
