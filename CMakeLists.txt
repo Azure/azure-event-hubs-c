@@ -2,7 +2,7 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 cmake_minimum_required(VERSION 2.8.11)
-project(eventhub_client)
+project(azure_event_hubs_c)
 
 #the following variables are project-wide and can be used with cmake-gui
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF) [if possible, they are always build]" OFF)
@@ -222,5 +222,41 @@ function(windows_unittests_add_lib whatIsBuilding)
     target_link_libraries(${whatIsBuilding}_lib micromock_ctest ctest ${ARGN})
 endfunction()
 
-add_subdirectory(testtools)
+if(${run_e2e_tests})
+    add_subdirectory(testtools)
+endif()
 add_subdirectory(eventhub_client)
+
+if(${use_installed_dependencies})
+    # Install azure-event-hubs-c
+    set(package_location "cmake")
+
+    include(CMakePackageConfigHelpers)
+
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+        VERSION ${EVENTHUB_SDK_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    configure_file("configs/${PROJECT_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
+        COPYONLY
+    )
+
+    install(EXPORT azure_event_hubs_cTargets
+        FILE
+            "${PROJECT_NAME}Targets.cmake"
+        DESTINATION
+            ${package_location}
+    )
+
+    install(
+        FILES
+            "configs/${PROJECT_NAME}Config.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+        DESTINATION
+            ${package_location}
+    )
+else()
+endif()
