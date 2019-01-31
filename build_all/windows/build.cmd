@@ -221,24 +221,24 @@ if %MAKE_NUGET_PKG% == yes (
 if %MAKE_NUGET_PKG% == yes (
 	if %make%==yes (
 		echo ***Building all configurations***
-		msbuild /m %cmake-root%\cmake\ehsdk_win32\eventhub_client.sln /p:Configuration=Release
+		msbuild /m %cmake-root%\cmake\ehsdk_win32\azure_event_hubs_c.sln /p:Configuration=Release
 		if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
-		msbuild /m %cmake-root%\cmake\iotsdk_win32\eventhub_client.sln /p:Configuration=Debug
+		msbuild /m %cmake-root%\cmake\iotsdk_win32\azure_event_hubs_c.sln /p:Configuration=Debug
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
-		msbuild /m %cmake-root%\cmake\ehsdk_x64\eventhub_client.sln /p:Configuration=Release
+		msbuild /m %cmake-root%\cmake\ehsdk_x64\azure_event_hubs_c.sln /p:Configuration=Release
 		if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
-		msbuild /m %cmake-root%\cmake\ehsdk_x64\eventhub_client.sln /p:Configuration=Debug
+		msbuild /m %cmake-root%\cmake\ehsdk_x64\azure_event_hubs_c.sln /p:Configuration=Debug
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
-		msbuild /m %cmake-root%\cmake\ehsdk_arm\eventhub_client.sln /p:Configuration=Release
+		msbuild /m %cmake-root%\cmake\ehsdk_arm\azure_event_hubs_c.sln /p:Configuration=Release
 		if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
-		msbuild /m %cmake-root%\cmake\ehsdk_arm\eventhub_client.sln /p:Configuration=Debug
+		msbuild /m %cmake-root%\cmake\ehsdk_arm\azure_event_hubs_c.sln /p:Configuration=Debug
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	)
 ) else (
 	if %make%==yes (
-		msbuild /m eventhub_client.sln
+		msbuild /m azure_event_hubs_c.sln
 		if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 		if %build-platform% neq arm (
