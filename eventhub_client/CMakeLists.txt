@@ -2,7 +2,6 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 cmake_minimum_required(VERSION 2.8.11)
-#this is CMakeLists for eventhub_client
 
 compileAsC99()
 
@@ -55,4 +54,58 @@ add_subdirectory(samples)
 
 if (${run_unittests})
     add_subdirectory(tests)
+endif()
+
+if(${use_installed_dependencies})
+    # Install azure-event-hubs-c
+    set(package_location "cmake")
+
+    if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
+        set(CMAKE_INSTALL_LIBDIR "lib")
+    endif()
+
+    install(TARGETS eventhub_client EXPORT eventhub_sdkTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_event_hubs_c
+    )
+    install(FILES ${eventhub_client_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_event_hubs_c)
+
+    include(CMakePackageConfigHelpers)
+
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+        VERSION ${EVENTHUB_SDK_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    configure_file("configs/${PROJECT_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
+        COPYONLY
+    )
+
+    install(EXPORT uamqpTargets
+        FILE
+            "${PROJECT_NAME}Targets.cmake"
+        DESTINATION
+            ${package_location}
+    )
+
+    install(
+        FILES
+            "configs/${PROJECT_NAME}Config.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+        DESTINATION
+            ${package_location}
+    )
+else()
+    set(install_staticlibs
+        eventhub_client
+    )
+    install(FILES ${eventhub_client_h_files}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_event_hubs_c)
+    install(TARGETS ${install_staticlibs}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
