@@ -11,8 +11,38 @@ option(compileOption_C "passes a string to the command line of the C compiler" O
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 
+function(getEHSDKVersion)
+    # First find the applicable line in the file
+    file (STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/eventhub_client/inc/version.h" ehsdkverstr
+        REGEX "^[\t ]*#[\t ]*define[\t ]*EVENT_HUB_SDK_VERSION[\t ]*\"([0-9]+)[\\.]([0-9]+)[\\.]([0-9]+)\"") 
+        
+    if (!MATCHES)
+        message(FATAL_ERROR "Unable to find version in ${CMAKE_SOURCE_DIR}/eventhub_client/inc/version.h")
+    else(!MATCHES)
+        # Parse out the three version identifiers
+        set(CMAKE_MATCH_3 "")
+
+        string(REGEX MATCH "^[\t ]*#[\t ]*define[\t ]*EVENT_HUB_SDK_VERSION[\t ]*\"([0-9]+)[\\.]([0-9]+)[\\.]([0-9]+)\"" temp "${ehsdkverstr}")
+
+        if (NOT "${CMAKE_MATCH_3}" STREQUAL "")
+            set (EVENTHUB_SDK_VERION_MAJOR "${CMAKE_MATCH_1}" PARENT_SCOPE)
+            set (EVENTHUB_SDK_VERION_MINOR "${CMAKE_MATCH_2}" PARENT_SCOPE)
+            set (EVENTHUB_SDK_VERION_FIX "${CMAKE_MATCH_3}" PARENT_SCOPE)
+            set (EVENTHUB_SDK_VERSION "${CMAKE_MATCH_1}.${CMAKE_MATCH_2}.${CMAKE_MATCH_3}" PARENT_SCOPE)
+        else ()
+            message(FATAL_ERROR "Unable to find version in ${ehsdkverstr}")
+        endif()
+    endif(!MATCHES)
+endfunction(getEHSDKVersion)
+
+getEHSDKVersion()
+message(STATUS "EH Client SDK Version = ${EVENTHUB_SDK_VERSION}")
+
 #Use solution folders. 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+# Set CMAKE_INSTALL_LIBDIR if not defined
+include(GNUInstallDirs)
 
 add_definitions(-DREFCOUNT_ATOMIC_DONTCARE)
 add_definitions(-D__STDC_NO_ATOMICS__=1)
