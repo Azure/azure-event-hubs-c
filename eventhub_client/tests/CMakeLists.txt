@@ -10,6 +10,8 @@ add_subdirectory(eventhubreceiver_unittests)
 add_subdirectory(eventhubreceiver_ll_unittests)
 add_subdirectory(eventhubauth_unittests)
 add_subdirectory(kvp_parser_unittests)
+add_subdirectory(version_ut)
+
 if (${run_e2e_tests})
     #add_subdirectory(eventhubclient_e2etests)
 endif()
