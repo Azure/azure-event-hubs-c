@@ -6,11 +6,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/strings.h"
-#include "azure_c_shared_utility/xlogging.h"
-#include "azure_c_shared_utility/vector.h"
+#include "azure_c_shared_utility/map.h"
 
 #include "eventdata.h"
 
