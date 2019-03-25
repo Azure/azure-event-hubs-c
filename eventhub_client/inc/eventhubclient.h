@@ -8,6 +8,7 @@
 #include "azure_c_shared_utility/umock_c_prod.h"
 
 #include "eventhubclient_ll.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -16,7 +17,6 @@ extern "C"
 
 typedef struct EVENTHUBCLIENT_STRUCT_TAG* EVENTHUBCLIENT_HANDLE;
 
-MOCKABLE_FUNCTION(, const char*, EventHubClient_GetVersionString);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_HANDLE, EventHubClient_CreateFromConnectionString, const char*, connectionString, const char*, eventHubPath);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_HANDLE, EventHubClient_CreateFromSASToken, const char*, eventHubSasToken);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_RefreshSASTokenAsync, EVENTHUBCLIENT_HANDLE, eventHubHandle, const char*, eventHubSasToken);
