@@ -15,7 +15,6 @@ EventHubClient Class for .net [http://msdn.microsoft.com/en-us/library/microsoft
 ```c
 typedef struct EVENTHUBCLIENT_STRUCT_TAG* EVENTHUBCLIENT_HANDLE;
 
-MOCKABLE_FUNCTION(, const char*, EventHubClient_GetVersionString);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_HANDLE, EventHubClient_CreateFromConnectionString, const char*, connectionString, const char*, eventHubPath);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_HANDLE, EventHubClient_CreateFromSASToken, const char*, eventHubSasToken);
 MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_RefreshSASTokenAsync, EVENTHUBCLIENT_HANDLE, eventHubHandle, const char*, eventHubSasToken);
@@ -28,17 +27,7 @@ MOCKABLE_FUNCTION(, EVENTHUBCLIENT_RESULT, EventHubClient_SetErrorCallback, EVEN
 MOCKABLE_FUNCTION(, void, EventHubClient_SetMessageTimeout, EVENTHUBCLIENT_HANDLE, eventHubHandle, size_t, timeout_value);
 MOCKABLE_FUNCTION(, void, EventHubClient_SetLogTrace, EVENTHUBCLIENT_HANDLE, eventHubHandle, bool, log_trace_on);
 MOCKABLE_FUNCTION(, void, EventHubClient_Destroy, EVENTHUBCLIENT_HANDLE, eventHubHandle);
-
 ```
-
-###EventHubClient_GetVersionString
-
-```c
-MOCKABLE_FUNCTION(, const char*, EventHubClient_GetVersionString);
-```
-
-**SRS_EVENTHUBCLIENT_05_003: \[**EventHubClient_GetVersionString shall return a pointer to a constant string which indicates the version of EventHubClient API.**\]** 
-
 
 ###EventHubClient_CreateFromConnectionString
 
