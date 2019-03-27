@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/connection_string_parser.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -40,7 +40,7 @@
 #include "eventhubclient_ll.h"
 #include "version.h"
 
-DEFINE_ENUM_STRINGS(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_RESULT_VALUES)
+MU_DEFINE_ENUM_STRINGS(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_RESULT_VALUES)
 
 #define AMQP_MAX_MESSAGE_SIZE           (256*1024)
 
@@ -55,9 +55,9 @@ DEFINE_ENUM_STRINGS(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_RESULT_VALUES)
         SENDER_AMQP_PENDING_SENDER_CREATE,      \
         SENDER_AMQP_INITIALIZED
 
-DEFINE_ENUM(EVENTHUBCLIENT_AMQP_STATE, EVENTHUBCLIENT_AMQP_STATE_VALUES);
+MU_DEFINE_ENUM(EVENTHUBCLIENT_AMQP_STATE, EVENTHUBCLIENT_AMQP_STATE_VALUES);
 
-#define LOG_ERROR(x) LogError("result = %s", ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, x));
+#define LOG_ERROR(x) LogError("result = %s", MU_ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, x));
 
 static const char SB_STRING[] = "sb://";
 #define SB_STRING_LENGTH      ((sizeof(SB_STRING) / sizeof(SB_STRING[0])) - 1)   /* length for sb:// */
@@ -204,7 +204,7 @@ static int ValidateEventDataList(EVENTDATA_HANDLE *eventDataList, size_t count)
         if (eventDataList[index] == NULL)
         {
             result = __LINE__;
-            LogError("handle index %d NULL result = %s", (int)index, ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_INVALID_ARG));
+            LogError("handle index %d NULL result = %s", (int)index, MU_ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_INVALID_ARG));
             break;
         }
         else
@@ -220,7 +220,7 @@ static int ValidateEventDataList(EVENTDATA_HANDLE *eventDataList, size_t count)
                 if ((currPartKey == NULL && partitionKey != NULL) || (currPartKey != NULL && partitionKey == NULL))
                 {
                     result = __LINE__;
-                    LogError("All event data in a SendBatch operation must have the same partition key result = %s", ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_PARTITION_KEY_MISMATCH));
+                    LogError("All event data in a SendBatch operation must have the same partition key result = %s", MU_ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_PARTITION_KEY_MISMATCH));
                     break;
                 }
                 else
@@ -231,7 +231,7 @@ static int ValidateEventDataList(EVENTDATA_HANDLE *eventDataList, size_t count)
                         {
                             /*Codes_SRS_EVENTHUBCLIENT_07_045: [If all of the eventDataHandle objects contain differing partitionKey values then EventHubClient_SendBatch shall fail and return EVENTHUBCLIENT_PARTITION_KEY_MISMATCH.]*/
                             result = __LINE__;
-                            LogError("All event data in a SendBatch operation must have the same partition key result = %s", ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_PARTITION_KEY_MISMATCH));
+                            LogError("All event data in a SendBatch operation must have the same partition key result = %s", MU_ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_PARTITION_KEY_MISMATCH));
                             break;
                         }
                     }

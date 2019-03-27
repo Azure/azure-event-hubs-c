@@ -14,7 +14,7 @@
 
 #include "eventdata.h"
 
-DEFINE_ENUM_STRINGS(EVENTDATA_RESULT, EVENTDATA_ENUM_VALUES)
+MU_DEFINE_ENUM_STRINGS(EVENTDATA_RESULT, EVENTDATA_ENUM_VALUES)
 
 typedef struct EVENT_DATA_TAG
 {
@@ -69,13 +69,13 @@ EVENTDATA_HANDLE EventData_CreateWithNewMemory(const unsigned char* data, size_t
     if (length != 0 && data == NULL)
     {
         result = NULL;
-        LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_INVALID_ARG));
+        LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_INVALID_ARG));
     }
     else if ((eventData = (EVENT_DATA*)malloc(sizeof(EVENT_DATA))) == NULL)
     {
         /* Codes_SRS_EVENTDATA_03_004: [For all other errors, EventData_Create shall return NULL.] */
         result = NULL;
-        LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
+        LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
     }
     /* Codes_SRS_EVENTDATA_03_008: [EventData_CreateWithNewMemory shall allocate new memory to store the specified data.] */
     else if ((eventData->buffer = BUFFER_new()) == NULL)
@@ -83,7 +83,7 @@ EVENTDATA_HANDLE EventData_CreateWithNewMemory(const unsigned char* data, size_t
         free(eventData);
         /* Codes_SRS_EVENTDATA_03_004: [For all other errors, EventData_Create shall return NULL.] */
         result = NULL;
-        LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
+        LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
     }
     else if (length != 0)
     {
@@ -94,7 +94,7 @@ EVENTDATA_HANDLE EventData_CreateWithNewMemory(const unsigned char* data, size_t
             free(eventData);
             /* Codes_SRS_EVENTDATA_03_004: [For all other errors, EventData_Create shall return NULL.] */
             result = NULL;
-            LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
+            LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
         }
         else
         {
@@ -105,7 +105,7 @@ EVENTDATA_HANDLE EventData_CreateWithNewMemory(const unsigned char* data, size_t
                 free(eventData);
                 /* Codes_SRS_EVENTDATA_03_004: [For all other errors, EventData_Create shall return NULL.] */
                 result = NULL;
-                LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
+                LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
             }
             else
             {
@@ -123,7 +123,7 @@ EVENTDATA_HANDLE EventData_CreateWithNewMemory(const unsigned char* data, size_t
             free(eventData);
             /* Codes_SRS_EVENTDATA_03_004: [For all other errors, EventData_Create shall return NULL.] */
             result = NULL;
-            LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
+            LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
         }
         else
         {
@@ -160,7 +160,7 @@ EVENTDATA_RESULT EventData_GetData(EVENTDATA_HANDLE eventDataHandle, const unsig
     if (eventDataHandle == NULL || buffer == NULL || size == NULL)
     {
         result = EVENTDATA_INVALID_ARG;
-        LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, result));
+        LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, result));
     }
     else
     {
@@ -169,13 +169,13 @@ EVENTDATA_RESULT EventData_GetData(EVENTDATA_HANDLE eventDataHandle, const unsig
         {
             /* Codes_SRS_EVENTDATA_03_023: [If EventData_GetData fails because of any other error it shall return EVENTDATA_ERROR.]*/
             result = EVENTDATA_ERROR;
-            LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, result));
+            LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, result));
         }
         else if (BUFFER_size(((EVENT_DATA*)eventDataHandle)->buffer, size) != 0)
         {
             /* Codes_SRS_EVENTDATA_03_023: [If EventData_GetData fails because of any other error it shall return EVENTDATA_ERROR.]*/
             result = EVENTDATA_ERROR;
-            LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, result));
+            LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, result));
         }
         else
         {
@@ -193,7 +193,7 @@ const char* EventData_GetPartitionKey(EVENTDATA_HANDLE eventDataHandle)
     if (eventDataHandle == NULL)
     {
         result = NULL;
-        LogError("EventData_GetPartitionKey result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_INVALID_ARG));
+        LogError("EventData_GetPartitionKey result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_INVALID_ARG));
     }
     else
     {
@@ -219,7 +219,7 @@ EVENTDATA_RESULT EventData_SetPartitionKey(EVENTDATA_HANDLE eventDataHandle, con
     if (eventDataHandle == NULL)
     {
         result = EVENTDATA_INVALID_ARG;
-        LogError("EventData_SetPartitionKey result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, result));
+        LogError("EventData_SetPartitionKey result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, result));
     }
     else
     {
@@ -248,7 +248,7 @@ EVENTDATA_HANDLE EventData_Clone(EVENTDATA_HANDLE eventDataHandle)
     {
         /* Codes_SRS_EVENTDATA_07_050: [EventData_Clone shall return NULL when the eventDataHandle is NULL.] */
         result = NULL;
-        LogError("EventData_Clone result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_INVALID_ARG));
+        LogError("EventData_Clone result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_INVALID_ARG));
     }
     else
     {
@@ -258,7 +258,7 @@ EVENTDATA_HANDLE EventData_Clone(EVENTDATA_HANDLE eventDataHandle)
         {
             /* Codes_SRS_EVENTDATA_07_053: [EventData_Clone shall return NULL if it fails for any reason.] */
             result = NULL;
-            LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
+            LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
         }
         else
         {
@@ -271,7 +271,7 @@ EVENTDATA_HANDLE EventData_Clone(EVENTDATA_HANDLE eventDataHandle)
                 /* Codes_SRS_EVENTDATA_07_053: [EventData_Clone shall return NULL if it fails for any reason.] */
                 free(result);
                 result = NULL;
-                LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
+                LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
             }
             /* Codes_SRS_EVENTDATA_07_052: [EventData_Clone shall make use of STRING_Clone to clone the partitionKey if it is not set.] */
             else if ( (srcData->partitionKey != NULL) && (result->partitionKey = STRING_clone(srcData->partitionKey) ) == NULL)
@@ -280,7 +280,7 @@ EVENTDATA_HANDLE EventData_Clone(EVENTDATA_HANDLE eventDataHandle)
                 BUFFER_delete(result->buffer);
                 free(result);
                 result = NULL;
-                LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
+                LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
             }
             /* Codes_SRS_EVENTDATA_07_054: [EventData_Clone shall make use of Map_Clone to clone the properties if it is not set.] */
             else if ( (result->properties = Map_Clone(srcData->properties)) == NULL)
@@ -290,7 +290,7 @@ EVENTDATA_HANDLE EventData_Clone(EVENTDATA_HANDLE eventDataHandle)
                 BUFFER_delete(result->buffer);
                 free(result);
                 result = NULL;
-                LogError("result = %s", ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
+                LogError("result = %s", MU_ENUM_TO_STRING(EVENTDATA_RESULT, EVENTDATA_ERROR));
             }
         }
     }

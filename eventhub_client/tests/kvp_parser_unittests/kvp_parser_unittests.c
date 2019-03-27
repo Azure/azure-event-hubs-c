@@ -51,7 +51,7 @@ static void TestHook_free(void* ptr)
 
 #define TEST_MAP_HANDLE             (MAP_HANDLE)0x2000
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 typedef struct KVPTag
 {
@@ -93,7 +93,7 @@ static const char UNUSED_KVP_STRING[] = "unused";
 static void TestHook_OnUMockCError(UMOCK_C_ERROR_CODE error_code)
 {
     char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
     ASSERT_FAIL(temp_str);
 }
 

@@ -25,13 +25,13 @@ static const char TEST_STRING_VALUE_2[] = "Property_String_Value_2";
 #define BUFFER_SIZE     128
 static unsigned int g_id = 1000;
 
-DEFINE_ENUM_STRINGS(EVENTHUBCLIENT_CONFIRMATION_RESULT, EVENTHUBCLIENT_CONFIRMATION_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(EVENTHUBCLIENT_CONFIRMATION_RESULT, EVENTHUBCLIENT_CONFIRMATION_RESULT_VALUES);
 
 static void EventhubClientCallback(EVENTHUBCLIENT_CONFIRMATION_RESULT result, void* userContextCallback)
 {
     sig_atomic_t* callbackNotified = (sig_atomic_t*)userContextCallback;
     *callbackNotified = 1;
-    (void)printf("EventhubClientCallback result (%s)...\r\n", ENUM_TO_STRING(EVENTHUBCLIENT_CONFIRMATION_RESULT, result) ); 
+    (void)printf("EventhubClientCallback result (%s)...\r\n", MU_ENUM_TO_STRING(EVENTHUBCLIENT_CONFIRMATION_RESULT, result) ); 
 }
 
 int SendAsync_Sample(void)

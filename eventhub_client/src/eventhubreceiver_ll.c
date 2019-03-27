@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/connection_string_parser.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -49,7 +49,7 @@
         RECEIVER_STATE_INACTIVE_PENDING,    \
         RECEIVER_STATE_ACTIVE
 
-DEFINE_ENUM(EVENTHUBRECEIVER_STATE, EVENTHUBRECEIVER_STATE_VALUES);
+MU_DEFINE_ENUM(EVENTHUBRECEIVER_STATE, EVENTHUBRECEIVER_STATE_VALUES);
 
 /* Event Hub Receiver AMQP States */
 #define EVENTHUBRECEIVER_AMQP_STATE_VALUES      \
@@ -58,7 +58,7 @@ DEFINE_ENUM(EVENTHUBRECEIVER_STATE, EVENTHUBRECEIVER_STATE_VALUES);
         RECEIVER_AMQP_PENDING_RECEIVER_CREATE,  \
         RECEIVER_AMQP_INITIALIZED
 
-DEFINE_ENUM(EVENTHUBRECEIVER_AMQP_STATE, EVENTHUBRECEIVER_AMQP_STATE_VALUES);
+MU_DEFINE_ENUM(EVENTHUBRECEIVER_AMQP_STATE, EVENTHUBRECEIVER_AMQP_STATE_VALUES);
 
 /* Default TLS port */
 #define TLS_PORT                    5671
