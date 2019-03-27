@@ -52,8 +52,17 @@ if(IN_OPENWRT)
     INCLUDE_DIRECTORIES("$ENV{TOOLCHAIN_DIR}/usr/include" "$ENV{TARGET_LDFLAGS}" "$ENV{TARGET_CPPFLAGS}" "$ENV{TARGET_CFLAGS}")
 endif()
 
+#do not add or build any tests of the dependencies
+set(original_run_e2e_tests ${run_e2e_tests})
+set(original_run_int_tests ${run_int_tests})
+set(original_run_unittests ${run_unittests})
+
+set(run_e2e_tests OFF)
+set(run_int_tests OFF)
+set(run_unittests OFF)
+
 if(NOT ${use_installed_dependencies})
-    if(${run_e2e_tests} OR ${run_unittests})
+    if(${original_run_e2e_tests} OR ${original_run_unittests})
         if (NOT TARGET testrunnerswitcher)
             add_subdirectory(deps/azure-c-testrunnerswitcher)
         endif()
@@ -71,6 +80,11 @@ if(NOT ${use_installed_dependencies})
         add_subdirectory(deps/azure-uamqp-c)
     endif()
 endif()
+
+set(run_e2e_tests ${original_run_e2e_tests})
+set(run_int_tests ${original_run_int_tests})
+set(run_unittests ${original_run_unittests})
+
 include("dependencies.cmake")
 
 # Include the common build rules for C shared utility
