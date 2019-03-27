@@ -1360,7 +1360,6 @@ EVENTHUBCLIENT_RESULT EventHubClient_LL_SendAsync(EVENTHUBCLIENT_LL_HANDLE event
             newEntry->currentStatus = WAITING_TO_BE_SENT;
             newEntry->eventCount = 1;
             newEntry->eventDataList = (EVENTDATA_HANDLE*)malloc(sizeof(EVENTDATA_HANDLE));
-            (void)tickcounter_get_current_ms(eventhub_client_ll->counter, &newEntry->idle_timer);
 
             if (newEntry->eventDataList == NULL)
             {
@@ -1370,6 +1369,8 @@ EVENTHUBCLIENT_RESULT EventHubClient_LL_SendAsync(EVENTHUBCLIENT_LL_HANDLE event
             }
             else
             {
+                (void)tickcounter_get_current_ms(eventhub_client_ll->counter, &newEntry->idle_timer);
+
                 /* Codes_SRS_EVENTHUBCLIENT_LL_04_013: [EventHubClient_LL_SendAsync shall add the DLIST outgoingEvents a new record cloning the information from eventDataHandle, telemetryConfirmationCallback and userContextCallBack.] */
                 if ((newEntry->eventDataList[0] = EventData_Clone(eventDataHandle)) == NULL)
                 {
