@@ -11,7 +11,7 @@
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/buffer_.h"
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/map.h"
 #include "azure_c_shared_utility/sastoken.h"
@@ -31,7 +31,7 @@
         EVENTHUBAUTH_OP_PUT,        \
         EVENTHUBAUTH_OP_DELETE
 
-DEFINE_ENUM(EVENTHUBAUTH_OP, EVENTHUBAUTH_OP_VALUES);
+MU_DEFINE_ENUM(EVENTHUBAUTH_OP, EVENTHUBAUTH_OP_VALUES);
 
 #define SASTOKEN_URI_ELEMENT_VALUES         \
         SASTOKEN_URI_ELEMENT_HOSTNAME,      \
@@ -42,7 +42,7 @@ DEFINE_ENUM(EVENTHUBAUTH_OP, EVENTHUBAUTH_OP_VALUES);
         SASTOKEN_URI_ELEMENT_PARTITIONID,   \
         SASTOKEN_URI_ELEMENT_UNKNOWN
 
-DEFINE_ENUM(SASTOKEN_URI_ELEMENT, SASTOKEN_URI_ELEMENT_VALUES);
+MU_DEFINE_ENUM(SASTOKEN_URI_ELEMENT, SASTOKEN_URI_ELEMENT_VALUES);
 
 #define SAS_TOKEN_TYPE          "servicebus.windows.net:sastoken"
 
@@ -755,7 +755,7 @@ EVENTHUBAUTH_CBS_HANDLE EventHubAuthCBS_Create(const EVENTHUBAUTH_CBS_CONFIG* ev
                     isError = true;
                 }
                 //**Codes_SRS_EVENTHUB_AUTH_29_029: \[**If credential type is EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO, EventHubAuthCBS_Create shall create a new STRING_HANDLE by Base64 encoding the buffer handle created above by using API Base64_Encoder.**\]**
-                else if ((result->encodedSASKeyValue = Base64_Encoder(bufferHandle)) == NULL)
+                else if ((result->encodedSASKeyValue = Azure_Base64_Encode(bufferHandle)) == NULL)
                 {
                     LogError("Could Not Base64 Encode the Shared Key Buffer\r\n");
                     isError = true;

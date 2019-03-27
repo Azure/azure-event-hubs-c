@@ -25,7 +25,7 @@
 #define CALLBACK_WAITING                0
 #define CALLBACK_NOTIFIED               1 
 
-#define LOG_ERROR(x) LogError("result = %s", ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, x));
+#define LOG_ERROR(x) LogError("result = %s", MU_ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, x));
 
 typedef struct EVENTHUBCLIENT_STRUCT_TAG
 {

@@ -32,7 +32,7 @@ static void TestHook_free(void* ptr)
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/agenttime.h"
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/gballoc.h"
@@ -57,7 +57,7 @@ static void TestHook_free(void* ptr)
 //#################################################################################################
 // EventHubAuth Test Defines and Data types
 //#################################################################################################
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 #define AUTH_WAITTIMEOUT_SECS 1
 #define AUTH_EXPIRATION_SECS  4
@@ -381,7 +381,7 @@ extern "C"
 static void TestHook_OnUMockCError(UMOCK_C_ERROR_CODE errorCode)
 {
     char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, errorCode));
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, errorCode));
     ASSERT_FAIL(temp_str);
 }
 
@@ -865,7 +865,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Create(EVENTHUBAUTH_MODE mode
         STRICT_EXPECTED_CALL(BUFFER_create((const unsigned char*)SHAREDACCESSKEY, strlen(SHAREDACCESSKEY)));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(Base64_Encoder(TEST_BUFFER_HANDLE_VALID_SHAREDACCESSKEY));
+        STRICT_EXPECTED_CALL(Azure_Base64_Encode(TEST_BUFFER_HANDLE_VALID_SHAREDACCESSKEY));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
         STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE_VALID_SHAREDACCESSKEY));
@@ -1276,8 +1276,8 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     REGISTER_GLOBAL_MOCK_RETURN(BUFFER_create, TEST_BUFFER_HANDLE_VALID_SHAREDACCESSKEY);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(BUFFER_create, NULL);
 
-    REGISTER_GLOBAL_MOCK_RETURN(Base64_Encoder, TEST_STRING_HANDLE_AUTO_KEYBASE64ENCODED);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(Base64_Encoder, NULL);
+    REGISTER_GLOBAL_MOCK_RETURN(Azure_Base64_Encode, TEST_STRING_HANDLE_AUTO_KEYBASE64ENCODED);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(Azure_Base64_Encode, NULL);
 
     REGISTER_GLOBAL_MOCK_RETURN(SASToken_Create, TEST_STRING_HANDLE_AUTO_SASTOKEN);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(SASToken_Create, NULL);

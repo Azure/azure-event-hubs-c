@@ -27,8 +27,8 @@ static const char TEST_STRING_VALUE_2[] = "Property_String_Value_2";
 #define BUFFER_SIZE     128
 static unsigned int g_id = 1000;
 
-DEFINE_ENUM_STRINGS(EVENTHUBCLIENT_STATE, EVENTHUBCLIENT_STATE_VALUES);
-DEFINE_ENUM_STRINGS(EVENTHUBCLIENT_ERROR_RESULT, EVENTHUBCLIENT_ERROR_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(EVENTHUBCLIENT_STATE, EVENTHUBCLIENT_STATE_VALUES);
+MU_DEFINE_ENUM_STRINGS(EVENTHUBCLIENT_ERROR_RESULT, EVENTHUBCLIENT_ERROR_RESULT_VALUES);
 
 void custom_logging_function(LOG_CATEGORY log_category, const char* file, const char* func, const int line, unsigned int options, const char* format, ...)
 {
@@ -58,13 +58,13 @@ void custom_logging_function(LOG_CATEGORY log_category, const char* file, const 
 void eventhub_state_change_callback(EVENTHUBCLIENT_STATE eventhub_state, void* userContextCallback)
 {
     (void)userContextCallback;
-    (void)printf("eventhub_state_change_callback %s\r\n", ENUM_TO_STRING(EVENTHUBCLIENT_STATE, eventhub_state) );
+    (void)printf("eventhub_state_change_callback %s\r\n", MU_ENUM_TO_STRING(EVENTHUBCLIENT_STATE, eventhub_state) );
 }
 
 void eventhub_error_callback(EVENTHUBCLIENT_ERROR_RESULT eventhub_failure, void* userContextCallback)
 {
     (void)userContextCallback;
-    (void)printf("eventhub_error_callback %s\r\n", ENUM_TO_STRING(EVENTHUBCLIENT_ERROR_RESULT, eventhub_failure) );
+    (void)printf("eventhub_error_callback %s\r\n", MU_ENUM_TO_STRING(EVENTHUBCLIENT_ERROR_RESULT, eventhub_failure) );
 }
 
 int Send_Sample(void)
