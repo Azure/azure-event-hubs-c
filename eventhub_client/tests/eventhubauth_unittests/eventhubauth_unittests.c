@@ -491,13 +491,13 @@ static uint64_t TestSetupCallStack_ReceiverEventHubAuthCBS_SASTokenParse(const c
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(kvp_parser_parse(sasToken + strlen(SAS_TOKEN_START_DEF), IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, "=", 1)
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, "&", 1)
+        .ValidateArgumentBuffer(2, "=", 1)
+        .ValidateArgumentBuffer(3, "&", 1)
         .SetReturn(TEST_MAP_HANDLE_VALID).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, URI_KEY_DEF, strlen(URI_KEY_DEF))
+        .ValidateArgumentBuffer(2, URI_KEY_DEF, strlen(URI_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -505,17 +505,17 @@ static uint64_t TestSetupCallStack_ReceiverEventHubAuthCBS_SASTokenParse(const c
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, SIGNATURE_KEY_DEF, strlen(SIGNATURE_KEY_DEF))
+        .ValidateArgumentBuffer(2, SIGNATURE_KEY_DEF, strlen(SIGNATURE_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, SKN_KEY_DEF, strlen(SKN_KEY_DEF))
+        .ValidateArgumentBuffer(2, SKN_KEY_DEF, strlen(SKN_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, EXPIRATION_KEY_DEF, strlen(EXPIRATION_KEY_DEF))
+        .ValidateArgumentBuffer(2, EXPIRATION_KEY_DEF, strlen(EXPIRATION_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -533,7 +533,7 @@ static uint64_t TestSetupCallStack_ReceiverEventHubAuthCBS_SASTokenParse(const c
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -545,7 +545,7 @@ static uint64_t TestSetupCallStack_ReceiverEventHubAuthCBS_SASTokenParse(const c
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -557,7 +557,7 @@ static uint64_t TestSetupCallStack_ReceiverEventHubAuthCBS_SASTokenParse(const c
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -565,7 +565,7 @@ static uint64_t TestSetupCallStack_ReceiverEventHubAuthCBS_SASTokenParse(const c
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -577,7 +577,7 @@ static uint64_t TestSetupCallStack_ReceiverEventHubAuthCBS_SASTokenParse(const c
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -585,7 +585,7 @@ static uint64_t TestSetupCallStack_ReceiverEventHubAuthCBS_SASTokenParse(const c
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -674,13 +674,13 @@ static uint64_t TestSetupCallStack_SenderEventHubAuthCBS_SASTokenParse(const cha
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(kvp_parser_parse(sasToken + strlen(SAS_TOKEN_START_DEF), IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, "=", 1)
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, "&", 1)
+        .ValidateArgumentBuffer(2, "=", 1)
+        .ValidateArgumentBuffer(3, "&", 1)
         .SetReturn(TEST_MAP_HANDLE_VALID).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, URI_KEY_DEF, strlen(URI_KEY_DEF))
+        .ValidateArgumentBuffer(2, URI_KEY_DEF, strlen(URI_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -688,17 +688,17 @@ static uint64_t TestSetupCallStack_SenderEventHubAuthCBS_SASTokenParse(const cha
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, SIGNATURE_KEY_DEF, strlen(SIGNATURE_KEY_DEF))
+        .ValidateArgumentBuffer(2, SIGNATURE_KEY_DEF, strlen(SIGNATURE_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, SKN_KEY_DEF, strlen(SKN_KEY_DEF))
+        .ValidateArgumentBuffer(2, SKN_KEY_DEF, strlen(SKN_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, EXPIRATION_KEY_DEF, strlen(EXPIRATION_KEY_DEF))
+        .ValidateArgumentBuffer(2, EXPIRATION_KEY_DEF, strlen(EXPIRATION_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -716,7 +716,7 @@ static uint64_t TestSetupCallStack_SenderEventHubAuthCBS_SASTokenParse(const cha
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -728,7 +728,7 @@ static uint64_t TestSetupCallStack_SenderEventHubAuthCBS_SASTokenParse(const cha
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -740,7 +740,7 @@ static uint64_t TestSetupCallStack_SenderEventHubAuthCBS_SASTokenParse(const cha
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -748,7 +748,7 @@ static uint64_t TestSetupCallStack_SenderEventHubAuthCBS_SASTokenParse(const cha
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_STRING_TOKENIZER_HANDLE, TEST_STRING_KEY_TOKEN_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
+        .ValidateArgumentBuffer(3, SAS_TOKEN_ENC_DELIM_DEF, strlen(SAS_TOKEN_ENC_DELIM_DEF))
         .SetReturn(0).SetFailReturn(-1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -824,7 +824,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Create(EVENTHUBAUTH_MODE mode
         STRICT_EXPECTED_CALL(STRING_concat_with_STRING(URI, TEST_STRING_HANDLE_AUTO_HOSTNAME));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(STRING_concat(URI, IGNORED_PTR_ARG)).IgnoreArgument(2).ValidateArgumentBuffer(2, "/", 1);
+        STRICT_EXPECTED_CALL(STRING_concat(URI, IGNORED_PTR_ARG)).ValidateArgumentBuffer(2, "/", 1);
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
         STRICT_EXPECTED_CALL(STRING_concat_with_STRING(URI, TEST_STRING_HANDLE_AUTO_EVENTHUBPATH));
@@ -832,13 +832,13 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Create(EVENTHUBAUTH_MODE mode
 
         if (mode == EVENTHUBAUTH_MODE_RECEIVER)
         {
-            STRICT_EXPECTED_CALL(STRING_concat(URI, IGNORED_PTR_ARG)).IgnoreArgument(2).ValidateArgumentBuffer(2, "/" CONSUMER_GROUP_KEY_DEF "/", strlen("/" CONSUMER_GROUP_KEY_DEF "/"));
+            STRICT_EXPECTED_CALL(STRING_concat(URI, IGNORED_PTR_ARG)).ValidateArgumentBuffer(2, "/" CONSUMER_GROUP_KEY_DEF "/", strlen("/" CONSUMER_GROUP_KEY_DEF "/"));
             failedFunctionBitmask |= ((uint64_t)1 << i++);
 
             STRICT_EXPECTED_CALL(STRING_concat_with_STRING(URI, TEST_STRING_HANDLE_AUTO_CONSUMERGROUP));
             failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-            STRICT_EXPECTED_CALL(STRING_concat(URI, IGNORED_PTR_ARG)).IgnoreArgument(2).ValidateArgumentBuffer(2, "/" PARTITION_ID_KEY_DEF "/", strlen("/" PARTITION_ID_KEY_DEF "/"));
+            STRICT_EXPECTED_CALL(STRING_concat(URI, IGNORED_PTR_ARG)).ValidateArgumentBuffer(2, "/" PARTITION_ID_KEY_DEF "/", strlen("/" PARTITION_ID_KEY_DEF "/"));
             failedFunctionBitmask |= ((uint64_t)1 << i++);
 
             STRICT_EXPECTED_CALL(STRING_concat_with_STRING(URI, TEST_STRING_HANDLE_AUTO_PARTITIONID));
@@ -846,7 +846,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Create(EVENTHUBAUTH_MODE mode
         }
         else
         {
-            STRICT_EXPECTED_CALL(STRING_concat(URI, IGNORED_PTR_ARG)).IgnoreArgument(2).ValidateArgumentBuffer(2, "/" PUBLISHER_KEY_DEF "/", strlen("/" PUBLISHER_KEY_DEF "/"));
+            STRICT_EXPECTED_CALL(STRING_concat(URI, IGNORED_PTR_ARG)).ValidateArgumentBuffer(2, "/" PUBLISHER_KEY_DEF "/", strlen("/" PUBLISHER_KEY_DEF "/"));
             failedFunctionBitmask |= ((uint64_t)1 << i++);
 
             STRICT_EXPECTED_CALL(STRING_concat_with_STRING(URI, TEST_STRING_HANDLE_AUTO_PUBLISHER_VALUE));
@@ -1006,7 +1006,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Authenticate_Common
     STRICT_EXPECTED_CALL(get_time(NULL));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, (time_t)(0))).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, (time_t)(0)));
     i++;
 
     if (credential == EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_EXT)
@@ -1027,8 +1027,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Authenticate_Common
         sasToken = TEST_STRING_HANDLE_AUTO_SASTOKEN;
         URI = TEST_STRING_HANDLE_AUTO_URI;
 
-        STRICT_EXPECTED_CALL(SASToken_Create(TEST_STRING_HANDLE_AUTO_KEYBASE64ENCODED, TEST_STRING_HANDLE_AUTO_URIENCODED, TEST_STRING_HANDLE_AUTO_SHAREDACCESSKEYNAME_CLONE, IGNORED_NUM_ARG))
-            .IgnoreArgument(4);
+        STRICT_EXPECTED_CALL(SASToken_Create(TEST_STRING_HANDLE_AUTO_KEYBASE64ENCODED, TEST_STRING_HANDLE_AUTO_URIENCODED, TEST_STRING_HANDLE_AUTO_SHAREDACCESSKEYNAME_CLONE, IGNORED_NUM_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
     }
 
@@ -1080,7 +1079,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Authenticate_PutCallback(CBS_
         STRICT_EXPECTED_CALL(get_time(NULL));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, (time_t)(0))).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, (time_t)(0)));
         i++;
     }
 
@@ -1106,7 +1105,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Refresh_AutoWithNoRefreshRequ
     STRICT_EXPECTED_CALL(get_time(NULL));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, (time_t)(0))).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, (time_t)(0)));
     i++;
 
     return failedFunctionBitmask;
@@ -1123,7 +1122,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Refresh_AutoWithRefreshRequir
     STRICT_EXPECTED_CALL(get_time(NULL));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, (time_t)(0))).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, (time_t)(0)));
     i++;
 
     failedFunctionBitmask = TestSetupCallStack_EventHubAuthCBS_Authenticate_Common(failedFunctionBitmask, i, true, mode, EVENTHUBAUTH_CREDENTIAL_TYPE_SASTOKEN_AUTO);
@@ -1178,13 +1177,13 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Refresh_Ext(bool isPriorSASTo
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(kvp_parser_parse(refreshSASTokenBuffer + strlen(SAS_TOKEN_START_DEF), IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, "=", 1)
-        .IgnoreArgument(3).ValidateArgumentBuffer(3, "&", 1)
+        .ValidateArgumentBuffer(2, "=", 1)
+        .ValidateArgumentBuffer(3, "&", 1)
         .SetReturn(TEST_MAP_HANDLE_VALID).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, URI_KEY_DEF, strlen(URI_KEY_DEF))
+        .ValidateArgumentBuffer(2, URI_KEY_DEF, strlen(URI_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -1193,17 +1192,17 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Refresh_Ext(bool isPriorSASTo
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, SIGNATURE_KEY_DEF, strlen(SIGNATURE_KEY_DEF))
+        .ValidateArgumentBuffer(2, SIGNATURE_KEY_DEF, strlen(SIGNATURE_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, SKN_KEY_DEF, strlen(SKN_KEY_DEF))
+        .ValidateArgumentBuffer(2, SKN_KEY_DEF, strlen(SKN_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).ValidateArgumentBuffer(2, EXPIRATION_KEY_DEF, strlen(EXPIRATION_KEY_DEF))
+        .ValidateArgumentBuffer(2, EXPIRATION_KEY_DEF, strlen(EXPIRATION_KEY_DEF))
         .SetReturn(uriFromSasToken).SetFailReturn(NULL);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
@@ -1211,7 +1210,7 @@ static uint64_t TestSetupCallStack_EventHubAuthCBS_Refresh_Ext(bool isPriorSASTo
     i++;
 
     STRICT_EXPECTED_CALL(STRING_compare(IGNORED_PTR_ARG, uriHandle))
-        .IgnoreArgument(1).SetReturn(0).SetFailReturn(1);
+        .SetReturn(0).SetFailReturn(1);
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));

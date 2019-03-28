@@ -811,26 +811,22 @@ static uint64_t TestSetupCallStack_Create(void)
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // create string handle for (hostName) "Endpoint"
-    STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // create string handle for host name TEST_HOST_NAME_VALUE
-    STRICT_EXPECTED_CALL(STRING_construct_n(IGNORED_PTR_ARG, TEST_HOST_NAME_VALUE_LEN))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(STRING_construct_n(IGNORED_PTR_ARG, TEST_HOST_NAME_VALUE_LEN));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // create string handle for Key:SharedAccessKeyName value in connection string
-    STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     EXPECTED_CALL(STRING_construct(IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // create string handle for Key:SharedAccessKey value in connection string
-    STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     EXPECTED_CALL(STRING_construct(IGNORED_PTR_ARG));
@@ -856,15 +852,13 @@ static uint64_t TestSetupCallStack_Create(void)
     STRICT_EXPECTED_CALL(STRING_clone(TEST_EVENTHUBPATH_STRING_HANDLE_VALID));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(STRING_concat(TEST_TARGETADDRESS_STRING_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(STRING_concat(TEST_TARGETADDRESS_STRING_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_concat_with_STRING(TEST_TARGETADDRESS_STRING_HANDLE_VALID, TEST_CONSUMERGROUP_STRING_HANDLE_VALID));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(STRING_concat(TEST_TARGETADDRESS_STRING_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(STRING_concat(TEST_TARGETADDRESS_STRING_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_concat_with_STRING(TEST_TARGETADDRESS_STRING_HANDLE_VALID, TEST_PARTITIONID_STRING_HANDLE_VALID));
@@ -926,15 +920,13 @@ static uint64_t TestSetupCallStack_CreateFromSASToken(const char* sasToken)
     STRICT_EXPECTED_CALL(STRING_clone(TEST_EVENTHUBPATH_STRING_HANDLE_VALID));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(STRING_concat(TEST_TARGETADDRESS_STRING_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(STRING_concat(TEST_TARGETADDRESS_STRING_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_concat_with_STRING(TEST_TARGETADDRESS_STRING_HANDLE_VALID, TEST_CONSUMERGROUP_STRING_HANDLE_VALID));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(STRING_concat(TEST_TARGETADDRESS_STRING_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(STRING_concat(TEST_TARGETADDRESS_STRING_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_concat_with_STRING(TEST_TARGETADDRESS_STRING_HANDLE_VALID, TEST_PARTITIONID_STRING_HANDLE_VALID));
@@ -951,9 +943,9 @@ static void TestSetupCallStack_ReceiveFromStartTimestampCommon(unsigned int wait
     TestHelper_ResetTestGlobalData();
     umock_c_reset_all_calls();
 
-    if (waitTimeInMS) STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_TICK_COUNTER_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    if (waitTimeInMS) STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_TICK_COUNTER_HANDLE_VALID, IGNORED_PTR_ARG));
 
-    //STRICT_EXPECTED_CALL(STRING_construct_sprintf(IGNORED_PTR_ARG, nowTS)).IgnoreArgument(1);
+    //STRICT_EXPECTED_CALL(STRING_construct_sprintf(IGNORED_PTR_ARG, nowTS));
     // Since the above is not possible to do with the mocking framework 
     // use TestHelper_isSTRING_construct_sprintfInvoked() instead to see if STRING_construct_sprintf was invoked at all
     // Ex: ASSERT_ARE_EQUAL(int, 1, TestHelper_isSTRING_construct_sprintfInvoked(), "Failed STRING_consturct_sprintf Value Test");
@@ -1100,8 +1092,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Inter
     STRICT_EXPECTED_CALL(saslmssbcbs_get_interface());
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(saslmechanism_create(TEST_SASL_INTERFACE_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(saslmechanism_create(TEST_SASL_INTERFACE_HANDLE, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // HostName
@@ -1111,19 +1102,16 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Inter
     STRICT_EXPECTED_CALL(platform_get_default_tlsio());
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(xio_create(TEST_TLS_IO_INTERFACE_DESCRPTION_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(xio_create(TEST_TLS_IO_INTERFACE_DESCRPTION_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(saslclientio_get_interface_description());
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(xio_create(TEST_SASL_CLIENT_IO_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(xio_create(TEST_SASL_CLIENT_IO_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(connection_create(TEST_SASL_XIO_VALID_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+    STRICT_EXPECTED_CALL(connection_create(TEST_SASL_XIO_VALID_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(connection_set_trace(TEST_CONNECTION_HANDLE_VALID, 0));
@@ -1132,8 +1120,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Inter
     STRICT_EXPECTED_CALL(session_create(TEST_CONNECTION_HANDLE_VALID, NULL, NULL));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(session_set_incoming_window(TEST_SESSION_HANDLE_VALID, IGNORED_NUM_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(session_set_incoming_window(TEST_SESSION_HANDLE_VALID, IGNORED_NUM_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     //if (wasRefreshTokenApplied)
@@ -1142,8 +1129,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Inter
     //    i++;
     //}
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_Create(IGNORED_NUM_ARG, TEST_SESSION_HANDLE_VALID))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_Create(IGNORED_NUM_ARG, TEST_SESSION_HANDLE_VALID));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
@@ -1179,7 +1165,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
 
     failedFunctionBitmask = TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Common(failedFunctionBitmask, &i);
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(connection_dowork(TEST_CONNECTION_HANDLE_VALID));
@@ -1215,7 +1201,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
 
     failedFunctionBitmask = TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Common(failedFunctionBitmask, &i);
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2).CopyOutArgumentBuffer(2, statusTestInput, sizeof(EVENTHUBAUTH_STATUS));
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).CopyOutArgumentBuffer(2, statusTestInput, sizeof(EVENTHUBAUTH_STATUS));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     failedFunctionBitmask = TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_TearDown_Common(failedFunctionBitmask, &i);
@@ -1248,7 +1234,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuth_AMQP_Stack_Teardown_Status_Fa
     TestHelper_ResetTestGlobalData();
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2).CopyOutArgumentBuffer(2, statusTestInput, sizeof(EVENTHUBAUTH_STATUS));
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).CopyOutArgumentBuffer(2, statusTestInput, sizeof(EVENTHUBAUTH_STATUS));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     failedFunctionBitmask = TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_TearDown_Common(failedFunctionBitmask, &i);
@@ -1274,7 +1260,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
 
     failedFunctionBitmask = TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Common(failedFunctionBitmask, &i);
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     // ensure that we do not have more that 64 mocked functions
@@ -1298,7 +1284,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
 
     failedFunctionBitmask = TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Common(failedFunctionBitmask, &i);
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(EventHubAuthCBS_Authenticate(TEST_EVENTHUBCBSAUTH_HANDLE_VALID));
@@ -1327,7 +1313,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
 
     failedFunctionBitmask = TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_WithRefreshToken_Common(failedFunctionBitmask, &i);
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(EventHubAuthCBS_Authenticate(TEST_EVENTHUBCBSAUTH_HANDLE_VALID));
@@ -1407,10 +1393,10 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_Bringup(un
     EXPECTED_CALL(amqpvalue_create_string(IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(source_set_address(TEST_SOURCE_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(source_set_address(TEST_SOURCE_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(source_set_filter(TEST_SOURCE_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(source_set_filter(TEST_SOURCE_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(amqpvalue_create_source(TEST_SOURCE_HANDLE_VALID));
@@ -1419,8 +1405,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_Bringup(un
     EXPECTED_CALL(messaging_create_target(IGNORED_PTR_ARG)).IgnoreAllArguments(); // TEST_MESSAGING_TARGET_VALID
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(link_create(TEST_SESSION_HANDLE_VALID, IGNORED_PTR_ARG, 1, TEST_AMQP_SOURCE_HANDLE_VALID, TEST_MESSAGING_TARGET_VALID))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(link_create(TEST_SESSION_HANDLE_VALID, IGNORED_PTR_ARG, 1, TEST_AMQP_SOURCE_HANDLE_VALID, TEST_MESSAGING_TARGET_VALID));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(link_set_rcv_settle_mode(TEST_LINK_HANDLE_VALID, 0));
@@ -1429,10 +1414,10 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_Bringup(un
     STRICT_EXPECTED_CALL(link_set_max_message_size(TEST_LINK_HANDLE_VALID, (256 * 1024)));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(messagereceiver_create(TEST_LINK_HANDLE_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(2).IgnoreArgument(3);
+    STRICT_EXPECTED_CALL(messagereceiver_create(TEST_LINK_HANDLE_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(messagereceiver_open(TEST_MESSAGE_RECEIVER_HANDLE_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(2).IgnoreArgument(3);
+    STRICT_EXPECTED_CALL(messagereceiver_open(TEST_MESSAGE_RECEIVER_HANDLE_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(source_destroy(TEST_SOURCE_HANDLE_VALID)); //TEST_AMQP_SOURCE_HANDLE_VALID
@@ -1458,11 +1443,11 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_Bringup(un
 
     if (waitTimeoutMs > 0)
     {
-        STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_TICK_COUNTER_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_TICK_COUNTER_HANDLE_VALID, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
     }
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(connection_dowork(TEST_CONNECTION_HANDLE_VALID));
@@ -1470,7 +1455,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_AMQP_Stack_Bringup(un
 
     if (waitTimeoutMs > 0)
     {
-        STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_TICK_COUNTER_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_TICK_COUNTER_HANDLE_VALID, IGNORED_PTR_ARG));
         i++; // we skip this because this is covered in another test
     }
 
@@ -1493,7 +1478,7 @@ static uint64_t TestSetupCallStack_DoWork_Uninit_UnAuth_AMQP_Stack_Bringup_Statu
     TestHelper_ResetTestGlobalData();
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(EventHubAuthCBS_Refresh(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, NULL));
@@ -1526,7 +1511,7 @@ static uint64_t TestSetupCallStack_EventHubReceiver_LL_RefreshSASTokenAsync(cons
     STRICT_EXPECTED_CALL(EventHubAuthCBS_SASTokenParse(sasToken));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(STRING_compare(TEST_STRING_HANDLE_EXT_REFRESH_1_RECEIVER_URI, TEST_STRING_HANDLE_EXT_RECEIVER_URI)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(STRING_compare(TEST_STRING_HANDLE_EXT_REFRESH_1_RECEIVER_URI, TEST_STRING_HANDLE_EXT_RECEIVER_URI));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(STRING_construct(sasToken));
@@ -1554,7 +1539,7 @@ static uint64_t TestSetupCallStack_DoWork_PostAuthComplete_StatusOk_ExtRefreshTo
     TestHelper_ResetTestGlobalData();
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).CopyOutArgumentBuffer(2, &status, sizeof(EVENTHUBAUTH_STATUS));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     STRICT_EXPECTED_CALL(EventHubAuthCBS_Refresh(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, TEST_STRING_HANDLE_EXT_REFRESH_SASTOKEN_1));
@@ -1589,8 +1574,7 @@ static uint64_t TestSetupCallStack_OnMessageReceived(void)
     //////////////////////////////////////////////////////////////////////////////////////////
     //   Event Data                                                                         //
     //////////////////////////////////////////////////////////////////////////////////////////
-    STRICT_EXPECTED_CALL(message_get_body_amqp_data_in_place(TEST_MESSAGE_HANDLE_VALID, 0, IGNORED_PTR_ARG))
-        .IgnoreArgument(3);
+    STRICT_EXPECTED_CALL(message_get_body_amqp_data_in_place(TEST_MESSAGE_HANDLE_VALID, 0, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     EXPECTED_CALL(EventData_CreateWithNewMemory(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
@@ -1599,22 +1583,18 @@ static uint64_t TestSetupCallStack_OnMessageReceived(void)
     //////////////////////////////////////////////////////////////////////////////////////////
     //   Event Partition Key                                                                //
     //////////////////////////////////////////////////////////////////////////////////////////
-    STRICT_EXPECTED_CALL(message_get_message_annotations(TEST_MESSAGE_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(message_get_message_annotations(TEST_MESSAGE_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     if (!TestHelper_IsNullMessageAnnotations())
     {
-        STRICT_EXPECTED_CALL(amqpvalue_get_map(TEST_AMQP_MESSAGE_ANNOTATIONS_VALID, IGNORED_PTR_ARG))
-            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(amqpvalue_get_map(TEST_AMQP_MESSAGE_ANNOTATIONS_VALID, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(amqpvalue_get_map_pair_count(TEST_AMQP_MESSAGE_ANNOTATIONS_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(amqpvalue_get_map_pair_count(TEST_AMQP_MESSAGE_ANNOTATIONS_MAP_HANDLE_VALID, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(amqpvalue_get_map_key_value_pair(TEST_AMQP_MESSAGE_ANNOTATIONS_MAP_HANDLE_VALID, 0, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-            .IgnoreArgument(3).IgnoreArgument(4);
+        STRICT_EXPECTED_CALL(amqpvalue_get_map_key_value_pair(TEST_AMQP_MESSAGE_ANNOTATIONS_MAP_HANDLE_VALID, 0, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
         EXPECTED_CALL(amqpvalue_get_symbol(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
@@ -1623,8 +1603,7 @@ static uint64_t TestSetupCallStack_OnMessageReceived(void)
         EXPECTED_CALL(amqpvalue_get_timestamp(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(EventData_SetEnqueuedTimestampUTCInMs(TEST_EVENTDATA_HANDLE_VALID, IGNORED_NUM_ARG))
-            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(EventData_SetEnqueuedTimestampUTCInMs(TEST_EVENTDATA_HANDLE_VALID, IGNORED_NUM_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
         EXPECTED_CALL(amqpvalue_destroy(IGNORED_PTR_ARG));
@@ -1643,8 +1622,7 @@ static uint64_t TestSetupCallStack_OnMessageReceived(void)
     STRICT_EXPECTED_CALL(EventData_Properties(TEST_EVENTDATA_HANDLE_VALID));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-    STRICT_EXPECTED_CALL(message_get_application_properties(TEST_MESSAGE_HANDLE_VALID, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(message_get_application_properties(TEST_MESSAGE_HANDLE_VALID, IGNORED_PTR_ARG));
     failedFunctionBitmask |= ((uint64_t)1 << i++);
 
     if (!TestHelper_IsNullMessageApplicationProperties())
@@ -1655,16 +1633,13 @@ static uint64_t TestSetupCallStack_OnMessageReceived(void)
         STRICT_EXPECTED_CALL(amqpvalue_get_inplace_described_value(TEST_MESSAGE_APP_PROPS_HANDLE_VALID));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(amqpvalue_get_map(TEST_AMQP_INPLACE_DESCRIBED_DESCRIPTOR, IGNORED_PTR_ARG))
-            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(amqpvalue_get_map(TEST_AMQP_INPLACE_DESCRIBED_DESCRIPTOR, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(amqpvalue_get_map_pair_count(TEST_AMQP_MESSAGE_APP_PROPS_MAP_HANDLE_VALID, IGNORED_PTR_ARG))
-            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(amqpvalue_get_map_pair_count(TEST_AMQP_MESSAGE_APP_PROPS_MAP_HANDLE_VALID, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(amqpvalue_get_map_key_value_pair(TEST_AMQP_MESSAGE_APP_PROPS_MAP_HANDLE_VALID, 0, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-            .IgnoreArgument(3).IgnoreArgument(4);
+        STRICT_EXPECTED_CALL(amqpvalue_get_map_key_value_pair(TEST_AMQP_MESSAGE_APP_PROPS_MAP_HANDLE_VALID, 0, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
         EXPECTED_CALL(amqpvalue_get_string(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
@@ -1673,8 +1648,7 @@ static uint64_t TestSetupCallStack_OnMessageReceived(void)
         EXPECTED_CALL(amqpvalue_get_string(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
-        STRICT_EXPECTED_CALL(Map_Add(TEST_EVENT_DATA_PROPS_MAP_HANDLE_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-            .IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(Map_Add(TEST_EVENT_DATA_PROPS_MAP_HANDLE_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
         EXPECTED_CALL(amqpvalue_destroy(IGNORED_PTR_ARG));
@@ -2101,7 +2075,7 @@ static void EventHubReceiver_LL_Create_Fails_With_Invalid_HostName(const char* i
     STRICT_EXPECTED_CALL(STRING_construct(EVENTHUB_PATH));
 
     // create string handle for (hostName) "Endpoint"
-    STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2).SetReturn(invalidHostName);
+    STRICT_EXPECTED_CALL(Map_GetValueFromKey(TEST_MAP_HANDLE_VALID, IGNORED_PTR_ARG)).SetReturn(invalidHostName);
 
     // destroy map as connection string processing is done
     STRICT_EXPECTED_CALL(Map_Destroy(TEST_MAP_HANDLE_VALID));
@@ -3657,7 +3631,7 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     TestHelper_ResetTestGlobalData();
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG));
 
     STRICT_EXPECTED_CALL(connection_dowork(TEST_CONNECTION_HANDLE_VALID));
 
@@ -3851,7 +3825,7 @@ static void EventHubReceiver_LL_DoWork_ActiveReceiver_SASToken_AMQPStackBringup_
     // arrange
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(EventHubAuthCBS_GetStatus(TEST_EVENTHUBCBSAUTH_HANDLE_VALID, IGNORED_PTR_ARG));
 
     umock_c_negative_tests_snapshot();
 
@@ -4894,7 +4868,7 @@ TEST_FUNCTION(EventHubReceiver_LL_DoWork_Msg_Timeout_Callback_Negative)
     int testResult = umock_c_negative_tests_init();
     ASSERT_ARE_EQUAL(int, 0, testResult);
 
-    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_TICK_COUNTER_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_TICK_COUNTER_HANDLE_VALID, IGNORED_PTR_ARG));
 
     umock_c_negative_tests_snapshot();
     // act

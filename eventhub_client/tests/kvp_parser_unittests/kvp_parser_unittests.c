@@ -246,11 +246,11 @@ uint64_t TestHelper_SetupKVPParserStack(TestKVPTestData* testData)
         bool isValueError = (testData->kvpPairs[ctr].value == NULL) ? true : false;
 
         STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_TOKENIZER_HANDLE, TEST_KEY_STRING_HANDLE, IGNORED_PTR_ARG))
-            .IgnoreArgument(3).ValidateArgumentBuffer(3, testData->keyDelim, strlen(testData->keyDelim));
+            .ValidateArgumentBuffer(3, testData->keyDelim, strlen(testData->keyDelim));
         i++;
 
         STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_TOKENIZER_HANDLE, TEST_VALUE_STRING_HANDLE, IGNORED_PTR_ARG))
-            .IgnoreArgument(3).ValidateArgumentBuffer(3, testData->valueDelim, strlen(testData->valueDelim));
+            .ValidateArgumentBuffer(3, testData->valueDelim, strlen(testData->valueDelim));
         failedFunctionBitmask |= ((uint64_t)1 << i++);
 
         STRICT_EXPECTED_CALL(STRING_c_str(TEST_KEY_STRING_HANDLE));
@@ -275,7 +275,7 @@ uint64_t TestHelper_SetupKVPParserStack(TestKVPTestData* testData)
     if (isError == false)
     {
         STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(TEST_TOKENIZER_HANDLE, TEST_KEY_STRING_HANDLE, IGNORED_PTR_ARG))
-            .IgnoreArgument(3).ValidateArgumentBuffer(3, testData->keyDelim, strlen(testData->keyDelim));
+            .ValidateArgumentBuffer(3, testData->keyDelim, strlen(testData->keyDelim));
         i++;
     }
     else
