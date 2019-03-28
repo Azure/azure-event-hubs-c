@@ -1,19 +1,28 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdbool>
+#ifdef __cplusplus
 #include <cstdlib>
 #include <climits>
 #include <cstdint>
 #include <cinttypes>
 #include <cstring>
 
+#include <ctime>
+#else
+#include <stdbool.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <inttypes.h>
+#include <string.h>
+
 #include <time.h>
+#endif
 
 #include "testrunnerswitcher.h"
-#include "micromock.h"
-#include "micromockcharstararenullterminatedstrings.h"
 
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/doublylinkedlist.h"
@@ -27,7 +36,7 @@
 #include "eventhubreceiver_ll.h"
 #include "eventhub_account.h"
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
 
 const char* TEST_NOTIFICATION_DATA_FMT = "{\"id\":%d,\"index\":%d,\"notifyData\":\"%24s\"}";
 const char* TEST_NOTIFICATION_DATA_PARSE_FMT = "{\"id\":%d,\"index\":%d";
@@ -44,8 +53,10 @@ static size_t g_eventHubTestId = 0;
 
 #define RECEIVER_SLEEP_TIME_MS          1000
 
-DEFINE_MICROMOCK_ENUM_TO_STRING(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_RESULT_VALUES);
-DEFINE_MICROMOCK_ENUM_TO_STRING(EVENTHUBCLIENT_CONFIRMATION_RESULT, EVENTHUBCLIENT_CONFIRMATION_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES)
+TEST_DEFINE_ENUM_TYPE(EVENTHUBRECEIVER_RESULT, EVENTHUBRECEIVER_RESULT_VALUES)
+TEST_DEFINE_ENUM_TYPE(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_RESULT_VALUES)
+TEST_DEFINE_ENUM_TYPE(EVENTDATA_RESULT, EVENTDATA_RESULT_VALUES)
 
 typedef struct EXPECTED_RECEIVE_DATA_TAG
 {
@@ -115,7 +126,7 @@ static void OnReceiveCB(EVENTHUBRECEIVER_RESULT result, EVENTDATA_HANDLE eventDa
     bool endReceiver = false;
 
     lockResult = Lock(rxData->lock);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, LOCK_OK, lockResult, "OnReceiveCB Lock Failure");
+    ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_OK, lockResult, "OnReceiveCB Lock Failure");
     switch (result)
     {
         case EVENTHUBRECEIVER_OK:
@@ -142,28 +153,28 @@ static void OnReceiveCB(EVENTHUBRECEIVER_RESULT result, EVENTDATA_HANDLE eventDa
             endReceiver = true;
     };
     lockResult = Unlock(rxData->lock);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, LOCK_OK, lockResult, "OnReceiveCB Unlock Failure");
+    ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_OK, lockResult, "OnReceiveCB Unlock Failure");
     if (endReceiver)
     {
         EVENTHUBRECEIVER_RESULT rxResult = EventHubReceiver_ReceiveEndAsync(rxData->receiver, NULL, NULL);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, rxResult, "OnReceiveCB EventHubReceiver_ReceiveEndAsync Failure");
+        ASSERT_ARE_EQUAL(EVENTHUBRECEIVER_RESULT, EVENTHUBRECEIVER_OK, rxResult, "OnReceiveCB EventHubReceiver_ReceiveEndAsync Failure");
     }
 }
 
 static void OnReceiveErrorCB(EVENTHUBRECEIVER_RESULT errorCode, void* userContext)
 {
-    EVENTHUB_RECEIVER_TEST_DATA_TAG* rxData = (EVENTHUB_RECEIVER_TEST_DATA_TAG*)userContext;
+    EVENTHUB_RECEIVER_TEST_DATA* rxData = (EVENTHUB_RECEIVER_TEST_DATA*)userContext;
     LOCK_RESULT lockResult;
     EVENTHUBRECEIVER_RESULT rxResult;
 
     lockResult = Lock(rxData->lock);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, LOCK_OK, lockResult, "OnReceiveErrorCB Lock Failure");
+    ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_OK, lockResult, "OnReceiveErrorCB Lock Failure");
     rxData->exitConditionObserved = 1;
     rxData->errorCode = errorCode;
     lockResult = Unlock(rxData->lock);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, LOCK_OK, lockResult, "OnReceiveErrorCB Unlock Failure");
+    ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_OK, lockResult, "OnReceiveErrorCB Unlock Failure");
     rxResult = EventHubReceiver_ReceiveEndAsync(rxData->receiver, NULL, NULL);
-    ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBRECEIVER_OK, rxResult, "OnReceiveErrorCB EventHubReceiver_ReceiveEndAsync Failure");
+    ASSERT_ARE_EQUAL(EVENTHUBRECEIVER_RESULT, EVENTHUBRECEIVER_OK, rxResult, "OnReceiveErrorCB EventHubReceiver_ReceiveEndAsync Failure");
 }
 
 static void AsyncDataCallbackListInit(PDLIST_ENTRY list)
@@ -254,13 +265,14 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
 
         if ((eventDataResult = EventData_GetData(eventDataHandle, &dataBuffer, &dataSize)) != EVENTDATA_OK)
         {
-            LogError("Error seen in EventData_GetData. Code:%u\r\n", eventDataResult);
-            result = __LINE__;
+            LogError("Error seen in EventData_GetData. Code:%u", eventDataResult);
+            result = MU_FAILURE;
         }
         else if ((enqueuedtimestamp = EventData_GetEnqueuedTimestampUTCInMs(eventDataHandle)) < expectedData->enqueuedTimestamp * (uint64_t)1000)
         {
-            LogError("Unexpected Enqueued Timestamp seen EventData_GetEnqueuedTimestampUTC. Expected Timestamp Greater Than or Equal To:%" PRIu64 "  Received:%" PRIu64 "\r\n", eventDataResult);
-            result = __LINE__;
+            LogError("Unexpected Enqueued Timestamp seen EventData_GetEnqueuedTimestampUTC. Expected Timestamp Greater Than or Equal To:%" PRIu64 "  Received:%" PRIu64 "",
+                (uint64_t)expectedData->enqueuedTimestamp, enqueuedtimestamp);
+            result = MU_FAILURE;
         }
         else
         {
@@ -271,13 +283,13 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
             buffHandle = BUFFER_new();
             if (buffHandle == NULL)
             {
-                LogError("Could not create buffHandle\r\n");
-                result = __LINE__;
+                LogError("Could not create buffHandle");
+                result = MU_FAILURE;
             }
             else if ((status = BUFFER_pre_build(buffHandle, dataSize + 1)) != 0)
             {
-                LogError("Failed BUFFER_pre_build. Code:%d\r\n", status);
-                result = __LINE__;
+                LogError("Failed BUFFER_pre_build. Code:%d", status);
+                result = MU_FAILURE;
             }
             else
             {
@@ -287,30 +299,30 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                 status = sscanf((const char*)temp, TEST_NOTIFICATION_DATA_PARSE_FMT, &receivedId, &receivedIndex);
                 if (status != 2)
                 {
-                    LogError("Error seen when parsing EventData Binary Data. Result:%d\r\n", status);
-                    result = __LINE__;
+                    LogError("Error seen when parsing EventData Binary Data. Result:%d", status);
+                    result = MU_FAILURE;
                 }
                 else
                 {
                     if (receivedId != (int)expectedData->testId)
                     {
-                        LogError("Mismatch Seen For Test ID. Expected:[%d] Received:%d\r\n", (int)expectedData->testId, receivedId);
-                        result = __LINE__;
+                        LogError("Mismatch Seen For Test ID. Expected:[%d] Received:%d", (int)expectedData->testId, receivedId);
+                        result = MU_FAILURE;
                     }
                     else if ((receivedIndex < 0) || (receivedIndex >(int)expectedData->numOfMsg))
                     {
-                        LogError("Index Seen Outside of Expected Range. Expected:[0..%d] Received:%d\r\n", (int)expectedData->numOfMsg, receivedIndex);
-                        result = __LINE__;
+                        LogError("Index Seen Outside of Expected Range. Expected:[0..%d] Received:%d", (int)expectedData->numOfMsg, receivedIndex);
+                        result = MU_FAILURE;
                     }
                     else if (expectedData->dataSize[receivedIndex] != dataSize)
                     {
-                        LogError("Mismatch seen in Received Data Size. Expected:%u Received:%u\r\n", expectedData->dataSize[receivedIndex], dataSize);
-                        result = __LINE__;
+                        LogError("Mismatch seen in Received Data Size. Expected:%u Received:%u", expectedData->dataSize[receivedIndex], dataSize);
+                        result = MU_FAILURE;
                     }
                     else if (memcmp(dataBuffer, expectedData->data[receivedIndex], dataSize) != 0)
                     {
-                        LogError("Mismatch seen in Received Data.\r\n");
-                        result = __LINE__;
+                        LogError("Mismatch seen in Received Data.");
+                        result = MU_FAILURE;
                     }
                     else
                     {
@@ -331,8 +343,8 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
         // validate if the data was really sent
         if ((expectedData->numOfMsg > 0) && ((expectedData->dataWasSent == false) || (expectedData->eventhubConfirmResult != EVENTHUBCLIENT_CONFIRMATION_OK)))
         {
-            LogError("EventHubClient Send Failed\r\n");
-            result = __LINE__;
+            LogError("EventHubClient Send Failed");
+            result = MU_FAILURE;
         }
         else
         {
@@ -373,13 +385,13 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
             {
                 if (numMessagesReceived != expectedData->numOfMsg)
                 {
-                    LogError("Mismatch seen in Number of Messages. Expected:%u Received:%u\r\n", expectedData->numOfMsg, numMessagesReceived);
-                    result = __LINE__;
+                    LogError("Mismatch seen in Number of Messages. Expected:%u Received:%u", expectedData->numOfMsg, numMessagesReceived);
+                    result = MU_FAILURE;
                 }
                 else if ((expectedData->partitionKeyWasSet) && (multiplePartitionsReceivedData))
                 {
-                    LogError("Received Event Data from multiple partitions. Expected a single partition.\r\n");
-                    result = __LINE__;
+                    LogError("Received Event Data from multiple partitions. Expected a single partition.");
+                    result = MU_FAILURE;
                 }
             }
         }
@@ -419,20 +431,20 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
 
             if ((receiversData = (EVENTHUB_RECEIVERS_DATA*)malloc(sizeof(EVENTHUB_RECEIVERS_DATA))) == NULL)
             {
-                LogError("Could not allocate EVENTHUB_RECEIVERS_DATA \r\n");
+                LogError("Could not allocate EVENTHUB_RECEIVERS_DATA ");
             }
             else
             {
                 receiversData->numReceivers = numPartitions;
                 if ((receiversData->receivers = (EVENTHUB_RECEIVER_TEST_DATA*)malloc(sizeof(EVENTHUB_RECEIVER_TEST_DATA) * numPartitions)) == NULL)
                 {
-                    LogError("Could not allocate EVENTHUB_RECEIVER_TEST_DATA \r\n");
+                    LogError("Could not allocate EVENTHUB_RECEIVER_TEST_DATA ");
                     free(receiversData);
                     receiversData = NULL;
                 }
                 else if ((receiversData->receiversLock = Lock_Init()) == NULL)
                 {
-                    LogError("Could not allocate EVENTHUB_RECEIVER_TEST_DATA \r\n");
+                    LogError("Could not allocate EVENTHUB_RECEIVER_TEST_DATA ");
                     free(receiversData->receivers);
                     free(receiversData);
                     receiversData = NULL;
@@ -455,7 +467,7 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                         receiversData->receivers[idx].receiver = EventHubReceiver_Create(connectionString, eventHubPath, consumerGroup, partitionBuffer);
                         if (receiversData->receivers[idx].receiver == NULL)
                         {
-                            LogError("Could not create receiver using EventHubReceiver_Create for index %u\r\n", idx);
+                            LogError("Could not create receiver using EventHubReceiver_Create for index %u", idx);
                             errorSeen = 1;
                             break;
                         }
@@ -469,7 +481,7 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                                                                                                     enqueuedTimestamp, waitTimoutMs);
                         if (receiverResult != EVENTHUBRECEIVER_OK)
                         {
-                            LogError("EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync Failed for index %u. Code:%u\r\n", idx, receiverResult);
+                            LogError("EventHubReceiver_ReceiveFromStartTimestampWithTimeoutAsync Failed for index %u. Code:%u", idx, receiverResult);
                             errorSeen = 1;
                             break;
                         }
@@ -496,7 +508,7 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                             done = 1;
                             ThreadAPI_Sleep(RECEIVER_SLEEP_TIME_MS);
                             lockResult = Lock(receiversData->receiversLock);
-                            ASSERT_ARE_EQUAL_WITH_MSG(int, LOCK_OK, lockResult, "Lock Failure");
+                            ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_OK, lockResult, "Lock Failure");
                             for (idx = 0; idx < numPartitions; idx++)
                             {
                                 if (receiversData->receivers[idx].exitConditionObserved == 0)
@@ -506,7 +518,7 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                                 }
                             }
                             lockResult = Unlock(receiversData->receiversLock);
-                            ASSERT_ARE_EQUAL_WITH_MSG(int, LOCK_OK, lockResult, "Unlock Failure");
+                            ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_OK, lockResult, "Unlock Failure");
                         } while (!done);
                     }
                 }
@@ -519,47 +531,53 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
     TEST_SUITE_INITIALIZE(TestClassInitialize)
     {
         int result = platform_init();
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, result, "Failed initializing platform!\r\n");
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        ASSERT_ARE_EQUAL(int, 0, result, "Failed initializing platform!");
+        g_testByTest = TEST_MUTEX_CREATE();
+        ASSERT_IS_NOT_NULL(g_testByTest);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        TEST_MUTEX_DESTROY(g_testByTest);
         platform_deinit();
     }
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     {
+        if (TEST_MUTEX_ACQUIRE(g_testByTest))
+        {
+            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
+        }
+
         g_eventHubTestId++;
     }
 
     TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     {
-
+        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     TEST_FUNCTION(EventHub_SendTelemetry_E2ETests)
     {
         /* arrange */
         size_t messageToCreate = 1;
-        uint64_t timestampNow = static_cast<uint64_t>(time(NULL));
+        uint64_t timestampNow = (uint64_t)(time(NULL));
 
         // setup test data
         EXPECTED_RECEIVE_DATA* messageData = MessageData_Create(messageToCreate, timestampNow);
-        ASSERT_IS_NOT_NULL_WITH_MSG(messageData, "Could not create messageData using MessageData_Create\r\n");
+        ASSERT_IS_NOT_NULL(messageData, "Could not create messageData using MessageData_Create");
 
         EVENTDATA_HANDLE eventDataHandle = EventData_CreateWithNewMemory( (const unsigned char*)messageData->data[0], messageData->dataSize[0]);
-        ASSERT_IS_NOT_NULL_WITH_MSG(eventDataHandle, "Could not create eventDataHandle using EventData_CreateWithNewMemory\r\n");
+        ASSERT_IS_NOT_NULL(eventDataHandle, "Could not create eventDataHandle using EventData_CreateWithNewMemory");
 
         /* arrange event hub send */
         EVENTHUBCLIENT_HANDLE eventHubClientHandle = EventHubClient_CreateFromConnectionString(EventHubAccount_GetConnectionString(), EventHubAccount_GetName() );
-        ASSERT_IS_NOT_NULL_WITH_MSG(eventHubClientHandle, "Could not create eventHubClientHandle using EventHubClient_CreateFromConnectionString\r\n");
+        ASSERT_IS_NOT_NULL(eventHubClientHandle, "Could not create eventHubClientHandle using EventHubClient_CreateFromConnectionString");
 
         EventHubClient_SetLogTrace(eventHubClientHandle, true);
 
         EVENTHUBCLIENT_RESULT result = EventHubClient_Send(eventHubClientHandle, eventDataHandle);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBCLIENT_OK, result, "EventHubClient_Send Failed.\r\n");
+        ASSERT_ARE_EQUAL(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_OK, result, "EventHubClient_Send Failed.");
 
         // since data send was successful setup the messageData accordingly
         messageData->dataWasSent = true;
@@ -572,11 +590,11 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                                                                                                 EventHubAccount_ConsumerGroup(),
                                                                                                 EventHubAccount_PartitionCount(),
                                                                                                 timestampNow, MAX_EXECUTE_TIME_MS);
-        ASSERT_IS_NOT_NULL_WITH_MSG(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed\r\n");
+        ASSERT_IS_NOT_NULL(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed");
 
         int validationResult;
         validationResult = EventHubReceiversTest_ValidateReceivedMessageData(receiversData, messageData);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, validationResult, "Received Data Validation Failed\r\n");
+        ASSERT_ARE_EQUAL(int, 0, validationResult, "Received Data Validation Failed");
 
         /* cleanup */
         // destroy the sender data
@@ -597,31 +615,31 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
     {
         /* arrange */
         size_t messageToCreate = MAX_NUM_OF_MESSAGES;
-        uint64_t timestampNow = static_cast<uint64_t>(time(NULL));
+        uint64_t timestampNow = (uint64_t)(time(NULL));
 
         // setup test data
         EXPECTED_RECEIVE_DATA* messageData = MessageData_Create(messageToCreate, timestampNow);
-        ASSERT_IS_NOT_NULL_WITH_MSG(messageData, "Could not create messageData using MessageData_Create\r\n");
+        ASSERT_IS_NOT_NULL(messageData, "Could not create messageData using MessageData_Create");
 
         EVENTDATA_HANDLE eventDataList[MAX_NUM_OF_MESSAGES];
         for (size_t index = 0; index < messageToCreate; index++)
         {
             EVENTDATA_RESULT eventDataResult;
             eventDataList[index] = EventData_CreateWithNewMemory((const unsigned char*)messageData->data[index], messageData->dataSize[index]);
-            ASSERT_IS_NOT_NULL_WITH_MSG(eventDataList[index], "Could not create eventDataHandle using EventData_CreateWithNewMemory\r\n");
+            ASSERT_IS_NOT_NULL(eventDataList[index], "Could not create eventDataHandle using EventData_CreateWithNewMemory");
             eventDataResult = EventData_SetPartitionKey(eventDataList[index], "PartitionKeyTest");
-            ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTDATA_OK, eventDataResult, "Failed in Setting PartitionKey\r\n");
+            ASSERT_ARE_EQUAL(EVENTDATA_RESULT, EVENTDATA_OK, eventDataResult, "Failed in Setting PartitionKey");
         }
         messageData->partitionKeyWasSet = true;
 
         /* arrange event hub send */
         EVENTHUBCLIENT_HANDLE eventHubClientHandle = EventHubClient_CreateFromConnectionString(EventHubAccount_GetConnectionString(), EventHubAccount_GetName());
-        ASSERT_IS_NOT_NULL_WITH_MSG(eventHubClientHandle, "Could not create eventHubClientHandle using EventHubClient_CreateFromConnectionString\r\n");
+        ASSERT_IS_NOT_NULL(eventHubClientHandle, "Could not create eventHubClientHandle using EventHubClient_CreateFromConnectionString");
 
         EventHubClient_SetLogTrace(eventHubClientHandle, true);
 
         EVENTHUBCLIENT_RESULT result = EventHubClient_SendBatch(eventHubClientHandle, eventDataList, messageToCreate);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBCLIENT_OK, result, "EventHubClient_SendBatch Failed.\r\n");
+        ASSERT_ARE_EQUAL(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_OK, result, "EventHubClient_SendBatch Failed.");
 
         // since data send was successful setup the messageData accordingly
         messageData->dataWasSent = true;
@@ -634,11 +652,11 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                                                                                                 EventHubAccount_ConsumerGroup(),
                                                                                                 EventHubAccount_PartitionCount(),
                                                                                                 timestampNow, MAX_EXECUTE_TIME_MS);
-        ASSERT_IS_NOT_NULL_WITH_MSG(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed\r\n");
+        ASSERT_IS_NOT_NULL(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed");
 
         int validationResult;
         validationResult = EventHubReceiversTest_ValidateReceivedMessageData(receiversData, messageData);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, validationResult, "Received Data Validation Failed\r\n");
+        ASSERT_ARE_EQUAL(int, 0, validationResult, "Received Data Validation Failed");
 
         /* cleanup */
         // destroy the sender data
@@ -661,27 +679,27 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
     {
         /* arrange */
         size_t messageToCreate = MAX_NUM_OF_MESSAGES;
-        uint64_t timestampNow = static_cast<uint64_t>(time(NULL));
+        uint64_t timestampNow = (uint64_t)(time(NULL));
 
         // setup test data
         EXPECTED_RECEIVE_DATA* messageData = MessageData_Create(messageToCreate, timestampNow);
-        ASSERT_IS_NOT_NULL_WITH_MSG(messageData, "Could not create messageData using MessageData_Create\r\n");
+        ASSERT_IS_NOT_NULL(messageData, "Could not create messageData using MessageData_Create");
 
         EVENTDATA_HANDLE eventDataList[MAX_NUM_OF_MESSAGES];
         for (size_t index = 0; index < messageToCreate; index++)
         {
             eventDataList[index] = EventData_CreateWithNewMemory((const unsigned char*)messageData->data[index], messageData->dataSize[index]);
-            ASSERT_IS_NOT_NULL_WITH_MSG(eventDataList[index], "Could not create eventDataHandle using EventData_CreateWithNewMemory\r\n");
+            ASSERT_IS_NOT_NULL(eventDataList[index], "Could not create eventDataHandle using EventData_CreateWithNewMemory");
         }
 
         /* arrange event hub send */
         EVENTHUBCLIENT_HANDLE eventHubClientHandle = EventHubClient_CreateFromConnectionString(EventHubAccount_GetConnectionString(), EventHubAccount_GetName());
-        ASSERT_IS_NOT_NULL_WITH_MSG(eventHubClientHandle, "Could not create eventHubClientHandle using EventHubClient_CreateFromConnectionString\r\n");
+        ASSERT_IS_NOT_NULL(eventHubClientHandle, "Could not create eventHubClientHandle using EventHubClient_CreateFromConnectionString");
 
         EventHubClient_SetLogTrace(eventHubClientHandle, true);
 
         EVENTHUBCLIENT_RESULT result = EventHubClient_SendBatch(eventHubClientHandle, eventDataList, messageToCreate);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBCLIENT_OK, result, "EventHubClient_SendBatch Failed.\r\n");
+        ASSERT_ARE_EQUAL(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_OK, result, "EventHubClient_SendBatch Failed.");
 
         // since data send was successful setup the messageData accordingly
         messageData->dataWasSent = true;
@@ -694,11 +712,11 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                                                                                                 EventHubAccount_ConsumerGroup(),
                                                                                                 EventHubAccount_PartitionCount(),
                                                                                                 timestampNow, MAX_EXECUTE_TIME_MS);
-        ASSERT_IS_NOT_NULL_WITH_MSG(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed\r\n");
+        ASSERT_IS_NOT_NULL(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed");
 
         int validationResult;
         validationResult = EventHubReceiversTest_ValidateReceivedMessageData(receiversData, messageData);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, validationResult, "Received Data Validation Failed\r\n");
+        ASSERT_ARE_EQUAL(int, 0, validationResult, "Received Data Validation Failed");
 
         /* cleanup */
         // destroy the sender data
@@ -721,27 +739,27 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
     {
         /* arrange */
         size_t messageToCreate = MAX_NUM_OF_MESSAGES;
-        uint64_t timestampNow = static_cast<uint64_t>(time(NULL));
+        uint64_t timestampNow = (uint64_t)(time(NULL));
 
         // setup test data
         EXPECTED_RECEIVE_DATA* messageData = MessageData_Create(messageToCreate, timestampNow);
-        ASSERT_IS_NOT_NULL_WITH_MSG(messageData, "Could not create messageData using MessageData_Create\r\n");
+        ASSERT_IS_NOT_NULL(messageData, "Could not create messageData using MessageData_Create");
 
         EVENTDATA_HANDLE eventDataList[MAX_NUM_OF_MESSAGES];
         for (size_t index = 0; index < messageToCreate; index++)
         {
             eventDataList[index] = EventData_CreateWithNewMemory((const unsigned char*)messageData->data[index], messageData->dataSize[index]);
-            ASSERT_IS_NOT_NULL_WITH_MSG(eventDataList[index], "Could not create eventDataHandle using EventData_CreateWithNewMemory\r\n");
+            ASSERT_IS_NOT_NULL(eventDataList[index], "Could not create eventDataHandle using EventData_CreateWithNewMemory");
         }
 
         /* arrange event hub send */
         EVENTHUBCLIENT_HANDLE eventHubClientHandle = EventHubClient_CreateFromConnectionString(EventHubAccount_GetConnectionString(), EventHubAccount_GetName());
-        ASSERT_IS_NOT_NULL_WITH_MSG(eventHubClientHandle, "Could not create eventHubClientHandle using EventHubClient_CreateFromConnectionString\r\n");
+        ASSERT_IS_NOT_NULL(eventHubClientHandle, "Could not create eventHubClientHandle using EventHubClient_CreateFromConnectionString");
 
         EventHubClient_SetLogTrace(eventHubClientHandle, true);
 
         EVENTHUBCLIENT_RESULT result = EventHubClient_SendBatchAsync(eventHubClientHandle, eventDataList, messageToCreate, EventhubClientCallback, messageData);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, EVENTHUBCLIENT_OK, result, "EventHubClient_SendBatchAsync Failed.\r\n");
+        ASSERT_ARE_EQUAL(EVENTHUBCLIENT_RESULT, EVENTHUBCLIENT_OK, result, "EventHubClient_SendBatchAsync Failed.");
 
         time_t beginOp = time(NULL);
         while (
@@ -759,11 +777,11 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                                                                                                 EventHubAccount_ConsumerGroup(),
                                                                                                 EventHubAccount_PartitionCount(),
                                                                                                 timestampNow, MAX_EXECUTE_TIME_MS);
-        ASSERT_IS_NOT_NULL_WITH_MSG(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed\r\n");
+        ASSERT_IS_NOT_NULL(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed");
 
         int validationResult;
         validationResult = EventHubReceiversTest_ValidateReceivedMessageData(receiversData, messageData);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, validationResult, "Received Data Validation Failed\r\n");
+        ASSERT_ARE_EQUAL(int, 0, validationResult, "Received Data Validation Failed");
 
         /* cleanup */
         // destroy the sender data
@@ -786,11 +804,11 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
     {
         /* arrange */
         size_t messageToCreate = 0;
-        uint64_t timestampNow = static_cast<uint64_t>(time(NULL));
+        uint64_t timestampNow = (uint64_t)(time(NULL));
 
         // setup test data
         EXPECTED_RECEIVE_DATA* messageData = MessageData_Create(messageToCreate, timestampNow);
-        ASSERT_IS_NOT_NULL_WITH_MSG(messageData, "Could not create messageData using MessageData_Create\r\n");
+        ASSERT_IS_NOT_NULL(messageData, "Could not create messageData using MessageData_Create");
 
         /* arrange event hub receive */
         // create receivers to read the sent data and validate against the expected test data
@@ -799,11 +817,11 @@ BEGIN_TEST_SUITE(eventhubclient_e2etests)
                                                                                                 EventHubAccount_ConsumerGroup(),
                                                                                                 EventHubAccount_PartitionCount(),
                                                                                                 timestampNow, MAX_EXECUTE_TIME_MS);
-        ASSERT_IS_NOT_NULL_WITH_MSG(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed\r\n");
+        ASSERT_IS_NOT_NULL(receiversData, "EventHubReceiversTest_Create_EnqueuedTimestamp Failed");
 
         int validationResult;
         validationResult = EventHubReceiversTest_ValidateReceivedMessageData(receiversData, messageData);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, validationResult, "Received Data Validation Failed\r\n");
+        ASSERT_ARE_EQUAL(int, 0, validationResult, "Received Data Validation Failed");
 
         /* cleanup */
         // destroy the receiver(s)

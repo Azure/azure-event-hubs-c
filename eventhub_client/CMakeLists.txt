@@ -51,10 +51,7 @@ target_link_libraries(eventhub_client uamqp)
 linkSharedUtil(eventhub_client)
 
 add_subdirectory(samples)
-
-if (${run_unittests})
-    add_subdirectory(tests)
-endif()
+add_subdirectory(tests)
 
 if(${use_installed_dependencies})
     if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
