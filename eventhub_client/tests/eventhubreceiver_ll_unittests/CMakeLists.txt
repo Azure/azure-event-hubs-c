@@ -19,4 +19,4 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_c_test_artifacts(${theseTestsName} ON "UnitTests")
+build_c_test_artifacts(${theseTestsName} ON "tests/azure_eventhubs_sdk_c_tests")

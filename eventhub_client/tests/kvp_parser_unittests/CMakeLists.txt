@@ -20,4 +20,4 @@ set(${theseTestsName}_h_files
     ../../inc/kvp_parser.h
 )
 
-build_c_test_artifacts(${theseTestsName} ON "UnitTests")
+build_c_test_artifacts(${theseTestsName} ON "tests/azure_eventhubs_sdk_c_tests")
