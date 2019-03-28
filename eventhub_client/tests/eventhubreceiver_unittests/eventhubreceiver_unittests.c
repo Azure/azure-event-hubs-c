@@ -250,22 +250,14 @@ void TestHelper_SetupReceiveFromStartTimestampAsyncCommon(unsigned int waitTimeo
     if (waitTimeoutInMs == 0)
     {
         STRICT_EXPECTED_CALL(EventHubReceiver_LL_ReceiveFromStartTimestampAsync(TEST_EVENTHUB_RECEIVER_LL_VALID,
-            EventHubHReceiver_OnRxCB, OnRxCBCtxt,
-            EventHubHReceiver_OnErrCB, OnErrCBCtxt, TEST_EVENTHUB_RECEIVER_UTC_TIMESTAMP))
-            .IgnoreArgument_onEventReceiveCallback()
-            .IgnoreArgument_onEventReceiveErrorCallback()
-            .IgnoreArgument_onEventReceiveErrorUserContext()
-            .IgnoreArgument_onEventReceiveUserContext();
+            IGNORED_PTR_ARG, IGNORED_PTR_ARG,
+            IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_EVENTHUB_RECEIVER_UTC_TIMESTAMP));
     }
     else
     {
         STRICT_EXPECTED_CALL(EventHubReceiver_LL_ReceiveFromStartTimestampWithTimeoutAsync(TEST_EVENTHUB_RECEIVER_LL_VALID,
-            EventHubHReceiver_OnRxCB, OnRxCBCtxt,
-            EventHubHReceiver_OnErrCB, OnErrCBCtxt, TEST_EVENTHUB_RECEIVER_UTC_TIMESTAMP, TEST_EVENTHUB_RECEIVER_TIMEOUT))
-            .IgnoreArgument_onEventReceiveCallback()
-            .IgnoreArgument_onEventReceiveErrorCallback()
-            .IgnoreArgument_onEventReceiveErrorUserContext()
-            .IgnoreArgument_onEventReceiveUserContext();
+            IGNORED_PTR_ARG, IGNORED_PTR_ARG,
+            IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_EVENTHUB_RECEIVER_UTC_TIMESTAMP, TEST_EVENTHUB_RECEIVER_TIMEOUT));
     }
 
     EXPECTED_CALL(ThreadAPI_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
@@ -285,7 +277,7 @@ void TestHelper_SetupCommonDestroyCallStack(size_t freeDispatchCallbackCount, bo
 
     if (isThreadActive)
     {
-        STRICT_EXPECTED_CALL(ThreadAPI_Join(TEST_THREAD_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(ThreadAPI_Join(TEST_THREAD_HANDLE_VALID, IGNORED_PTR_ARG));
     }
 
     STRICT_EXPECTED_CALL(EventHubReceiver_LL_Destroy(TEST_EVENTHUB_RECEIVER_LL_VALID));
@@ -375,8 +367,7 @@ void TestHelper_SetupCommonReceiveEndAsyncStack(void)
 {
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_VALID));
 
-    STRICT_EXPECTED_CALL(EventHubReceiver_LL_ReceiveEndAsync(TEST_EVENTHUB_RECEIVER_LL_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument_onEventReceiveEndUserContext().IgnoreArgument_onEventReceiveEndCallback();
+    STRICT_EXPECTED_CALL(EventHubReceiver_LL_ReceiveEndAsync(TEST_EVENTHUB_RECEIVER_LL_VALID, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_VALID));
 }
@@ -1634,7 +1625,7 @@ TEST_FUNCTION(EventHubReceiver_Destroy_ReceiverActive_Negative)
 
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(ThreadAPI_Join(TEST_THREAD_HANDLE_VALID, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(ThreadAPI_Join(TEST_THREAD_HANDLE_VALID, IGNORED_PTR_ARG));
 
     umock_c_negative_tests_snapshot();
 
