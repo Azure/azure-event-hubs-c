@@ -15,7 +15,7 @@
 #ifndef EVENTHUBRECEIVER_H
 #define EVENTHUBRECEIVER_H
 
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
 
 #include "eventhubreceiver_ll.h"
