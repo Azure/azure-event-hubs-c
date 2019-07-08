@@ -9,7 +9,7 @@
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
 #define REGISTER_DOUBLYLINKEDLIST_GLOBAL_MOCK_HOOKS() \
-    FOR_EACH_1(R2, \
+    MU_FOR_EACH_1(R2, \
         DList_InitializeListHead, \
         DList_IsListEmpty, \
         DList_InsertTailList, \
