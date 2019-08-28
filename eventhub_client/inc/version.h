@@ -4,7 +4,7 @@
 #ifndef EVENTHUBVERSION_H
 #define EVENTHUBVERSION_H
 
-#define EVENT_HUB_SDK_VERSION "0.11.0"
+#define EVENT_HUB_SDK_VERSION "0.12.0"
 
 #include "umock_c/umock_c_prod.h"
 
