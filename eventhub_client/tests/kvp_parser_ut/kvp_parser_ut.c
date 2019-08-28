@@ -25,9 +25,9 @@ static void TestHook_free(void* ptr)
 }
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
@@ -78,7 +78,6 @@ typedef struct TestKVPGlobalTag
 // KVP Parser Test Data
 //#################################################################################################
 static TEST_MUTEX_HANDLE gTestByTest;
-static TEST_MUTEX_HANDLE gDllByDll;
 static TestKVPGlobal gTestData;
 
 static const char KEY1[] = "key1";
@@ -309,7 +308,6 @@ BEGIN_TEST_SUITE(kvp_parser_unittests)
 
 TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(gDllByDll);
     gTestByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(gTestByTest);
 
@@ -341,7 +339,6 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     umock_c_deinit();
     TEST_MUTEX_DESTROY(gTestByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(gDllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
