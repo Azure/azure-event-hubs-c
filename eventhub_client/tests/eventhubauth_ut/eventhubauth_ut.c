@@ -26,9 +26,9 @@ static void TestHook_free(void* ptr)
 }
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/agenttime.h"
@@ -3699,16 +3699,16 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusInProgressAndTimeoutA
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test");
 
     do
     {
         result = EventHubAuthCBS_GetStatus(h, &status);
-        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test");
     } while (status == EVENTHUBAUTH_STATUS_IN_PROGRESS);
 
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_TIMEOUT, status, "Failed Timeout Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_TIMEOUT, status, "Failed Timeout Status Test");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3769,8 +3769,8 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusOKToRefreshRequiredTo
     (void)EventHubAuthCBS_Authenticate(h);
 
     result = EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test.");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test.");
 
     // complete authentication
     g_TestGlobal.sasTokenPutCB(g_TestGlobal.sasTokenPutCBContext, CBS_OPERATION_RESULT_OK, 0, NULL);
@@ -3779,30 +3779,30 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusOKToRefreshRequiredTo
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test.");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test.");
 
     do
     {
         result = EventHubAuthCBS_GetStatus(h, &status);
-        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test.");
     } while (status == EVENTHUBAUTH_STATUS_OK);
 
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, status, "Failed Refresh Required Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, status, "Failed Refresh Required Status Test.");
 
     result = EventHubAuthCBS_Refresh(h, NULL);
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed EventHubAuthCBS_Refresh Return Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed EventHubAuthCBS_Refresh Return Test.");
 
     result = EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for In Progress Test.");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_IN_PROGRESS, status, "Failed In Progress Status Test.");
 
     // complete authentication
     g_TestGlobal.sasTokenPutCB(g_TestGlobal.sasTokenPutCBContext, CBS_OPERATION_RESULT_OK, 0, NULL);
 
     result = EventHubAuthCBS_GetStatus(h, &status);
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test.");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test.");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
@@ -3835,24 +3835,24 @@ TEST_FUNCTION(EventHubAuth_EventHubAuthCBS_GetStatus_StatusOKToRefreshRequiredTo
     result = EventHubAuthCBS_GetStatus(h, &status);
 
     // assert
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test.");
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_OK, status, "Failed EVENTHUBAUTH_STATUS_OK Status Test.");
 
     do
     {
         result = EventHubAuthCBS_GetStatus(h, &status);
-        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test. Line:" TOSTRING(__LINE__));
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Return Value for EVENTHUBAUTH_STATUS_OK Test.");
     } while (status == EVENTHUBAUTH_STATUS_OK);
 
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, status, "Failed Refresh Required Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_REFRESH_REQUIRED, status, "Failed Refresh Required Status Test.");
 
     do
     {
         result = EventHubAuthCBS_GetStatus(h, &status);
-        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Refresh Required Return Value Test. Line:" TOSTRING(__LINE__));
+        ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_RESULT_OK, result, "Failed Refresh Required Return Value Test.");
     } while (status == EVENTHUBAUTH_STATUS_REFRESH_REQUIRED);
 
-    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_EXPIRED, status, "Failed Expired Status Test. Line:" TOSTRING(__LINE__));
+    ASSERT_ARE_EQUAL(int, EVENTHUBAUTH_STATUS_EXPIRED, status, "Failed Expired Status Test.");
 
     // cleanup
     EventHubAuthCBS_Destroy(h);
