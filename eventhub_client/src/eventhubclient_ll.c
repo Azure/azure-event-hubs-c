@@ -512,6 +512,7 @@ static int initialize_uamqp_stack_common(EVENTHUBCLIENT_LL_HANDLE eventhub_clien
         const IO_INTERFACE_DESCRIPTION* saslclientio_interface;
         TLSIO_CONFIG tls_io_config;
 
+        memset(&tls_io_config, 0, sizeof(tls_io_config));
         tls_io_config.hostname = host_name_temp;
         tls_io_config.port = 5671;
 
