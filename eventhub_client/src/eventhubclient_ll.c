@@ -184,6 +184,7 @@ static int add_partition_key_to_message(MESSAGE_HANDLE message, EVENTDATA_HANDLE
             amqpvalue_destroy(partition_value);
             amqpvalue_destroy(partition_name);
             amqpvalue_destroy(partition_map);
+            amqpvalue_destroy(partition_annotation);
         }
     }
     else
