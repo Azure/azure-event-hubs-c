@@ -1,3 +1,6 @@
+_This SDK is no longer supported and it is maintained by Microsoft employees and external contributors in a best effort way (in their free time). To send events to Azure Event Hub in other languages please see the [Azure Event Hub documentation](https://docs.microsoft.com/en-us/azure/event-hubs/), quickstarts section._
+
+_For use cases where connectivity to Event Hub is needed in a C development environment, please use [uamqp-c](https://github.com/Azure/azure-uamqp-c) or other AMQP C clients._
 
 # Azure Event Hub Client for C
 
