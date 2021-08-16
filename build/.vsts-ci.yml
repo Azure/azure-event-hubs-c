@@ -23,7 +23,7 @@ jobs:
     displayName: 'build'   
 - job: windowsx86
   pool:
-    name: 'aziotbld-win03'
+    name: 'sdk-c--win-vs2017'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
@@ -51,7 +51,8 @@ jobs:
 - job: raspberrypi
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c"
-  pool: Hosted Ubuntu 1604
+  pool: 
+    name: 'sdk-c--ubuntu-18'
   displayName: raspberrypi
   steps:
   - script: |
@@ -65,7 +66,8 @@ jobs:
 - job: gcc44
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-gcc4.4"
-  pool: Hosted Ubuntu 1604
+  pool: 
+    name: 'sdk-c--ubuntu-18'
   displayName: 'gcc4.4'
   steps:
   - script: |
@@ -86,7 +88,8 @@ jobs:
 - job: gcc46
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/gcc-4.6:latest"
-  pool: Hosted Ubuntu 1604
+  pool: 
+    name: 'sdk-c--ubuntu-18'
   displayName: 'gcc-4.6'
   steps:
   - script: |
@@ -109,7 +112,8 @@ jobs:
 - job: linuxoptions
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-linux-c-ubuntu"
-  pool: Hosted Ubuntu 1604
+  pool: 
+    name: 'sdk-c--ubuntu-18'
   displayName: 'linux-options'
   steps:
   - script: | 
@@ -122,21 +126,9 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()    
-- job: windowscex86
-  pool:
-    name: 'win'
-  steps:
-  - script: |
-     if exist jenkins\windowsce_c.cmd (
-      call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
-      call jenkins\windowsce_c.cmd)
-    displayName: 'build'
-  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'cleanup'
-    condition: always()    
 - job: windowsdynamic
   pool:
-    name: 'aziotbld-win03'
+    name: 'sdk-c--win-vs2017'
   steps:
   - script: |
      if exist jenkins\windows_c_build_as_dynamic.cmd (
@@ -197,7 +189,8 @@ jobs:
 - job: clang
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/ubuntu-clang"
-  pool: aziotbld-lin01
+  pool: 
+    name: 'sdk-c--ubuntu-18'
   displayName: 'clang'
   steps:
   - script: |
@@ -232,7 +225,8 @@ jobs:
 - job: ubuntu1604
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu"
-  pool: aziotbld-lin02
+  pool: 
+    name: 'sdk-c--ubuntu-18'
   displayName: 'ubuntu1604'
   steps:
   - script: |
@@ -267,7 +261,8 @@ jobs:
 - job: debian
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/c-debian"
-  pool: c-df
+  pool: 
+    name: 'sdk-c--ubuntu-18'
   displayName: 'debian'
   steps:
   - script: |
@@ -302,7 +297,8 @@ jobs:
 - job: wolfssl
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-wolfssl"
-  pool: Hosted Ubuntu 1604
+  pool: 
+    name: 'sdk-c--ubuntu-18'
   displayName: 'wolfssl'
   steps:
   - script: |
@@ -336,7 +332,7 @@ jobs:
     condition: always()
 - job: windowsx64
   pool:
-    name: 'aziotbld-win03'
+    name: 'sdk-c--win-vs2017'
   displayName: 'windowsx64'
   steps:
   - script: |
