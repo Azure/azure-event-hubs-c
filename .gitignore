@@ -197,3 +197,5 @@ Buildx86retail.dat
 
 # Typescript installed definition files for modules
 **/typings/
+/.vs
+/out/build
