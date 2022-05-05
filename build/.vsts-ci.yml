@@ -23,7 +23,7 @@ jobs:
     displayName: 'build'   
 - job: windowsx86
   pool:
-    vmImage: 'vs2017-win2016'
+    name: 'sdk-c--win-vs2017'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
@@ -115,7 +115,7 @@ jobs:
     condition: always()   
 - job: windowsdynamic
   pool:
-    vmImage: 'vs2017-win2016'
+    name: 'sdk-c--win-vs2017'
   steps:
   - script: |
      if exist jenkins\windows_c_build_as_dynamic.cmd (
@@ -300,7 +300,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
 - job: windowsx64
   pool:
-    vmImage: 'vs2017-win2016'
+    name: 'sdk-c--win-vs2017'
   displayName: 'windowsx64'
   steps:
   - script: |
