@@ -105,7 +105,7 @@ int SendBatch_Sample(void)
             EventData_Destroy(eventDataList[i]);
         }
 
-        platform_init();
+        platform_deinit();
     }
 
     return result;
