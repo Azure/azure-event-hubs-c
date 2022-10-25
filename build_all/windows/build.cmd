@@ -138,9 +138,6 @@ if %build-samples%==yes (
 	if not !errorlevel! == 0 (
 	@Echo Azure EventHub SDK needs to download nuget.exe from https://www.nuget.org/nuget.exe 
 	@Echo https://www.nuget.org 
-	choice /T 10 /C yn /D y /M "Do you want to download and run nuget.exe?" 
-	if not !errorlevel!==1 goto :eof
-	rem if nuget.exe is not found, then ask user
 	Powershell.exe wget -outf nuget.exe https://nuget.org/nuget.exe
 		if not exist .\nuget.exe (
 			echo nuget does not exist
