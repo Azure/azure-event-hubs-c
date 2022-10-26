@@ -133,18 +133,18 @@ rem ----------------------------------------------------------------------------
 rem -- restore packages for solutions
 rem -----------------------------------------------------------------------------
 
- if %build-samples%==yes (
+if %build-samples%==yes (
 	where /q nuget.exe
 	if not !errorlevel! == 0 (
 	@Echo Azure EventHub SDK needs to download nuget.exe from https://www.nuget.org/nuget.exe 
 	@Echo https://www.nuget.org 
-	Powershell.exe [Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"; wget -outf nuget.exe https://nuget.org/nuget.exe	
+	Powershell.exe [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; wget -outf nuget.exe https://nuget.org/nuget.exe	
 		if not exist .\nuget.exe (
 			echo nuget does not exist
 			exit /b 1
 		)
 	)
- )
+)
 
 rem -----------------------------------------------------------------------------
 rem -- clean solutions
