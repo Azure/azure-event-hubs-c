@@ -138,6 +138,7 @@ if %build-samples%==yes (
 	if not !errorlevel! == 0 (
 	@Echo Azure EventHub SDK needs to download nuget.exe from https://www.nuget.org/nuget.exe 
 	@Echo https://www.nuget.org 
+	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 	Powershell.exe wget -outf nuget.exe https://nuget.org/nuget.exe
 		if not exist .\nuget.exe (
 			echo nuget does not exist
