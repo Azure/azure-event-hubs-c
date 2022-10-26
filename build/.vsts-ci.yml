@@ -8,14 +8,14 @@ jobs:
     name: 'sdk-c--ubuntu-18'
   steps:
   - script: |
-      sudo apt-get update && apt-get install -y \
+      sudo apt-get update && sudo apt-get install -y \
       curl \
       git \
       python-software-properties \
       build-essential \
       pkg-config
-      sudo curl -sL https://deb.nodesource.com/setup_6.x | bash -
-      sudo apt-get install -y nodejs
+      sudo curl -sL https://deb.nodesource.com/setup_14.x | bash -
+      sudo apt-get install -y nodejs-dev node-gyp libssl1.0-dev nodejs npm
     displayName: 'setup'  
   - script: |
       npm install check_submodules

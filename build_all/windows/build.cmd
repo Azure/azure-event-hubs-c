@@ -138,10 +138,7 @@ if %build-samples%==yes (
 	if not !errorlevel! == 0 (
 	@Echo Azure EventHub SDK needs to download nuget.exe from https://www.nuget.org/nuget.exe 
 	@Echo https://www.nuget.org 
-	choice /C yn /M "Do you want to download and run nuget.exe?" 
-	if not !errorlevel!==1 goto :eof
-	rem if nuget.exe is not found, then ask user
-	Powershell.exe wget -outf nuget.exe https://nuget.org/nuget.exe
+	Powershell.exe [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; wget -outf nuget.exe https://nuget.org/nuget.exe	
 		if not exist .\nuget.exe (
 			echo nuget does not exist
 			exit /b 1
@@ -206,7 +203,7 @@ if %MAKE_NUGET_PKG% == yes (
 
 ) else if %build-platform% == x64 (
 	echo ***Running CMAKE for Win64***
-	cmake -Drun_longhaul_tests:BOOL=%CMAKE_run_longhaul_tests% -Drun_e2e_tests:BOOL=%CMAKE_run_e2e_tests% -Drun_unittests:BOOL=%CMAKE_run_unittests% -Duse_wsio:BOOL=%CMAKE_use_wsio% %build-root%  -G "Visual Studio 14 Win64"
+	cmake -Drun_longhaul_tests:BOOL=%CMAKE_run_longhaul_tests% -Drun_e2e_tests:BOOL=%CMAKE_run_e2e_tests% -Drun_unittests:BOOL=%CMAKE_run_unittests% -Duse_wsio:BOOL=%CMAKE_use_wsio% %build-root%  -G "Visual Studio 15 2017 Win64"
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == arm (
 	echo ***Running CMAKE for ARM***
