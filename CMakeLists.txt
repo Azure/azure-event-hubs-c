@@ -199,7 +199,7 @@ function(windows_unittests_add_dll whatIsBuilding)
                FOLDER "UnitTests") 
                
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
-    target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
+    target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST_XXX)
     target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest ctest ${ARGN})
 endfunction()
 
