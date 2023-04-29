@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-compileAsC11()
+compileAsC99()
 
 set(theseTestsName eventhubauth_ut)
 

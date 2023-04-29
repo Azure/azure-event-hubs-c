@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-compileAsC11()
+compileAsC99()
 set(theseTestsName eventhubclient_e2e)
 
 set(${theseTestsName}_test_files
