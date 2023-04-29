@@ -8,11 +8,7 @@ rem // resolve to fully qualified path
 for %%i in ("%build-root%") do set build-root=%%~fi
 
 echo ***checking msbuild***
-where /q msbuild
-IF ERRORLEVEL 1 (
-echo ***setting VC paths***
-    IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsMSBuildCmd.bat" call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsMSBuildCmd.bat"
-)
+call jenkins\windows_c_VsDevCmd.cmd
 where msbuild
 
 REM -- C --
