@@ -5,7 +5,7 @@ resources:
 jobs:
 - job: checksubmodule  
   pool:
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   steps:
   - script: |
       sudo apt-get update && sudo apt-get install -y \
@@ -48,7 +48,7 @@ jobs:
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c"
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: raspberrypi
   steps:
   - script: |
@@ -61,7 +61,7 @@ jobs:
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-gcc4.4"
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: 'gcc4.4'
   steps:
   - script: |
@@ -80,7 +80,7 @@ jobs:
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/gcc-4.6:latest"
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: 'gcc-4.6'
   steps:
   - script: |
@@ -101,7 +101,7 @@ jobs:
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-linux-c-ubuntu"
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: 'linux-options'
   steps:
   - script: | 
@@ -168,7 +168,7 @@ jobs:
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/ubuntu-clang"
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: 'clang'
   steps:
   - script: |
@@ -201,7 +201,7 @@ jobs:
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu"
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: 'ubuntu1604'
   steps:
   - script: |
@@ -234,7 +234,7 @@ jobs:
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/c-debian"
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: 'debian'
   steps:
   - script: |
@@ -267,7 +267,7 @@ jobs:
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-wolfssl"
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: 'wolfssl'
   steps:
   - script: |
