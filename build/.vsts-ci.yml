@@ -23,7 +23,7 @@ jobs:
     displayName: 'build'   
 - job: windowsx86
   pool:
-    name: 'sdk-c--win-vs2017'
+    name: 'sdk-c--win-vs2022'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
@@ -138,7 +138,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)    
 - job: OSX
   pool:
-    name: OSX
+    vmImage: 'macOS-13'
   steps:
   - script: |
      if [ -f "jenkins/osx_gcc_openssl.sh" ]
@@ -298,7 +298,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
 - job: windowsx64
   pool:
-    name: 'sdk-c--win-vs2017'
+    name: 'sdk-c--win-vs2022'
   displayName: 'windowsx64'
   steps:
   - script: |
@@ -325,7 +325,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)  
 - job: xcodenative
   pool:
-    name: OSX
+    vmImage: 'macOS-13'
   steps:
   - script: |
      if [ -f "jenkins/osx_xcode_native.sh" ]
