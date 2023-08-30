@@ -113,7 +113,7 @@ jobs:
     condition: always()   
 - job: windowsdynamic
   pool:
-    name: 'sdk-c--win-vs2017'
+    name: 'sdk-c--win-vs2022'
   steps:
   - script: |
      if exist jenkins\windows_c_build_as_dynamic.cmd (
